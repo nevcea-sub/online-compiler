@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:25-slim
 
 # Docker CLI 설치
 RUN apt-get update && apt-get install -y \
