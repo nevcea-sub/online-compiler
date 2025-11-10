@@ -43,6 +43,15 @@ export default [
         }
     },
     {
-        ignores: ['node_modules/**', 'backend/node_modules/**', 'dist/**', 'build/**', '*.min.js', 'coverage/**']
+        ignores: [
+            'node_modules/**',
+            'backend/node_modules/**',
+            'backend/code/**',
+            'backend/output/**',
+            'dist/**',
+            'build/**',
+            '*.min.js',
+            'coverage/**'
+        ]
     }
 ];
