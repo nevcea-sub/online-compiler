@@ -10,7 +10,7 @@ jobs:
     lint-and-format:
         name: Lint and Format Check
         runs-on: ubuntu-latest
-        
+
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
     test:
         name: Test
         runs-on: ubuntu-latest
-        
+
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -63,7 +63,7 @@ jobs:
     build-check:
         name: Build Check
         runs-on: ubuntu-latest
-        
+
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -85,4 +85,3 @@ jobs:
               run: |
                   timeout 5 node server.js || true
                   echo "Backend server check completed"
-

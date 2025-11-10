@@ -750,13 +750,14 @@ function initEditor() {
                         }
 
                         const suggestions = words
-                            .filter(word =>
-                                word.toLowerCase().startsWith(currentWord.toLowerCase()) &&
-                                word !== currentWord &&
-                                word.length > 1
+                            .filter(
+                                (word) =>
+                                    word.toLowerCase().startsWith(currentWord.toLowerCase()) &&
+                                    word !== currentWord &&
+                                    word.length > 1
                             )
                             .slice(0, 50)
-                            .map(word => ({
+                            .map((word) => ({
                                 label: word,
                                 kind: monaco.languages.CompletionItemKind.Text,
                                 insertText: word,
@@ -805,13 +806,149 @@ function initEditor() {
 
         function isKeyword(word, language) {
             const keywords = {
-                python: ['if', 'else', 'elif', 'for', 'while', 'def', 'class', 'import', 'from', 'as', 'return', 'try', 'except', 'finally', 'with', 'pass', 'break', 'continue', 'and', 'or', 'not', 'in', 'is', 'None', 'True', 'False'],
-                javascript: ['if', 'else', 'for', 'while', 'function', 'class', 'import', 'export', 'return', 'try', 'catch', 'finally', 'with', 'break', 'continue', 'var', 'let', 'const', 'new', 'this', 'super', 'extends', 'static', 'async', 'await'],
-                java: ['if', 'else', 'for', 'while', 'class', 'public', 'private', 'protected', 'static', 'void', 'return', 'try', 'catch', 'finally', 'import', 'package', 'extends', 'implements', 'new', 'this', 'super'],
-                cpp: ['if', 'else', 'for', 'while', 'class', 'public', 'private', 'protected', 'static', 'void', 'return', 'try', 'catch', 'include', 'using', 'namespace', 'new', 'delete', 'this'],
+                python: [
+                    'if',
+                    'else',
+                    'elif',
+                    'for',
+                    'while',
+                    'def',
+                    'class',
+                    'import',
+                    'from',
+                    'as',
+                    'return',
+                    'try',
+                    'except',
+                    'finally',
+                    'with',
+                    'pass',
+                    'break',
+                    'continue',
+                    'and',
+                    'or',
+                    'not',
+                    'in',
+                    'is',
+                    'None',
+                    'True',
+                    'False'
+                ],
+                javascript: [
+                    'if',
+                    'else',
+                    'for',
+                    'while',
+                    'function',
+                    'class',
+                    'import',
+                    'export',
+                    'return',
+                    'try',
+                    'catch',
+                    'finally',
+                    'with',
+                    'break',
+                    'continue',
+                    'var',
+                    'let',
+                    'const',
+                    'new',
+                    'this',
+                    'super',
+                    'extends',
+                    'static',
+                    'async',
+                    'await'
+                ],
+                java: [
+                    'if',
+                    'else',
+                    'for',
+                    'while',
+                    'class',
+                    'public',
+                    'private',
+                    'protected',
+                    'static',
+                    'void',
+                    'return',
+                    'try',
+                    'catch',
+                    'finally',
+                    'import',
+                    'package',
+                    'extends',
+                    'implements',
+                    'new',
+                    'this',
+                    'super'
+                ],
+                cpp: [
+                    'if',
+                    'else',
+                    'for',
+                    'while',
+                    'class',
+                    'public',
+                    'private',
+                    'protected',
+                    'static',
+                    'void',
+                    'return',
+                    'try',
+                    'catch',
+                    'include',
+                    'using',
+                    'namespace',
+                    'new',
+                    'delete',
+                    'this'
+                ],
                 c: ['if', 'else', 'for', 'while', 'return', 'include', 'define', 'typedef', 'struct', 'enum', 'union'],
-                rust: ['if', 'else', 'for', 'while', 'fn', 'let', 'mut', 'pub', 'struct', 'enum', 'impl', 'trait', 'use', 'mod', 'return', 'match', 'loop', 'break', 'continue'],
-                php: ['if', 'else', 'for', 'while', 'function', 'class', 'public', 'private', 'protected', 'static', 'return', 'try', 'catch', 'finally', 'include', 'require', 'use', 'namespace', 'new', 'this']
+                rust: [
+                    'if',
+                    'else',
+                    'for',
+                    'while',
+                    'fn',
+                    'let',
+                    'mut',
+                    'pub',
+                    'struct',
+                    'enum',
+                    'impl',
+                    'trait',
+                    'use',
+                    'mod',
+                    'return',
+                    'match',
+                    'loop',
+                    'break',
+                    'continue'
+                ],
+                php: [
+                    'if',
+                    'else',
+                    'for',
+                    'while',
+                    'function',
+                    'class',
+                    'public',
+                    'private',
+                    'protected',
+                    'static',
+                    'return',
+                    'try',
+                    'catch',
+                    'finally',
+                    'include',
+                    'require',
+                    'use',
+                    'namespace',
+                    'new',
+                    'this'
+                ]
             };
             return keywords[language]?.includes(word) || false;
         }

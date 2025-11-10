@@ -9,7 +9,7 @@ jobs:
     format:
         name: Auto Format Code
         runs-on: ubuntu-latest
-        
+
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -44,4 +44,3 @@ jobs:
                   git add .
                   git commit -m "chore: auto-format code [skip ci]"
                   git push
-
