@@ -4,6 +4,8 @@ const { exec } = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -63,6 +65,9 @@ const LANGUAGE_CONFIGS = {
     }
 };
 
+const ALLOWED_LANGUAGES = Object.keys(LANGUAGE_EXTENSIONS);
+const ALLOWED_IMAGES = Object.values(LANGUAGE_CONFIGS).map((config) => config.image);
+
 const DANGEROUS_PATTERNS = [
     /rm\s+-rf/gi,
     /mkfs/gi,
@@ -75,7 +80,14 @@ const DANGEROUS_PATTERNS = [
     /shutdown/gi,
     /reboot/gi,
     /halt/gi,
-    /poweroff/gi
+    /poweroff/gi,
+    /docker/gi,
+    /sudo/gi,
+    /su\s/gi,
+    /chmod\s+[0-9]{3,4}/gi,
+    /chown/gi,
+    /mount/gi,
+    /umount/gi
 ];
 
 const DOCKER_PULL_MESSAGES = [
@@ -90,12 +102,76 @@ const DOCKER_PULL_MESSAGES = [
     'status: image is up to date'
 ];
 
-app.use(cors());
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false
+}));
+
+const corsOptions = {
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
 app.use(express.json({ limit: '10mb' }));
 
+const executeLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 10,
+    message: 'Too many execution requests, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+const healthLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+function escapeShellArg(arg) {
+    if (typeof arg !== 'string') {
+        return '';
+    }
+    return `'${arg.replace(/'/g, "'\\''")}'`;
+}
+
+function validateLanguage(language) {
+    if (typeof language !== 'string') {
+        return false;
+    }
+    return ALLOWED_LANGUAGES.includes(language.toLowerCase());
+}
+
+function validateImage(image) {
+    if (typeof image !== 'string') {
+        return false;
+    }
+    return ALLOWED_IMAGES.includes(image);
+}
+
+function validatePath(filePath) {
+    if (typeof filePath !== 'string') {
+        return false;
+    }
+    const resolved = path.resolve(filePath);
+    const codeDirResolved = path.resolve(codeDir);
+    return resolved.startsWith(codeDirResolved);
+}
+
 function checkImageExists(image) {
+    if (!validateImage(image)) {
+        return Promise.resolve(false);
+    }
     return new Promise((resolve) => {
-        exec(`docker images -q ${image}`, (error, stdout) => {
+        const escapedImage = escapeShellArg(image);
+        exec(`docker images -q ${escapedImage}`, (error, stdout) => {
+            if (error) {
+                resolve(false);
+                return;
+            }
             resolve(stdout.trim().length > 0);
         });
     });
@@ -107,11 +183,15 @@ async function preloadDockerImages() {
     const uniqueImages = [...new Set(images)];
 
     const pullPromises = uniqueImages.map(async (image) => {
+        if (!validateImage(image)) {
+            return;
+        }
         const exists = await checkImageExists(image);
         if (!exists) {
             console.log(`Pulling ${image}...`);
             return new Promise((resolve) => {
-                exec(`docker pull ${image}`, (error) => {
+                const escapedImage = escapeShellArg(image);
+                exec(`docker pull ${escapedImage}`, (error) => {
                     if (error) {
                         console.error(`Failed to pull ${image}:`, error.message);
                     } else {
@@ -129,7 +209,13 @@ async function preloadDockerImages() {
 }
 
 function runDockerCommand(image, command, tmpfsSize) {
-    const dockerCmd = `docker run --rm --memory=${MAX_MEMORY} --cpus=${MAX_CPU_PERCENT} --network=none --read-only --tmpfs /tmp:rw,exec,nosuid,size=${tmpfsSize} ${image} sh -c "${command}"`;
+    if (!validateImage(image) || typeof command !== 'string' || typeof tmpfsSize !== 'string') {
+        return;
+    }
+    const escapedImage = escapeShellArg(image);
+    const escapedCommand = escapeShellArg(command);
+    const escapedTmpfsSize = escapeShellArg(tmpfsSize);
+    const dockerCmd = `docker run --rm --memory=${escapedTmpfsSize} --cpus=${MAX_CPU_PERCENT} --network=none --read-only --tmpfs /tmp:rw,exec,nosuid,size=${escapedTmpfsSize} ${escapedImage} sh -c ${escapedCommand}`;
     exec(dockerCmd, () => {});
 }
 
@@ -172,15 +258,23 @@ async function ensureDirectories() {
 }
 
 function sanitizeCode(code) {
+    if (typeof code !== 'string') {
+        throw new Error('Invalid code format');
+    }
+
     for (const pattern of DANGEROUS_PATTERNS) {
         if (pattern.test(code)) {
             throw new Error('Potentially dangerous code detected');
         }
     }
+
+    if (code.length === 0) {
+        throw new Error('Code cannot be empty');
+    }
 }
 
 function filterDockerMessages(text) {
-    if (!text) {
+    if (!text || typeof text !== 'string') {
         return '';
     }
     return text
@@ -192,24 +286,48 @@ function filterDockerMessages(text) {
         .join('\n');
 }
 
+function sanitizeError(error) {
+    if (!error) {
+        return 'An error occurred';
+    }
+    const errorStr = typeof error === 'string' ? error : error.message || String(error);
+    const filtered = filterDockerMessages(errorStr);
+    if (filtered.length > 500) {
+        return filtered.substring(0, 500) + '...';
+    }
+    return filtered;
+}
+
 async function cleanupFile(filePath) {
+    if (!filePath || !validatePath(filePath)) {
+        return;
+    }
     try {
-        if (filePath) {
-            await fs.unlink(filePath).catch(() => {});
-        }
+        await fs.unlink(filePath).catch(() => {});
     } catch (error) {
         console.error('Cleanup error:', error);
     }
 }
 
 function getContainerCodePath(language, extension) {
-    return language === 'java' ? '/tmp/Main.java' : `/tmp/code${extension}`;
+    if (language === 'java') {
+        return '/tmp/Main.java';
+    }
+    return `/tmp/code${extension}`;
 }
 
 function buildDockerCommand(language, hostCodePath) {
+    if (!validateLanguage(language)) {
+        throw new Error('Invalid language');
+    }
+
+    if (!validatePath(hostCodePath)) {
+        throw new Error('Invalid file path');
+    }
+
     const config = LANGUAGE_CONFIGS[language];
-    if (!config) {
-        throw new Error(`Unsupported language: ${language}`);
+    if (!config || !validateImage(config.image)) {
+        throw new Error('Invalid language configuration');
     }
 
     const extension = LANGUAGE_EXTENSIONS[language];
@@ -218,10 +336,20 @@ function buildDockerCommand(language, hostCodePath) {
     const tmpfsSize = language === 'rust' ? '200m' : '50m';
     const normalizedHostPath = path.resolve(hostCodePath);
 
-    return `docker run --rm --memory=${MAX_MEMORY} --cpus=${MAX_CPU_PERCENT} --network=none --read-only --tmpfs /tmp:rw,exec,nosuid,size=${tmpfsSize},noatime -v "${normalizedHostPath}:${containerPath}:ro" ${config.image} sh -c "${command}"`;
+    const escapedImage = escapeShellArg(config.image);
+    const escapedHostPath = escapeShellArg(normalizedHostPath);
+    const escapedContainerPath = escapeShellArg(containerPath);
+    const escapedCommand = escapeShellArg(command);
+    const escapedTmpfsSize = escapeShellArg(tmpfsSize);
+    const escapedMemory = escapeShellArg(MAX_MEMORY);
+
+    return `docker run --rm --memory=${escapedMemory} --cpus=${MAX_CPU_PERCENT} --network=none --read-only --tmpfs /tmp:rw,exec,nosuid,size=${escapedTmpfsSize},noatime -v ${escapedHostPath}:${escapedContainerPath}:ro ${escapedImage} sh -c ${escapedCommand}`;
 }
 
 function validateJavaClass(code) {
+    if (typeof code !== 'string') {
+        throw new Error('Invalid code format');
+    }
     const className = code.match(/public\s+class\s+(\w+)/);
     if (className && className[1] !== 'Main') {
         throw new Error('Java class must be named "Main"');
@@ -229,27 +357,37 @@ function validateJavaClass(code) {
 }
 
 async function writeCodeFile(codePath, code, language) {
+    if (!validateLanguage(language)) {
+        throw new Error('Invalid language');
+    }
+
+    const resolvedCodePath = path.resolve(codePath);
+    if (!resolvedCodePath.startsWith(path.resolve(codeDir))) {
+        throw new Error('Invalid code path');
+    }
+
     if (language === 'java') {
         validateJavaClass(code);
         const modifiedCode = code.replace(/public\s+class\s+\w+/, 'public class Main');
-        await fs.writeFile(codePath + '.java', modifiedCode, 'utf8');
-        return codePath + '.java';
+        const filePath = resolvedCodePath + '.java';
+        await fs.writeFile(filePath, modifiedCode, 'utf8');
+        return filePath;
     }
     const extension = LANGUAGE_EXTENSIONS[language];
-    const fullPath = codePath + extension;
+    const fullPath = resolvedCodePath + extension;
     await fs.writeFile(fullPath, code, 'utf8');
     return fullPath;
 }
 
 function handleExecutionResult(error, stdout, stderr, executionTime, res) {
-    const filteredStderr = filterDockerMessages(stderr);
+    const filteredStderr = filterDockerMessages(stderr || '');
     const hasStdout = stdout && stdout.trim().length > 0;
 
     if (error) {
         const errorMsg =
             error.killed || error.signal === 'SIGTERM'
                 ? filteredStderr || 'Execution timeout exceeded'
-                : filterDockerMessages(stderr || error.message || '');
+                : sanitizeError(stderr || error.message);
 
         return res.json({
             output: stdout || '',
@@ -265,19 +403,23 @@ function handleExecutionResult(error, stdout, stderr, executionTime, res) {
     });
 }
 
-app.post('/api/execute', async (req, res) => {
+app.post('/api/execute', executeLimiter, async (req, res) => {
     const { code, language } = req.body;
 
     if (!code || !language) {
         return res.status(400).json({ error: 'Code and language are required' });
     }
 
+    if (typeof code !== 'string' || typeof language !== 'string') {
+        return res.status(400).json({ error: 'Invalid input format' });
+    }
+
     if (code.length > MAX_CODE_LENGTH) {
         return res.status(400).json({ error: `Code exceeds maximum length of ${MAX_CODE_LENGTH} characters` });
     }
 
-    if (!LANGUAGE_EXTENSIONS[language]) {
-        return res.status(400).json({ error: `Unsupported language: ${language}` });
+    if (!validateLanguage(language)) {
+        return res.status(400).json({ error: 'Unsupported language' });
     }
 
     const sessionId = crypto.randomBytes(16).toString('hex');
@@ -287,6 +429,10 @@ app.post('/api/execute', async (req, res) => {
     try {
         sanitizeCode(code);
         fullCodePath = await writeCodeFile(codePath, code, language);
+
+        if (!validatePath(fullCodePath)) {
+            throw new Error('Invalid file path generated');
+        }
 
         const dockerCommand = buildDockerCommand(language, fullCodePath);
         const config = LANGUAGE_CONFIGS[language];
@@ -306,12 +452,18 @@ app.post('/api/execute', async (req, res) => {
         );
     } catch (error) {
         await cleanupFile(fullCodePath);
-        res.status(400).json({ error: error.message });
+        const sanitizedError = sanitizeError(error);
+        res.status(400).json({ error: sanitizedError });
     }
 });
 
-app.get('/api/health', (req, res) => {
+app.get('/api/health', healthLimiter, (req, res) => {
     res.json({ status: 'ok' });
+});
+
+app.use((err, req, res, _next) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ error: 'Internal server error' });
 });
 
 ensureDirectories().then(() => {
