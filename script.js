@@ -355,15 +355,47 @@ function initEditor() {
             fontSize: savedFontSize,
             fontFamily: savedFontFamily,
             suggestOnTriggerCharacters: true,
-            quickSuggestions: { other: true, comments: false, strings: false },
+            quickSuggestions: { other: true, comments: true, strings: true },
             acceptSuggestionOnEnter: 'on',
             acceptSuggestionOnCommitCharacter: true,
             snippetSuggestions: 'top',
             tabCompletion: 'on',
-            wordBasedSuggestions: 'matchingDocuments',
-            parameterHints: { enabled: true },
+            wordBasedSuggestions: 'allDocuments',
+            parameterHints: { enabled: true, cycle: true },
             formatOnPaste: true,
             formatOnType: true,
+            suggest: {
+                showKeywords: true,
+                showSnippets: true,
+                showClasses: true,
+                showFunctions: true,
+                showVariables: true,
+                showFields: true,
+                showMethods: true,
+                showProperties: true,
+                showEvents: true,
+                showOperators: true,
+                showUnits: true,
+                showValues: true,
+                showText: true,
+                showColors: true,
+                showFiles: true,
+                showReferences: true,
+                showFolders: true,
+                showTypeParameters: true,
+                showIssues: true,
+                showUsers: true,
+                showWords: true,
+                showDeprecated: true,
+                maxVisibleSuggestions: 12,
+                filterGraceful: true,
+                shareSuggestSelections: false,
+                showIcons: true,
+                preview: true,
+                previewMode: 'prefix',
+                showStatusBar: true,
+                insertMode: 'replace'
+            },
             scrollbar: {
                 vertical: 'hidden',
                 horizontal: 'hidden',
@@ -427,6 +459,7 @@ function initEditor() {
 
             const savedCode = loadCodeFromStorage();
             setEditorValue(savedCode);
+            updateAutoComplete();
 
             elements.output.innerHTML = `<p class="text-muted">${translations[currentLang]['output-placeholder']}</p>`;
         }
@@ -666,7 +699,183 @@ function initEditor() {
 
         codeEditor.onDidChangeModelContent(() => {
             saveCodeToStorage();
+            updateAutoComplete();
         });
+
+        function updateAutoComplete() {
+            const model = codeEditor.getModel();
+            if (!model) {
+                return;
+            }
+
+            if (currentLanguage === 'javascript') {
+                return;
+            }
+
+            try {
+                monaco.languages.setLanguageConfiguration(currentLanguage, {
+                    wordPattern: /[a-zA-Z_$][a-zA-Z0-9_$]*/g,
+                    comments: {
+                        lineComment: getLineComment(currentLanguage),
+                        blockComment: getBlockComment(currentLanguage)
+                    },
+                    brackets: getBrackets(currentLanguage),
+                    autoClosingPairs: getAutoClosingPairs(currentLanguage),
+                    surroundingPairs: getSurroundingPairs(currentLanguage)
+                });
+
+                registerCompletionProvider(currentLanguage);
+            } catch (error) {
+                console.debug('Language configuration failed:', error);
+            }
+        }
+
+        const registeredProviders = new Set();
+
+        function registerCompletionProvider(language) {
+            if (registeredProviders.has(language) || language === 'javascript') {
+                return;
+            }
+
+            try {
+                monaco.languages.registerCompletionItemProvider(language, {
+                    provideCompletionItems: function (model, position) {
+                        const text = model.getValue();
+                        const words = extractWords(text, language);
+                        const wordAtPosition = model.getWordUntilPosition(position);
+                        const currentWord = wordAtPosition.word;
+
+                        if (!currentWord || currentWord.length < 1) {
+                            return { suggestions: [] };
+                        }
+
+                        const suggestions = words
+                            .filter(word =>
+                                word.toLowerCase().startsWith(currentWord.toLowerCase()) &&
+                                word !== currentWord &&
+                                word.length > 1
+                            )
+                            .slice(0, 50)
+                            .map(word => ({
+                                label: word,
+                                kind: monaco.languages.CompletionItemKind.Text,
+                                insertText: word,
+                                range: {
+                                    startLineNumber: position.lineNumber,
+                                    endLineNumber: position.lineNumber,
+                                    startColumn: wordAtPosition.startColumn,
+                                    endColumn: wordAtPosition.endColumn
+                                }
+                            }));
+
+                        return { suggestions: suggestions };
+                    }
+                });
+
+                registeredProviders.add(language);
+            } catch (error) {
+                console.debug('Completion provider registration failed:', error);
+            }
+        }
+
+        function extractWords(text, language) {
+            const wordPatterns = {
+                python: /[a-zA-Z_][a-zA-Z0-9_]*/g,
+                javascript: /[a-zA-Z_$][a-zA-Z0-9_$]*/g,
+                java: /[a-zA-Z_$][a-zA-Z0-9_$]*/g,
+                cpp: /[a-zA-Z_][a-zA-Z0-9_]*/g,
+                c: /[a-zA-Z_][a-zA-Z0-9_]*/g,
+                rust: /[a-zA-Z_][a-zA-Z0-9_]*/g,
+                php: /[a-zA-Z_$][a-zA-Z0-9_$]*/g
+            };
+
+            const pattern = wordPatterns[language] || /[a-zA-Z_][a-zA-Z0-9_]*/g;
+            const words = new Set();
+            let match;
+
+            while ((match = pattern.exec(text)) !== null) {
+                const word = match[0];
+                if (word.length > 1 && !isKeyword(word, language)) {
+                    words.add(word);
+                }
+            }
+
+            return Array.from(words);
+        }
+
+        function isKeyword(word, language) {
+            const keywords = {
+                python: ['if', 'else', 'elif', 'for', 'while', 'def', 'class', 'import', 'from', 'as', 'return', 'try', 'except', 'finally', 'with', 'pass', 'break', 'continue', 'and', 'or', 'not', 'in', 'is', 'None', 'True', 'False'],
+                javascript: ['if', 'else', 'for', 'while', 'function', 'class', 'import', 'export', 'return', 'try', 'catch', 'finally', 'with', 'break', 'continue', 'var', 'let', 'const', 'new', 'this', 'super', 'extends', 'static', 'async', 'await'],
+                java: ['if', 'else', 'for', 'while', 'class', 'public', 'private', 'protected', 'static', 'void', 'return', 'try', 'catch', 'finally', 'import', 'package', 'extends', 'implements', 'new', 'this', 'super'],
+                cpp: ['if', 'else', 'for', 'while', 'class', 'public', 'private', 'protected', 'static', 'void', 'return', 'try', 'catch', 'include', 'using', 'namespace', 'new', 'delete', 'this'],
+                c: ['if', 'else', 'for', 'while', 'return', 'include', 'define', 'typedef', 'struct', 'enum', 'union'],
+                rust: ['if', 'else', 'for', 'while', 'fn', 'let', 'mut', 'pub', 'struct', 'enum', 'impl', 'trait', 'use', 'mod', 'return', 'match', 'loop', 'break', 'continue'],
+                php: ['if', 'else', 'for', 'while', 'function', 'class', 'public', 'private', 'protected', 'static', 'return', 'try', 'catch', 'finally', 'include', 'require', 'use', 'namespace', 'new', 'this']
+            };
+            return keywords[language]?.includes(word) || false;
+        }
+
+        function getLineComment(language) {
+            const comments = {
+                python: '#',
+                javascript: '//',
+                java: '//',
+                cpp: '//',
+                c: '//',
+                rust: '//',
+                php: '//'
+            };
+            return comments[language] || '//';
+        }
+
+        function getBlockComment(language) {
+            const comments = {
+                python: null,
+                javascript: { open: '/*', close: '*/' },
+                java: { open: '/*', close: '*/' },
+                cpp: { open: '/*', close: '*/' },
+                c: { open: '/*', close: '*/' },
+                rust: { open: '/*', close: '*/' },
+                php: { open: '/*', close: '*/' }
+            };
+            return comments[language] || null;
+        }
+
+        function getBrackets(_language) {
+            return [
+                ['{', '}'],
+                ['[', ']'],
+                ['(', ')']
+            ];
+        }
+
+        function getAutoClosingPairs(language) {
+            const pairs = [
+                { open: '{', close: '}' },
+                { open: '[', close: ']' },
+                { open: '(', close: ')' },
+                { open: '"', close: '"' },
+                { open: "'", close: "'" }
+            ];
+
+            if (language === 'python') {
+                pairs.push({ open: '"""', close: '"""' });
+                pairs.push({ open: "'''", close: "'''" });
+            }
+
+            return pairs;
+        }
+
+        function getSurroundingPairs(_language) {
+            return [
+                { open: '{', close: '}' },
+                { open: '[', close: ']' },
+                { open: '(', close: ')' },
+                { open: '"', close: '"' },
+                { open: "'", close: "'" }
+            ];
+        }
 
         codeEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyC, () => {
             const outputText =
@@ -689,6 +898,7 @@ function initEditor() {
 
         updateSelectedLanguage(CONFIG.DEFAULT_LANGUAGE);
         updateMonacoTheme();
+        updateAutoComplete();
 
         elements.languageDropdown.querySelectorAll('.select-option').forEach((option) => {
             const optionLanguage = option.dataset.value;
