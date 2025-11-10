@@ -1,0 +1,51 @@
+version: 2
+updates:
+    - package-ecosystem: 'npm'
+      directory: '/'
+      schedule:
+          interval: 'weekly'
+      open-pull-requests-limit: 5
+      labels:
+          - 'dependencies'
+          - 'npm'
+      commit-message:
+          prefix: 'chore'
+          include: 'scope'
+
+    - package-ecosystem: 'npm'
+      directory: '/backend'
+      schedule:
+          interval: 'weekly'
+      open-pull-requests-limit: 5
+      labels:
+          - 'dependencies'
+          - 'npm'
+          - 'backend'
+      commit-message:
+          prefix: 'chore'
+          include: 'scope'
+
+    - package-ecosystem: 'docker'
+      directory: '/backend'
+      schedule:
+          interval: 'weekly'
+      open-pull-requests-limit: 3
+      labels:
+          - 'dependencies'
+          - 'docker'
+      commit-message:
+          prefix: 'chore'
+          include: 'scope'
+
+    - package-ecosystem: 'github-actions'
+      directory: '/'
+      schedule:
+          interval: 'monthly'
+      open-pull-requests-limit: 3
+      labels:
+          - 'dependencies'
+          - 'github-actions'
+      commit-message:
+          prefix: 'chore'
+          include: 'scope'
+
