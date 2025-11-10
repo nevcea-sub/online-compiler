@@ -28,12 +28,12 @@ jobs:
 
             - name: Build Docker image
               run: |
-                  docker-compose build
+                  docker compose build
 
             - name: Test Docker Compose
               run: |
-                  docker-compose up -d
+                  docker compose up -d
                   sleep 5
-                  docker-compose ps
-                  docker-compose down
+                  docker compose ps
+                  docker compose down
 
