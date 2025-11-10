@@ -34,7 +34,7 @@ npm run dev
 
 ### 4. 프론트엔드 접속
 
-브라우저에서 `index.html` 파일을 열거나, VS Code Live Server를 사용하여 접속합니다.
+브라우저에서 `index.html` 파일을 엽니다.
 
 ## 사용 방법
 
