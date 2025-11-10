@@ -19,10 +19,9 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: '20'
-                  cache: 'npm'
 
             - name: Install root dependencies
-              run: npm ci
+              run: npm install
 
             - name: Run ESLint
               run: npm run lint
@@ -32,7 +31,7 @@ jobs:
 
             - name: Install backend dependencies
               working-directory: ./backend
-              run: npm ci
+              run: npm install
 
             - name: Check backend code
               working-directory: ./backend
@@ -50,14 +49,13 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: '20'
-                  cache: 'npm'
 
             - name: Install root dependencies
-              run: npm ci
+              run: npm install
 
             - name: Install backend dependencies
               working-directory: ./backend
-              run: npm ci
+              run: npm install
 
             - name: Run tests
               run: npm run test
@@ -74,14 +72,13 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: '20'
-                  cache: 'npm'
 
             - name: Install root dependencies
-              run: npm ci
+              run: npm install
 
             - name: Install backend dependencies
               working-directory: ./backend
-              run: npm ci
+              run: npm install
 
             - name: Verify backend server starts
               working-directory: ./backend
