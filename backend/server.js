@@ -15,6 +15,10 @@ const MAX_EXECUTION_TIME = 10000;
 const MAX_MEMORY = '256m';
 const MAX_CPU_PERCENT = '2.0';
 const MAX_CPU_PERCENT_KOTLIN = '3.0';
+const MAX_OUTPUT_BYTES = parseInt(process.env.MAX_OUTPUT_BYTES || '1048576', 10); // 1MB
+const MAX_INPUT_LENGTH = parseInt(process.env.MAX_INPUT_LENGTH || '1000000', 10); // 1MB
+const ENABLE_PRELOAD = (process.env.ENABLE_PRELOAD || 'true').toLowerCase() === 'true';
+const ENABLE_WARMUP = (process.env.ENABLE_WARMUP || 'true').toLowerCase() === 'true';
 
 const codeDir = path.join(__dirname, 'code');
 const outputDir = path.join(__dirname, 'output');
@@ -643,7 +647,6 @@ function convertToDockerPath(filePath) {
     return normalized;
 }
 
-
 function buildDockerArgs(language, hostCodePath, opts = {}) {
     if (!validateLanguage(language)) {
         throw new Error('Invalid language');
@@ -790,10 +793,10 @@ async function findImageFiles(outputDir) {
                         data: `data:${mimeType};base64,${base64}`
                     });
                     await fs.unlink(filePath).catch(() => {});
-                } catch { ; }
+                } catch {}
             }
         }
-    } catch { ; }
+    } catch {}
 
     return images;
 }
@@ -806,7 +809,7 @@ async function handleExecutionResult(error, stdout, stderr, executionTime, res, 
     if (outputDir) {
         images = await findImageFiles(outputDir);
         try {
-            await fs.rmdir(outputDir).catch(() => {});
+            await fs.rm(outputDir, { recursive: true, force: true }).catch(() => {});
         } catch {
             // Ignore cleanup errors
         }
@@ -861,6 +864,13 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
         return sendResponse(400, { error: 'Unsupported language' });
     }
 
+    const inputText = typeof input === 'string' ? input : input === null || input === undefined ? '' : String(input);
+    if (inputText.length > MAX_INPUT_LENGTH) {
+        return sendResponse(400, {
+            error: `Input exceeds maximum length of ${MAX_INPUT_LENGTH} characters`
+        });
+    }
+
     const sessionId = crypto.randomBytes(16).toString('hex');
     const codePath = path.join(codeDir, `${sessionId}_code`);
     let fullCodePath = null;
@@ -883,13 +893,12 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
             await fs.mkdir(hostBuildDir, { recursive: true });
             buildOptions.kotlinBuildDirHost = hostBuildDir;
         }
-        const hasInput = input && input.trim().length > 0;
-        buildOptions.hasInput = hasInput;
+        buildOptions.hasInput = inputText && inputText.trim().length > 0;
         buildOptions.outputDirHost = sessionOutputDir;
         const config = LANGUAGE_CONFIGS[language];
         const startTime = Date.now();
 
-        if (hasInput) {
+        if (buildOptions.hasInput) {
             const dockerArgs = buildDockerArgs(language, fullCodePath, buildOptions);
             const dockerProcess = spawn('docker', dockerArgs, {
                 timeout: config.timeout + 2000,
@@ -898,13 +907,47 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
 
             let stdout = '';
             let stderr = '';
+            let stdoutBytes = 0;
+            let stderrBytes = 0;
+            let stdoutTruncated = false;
+            let stderrTruncated = false;
 
             dockerProcess.stdout.on('data', (data) => {
-                stdout += data.toString();
+                const s = data.toString('utf8');
+                const bytes = Buffer.byteLength(s, 'utf8');
+                const remaining = MAX_OUTPUT_BYTES - stdoutBytes;
+                if (remaining <= 0) {
+                    stdoutTruncated = true;
+                    return;
+                }
+                if (bytes <= remaining) {
+                    stdout += s;
+                    stdoutBytes += bytes;
+                } else {
+                    const slice = Buffer.from(s, 'utf8').subarray(0, remaining).toString('utf8');
+                    stdout += slice;
+                    stdoutBytes += remaining;
+                    stdoutTruncated = true;
+                }
             });
 
             dockerProcess.stderr.on('data', (data) => {
-                stderr += data.toString();
+                const s = data.toString('utf8');
+                const bytes = Buffer.byteLength(s, 'utf8');
+                const remaining = MAX_OUTPUT_BYTES - stderrBytes;
+                if (remaining <= 0) {
+                    stderrTruncated = true;
+                    return;
+                }
+                if (bytes <= remaining) {
+                    stderr += s;
+                    stderrBytes += bytes;
+                } else {
+                    const slice = Buffer.from(s, 'utf8').subarray(0, remaining).toString('utf8');
+                    stderr += slice;
+                    stderrBytes += remaining;
+                    stderrTruncated = true;
+                }
             });
 
             dockerProcess.on('close', async (code) => {
@@ -912,6 +955,12 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
                 await cleanupFile(fullCodePath);
                 if (!responseSent) {
                     const error = code !== 0 ? { code, killed: false, signal: null } : null;
+                    if (stdoutTruncated) {
+                        stdout += '\n[truncated]';
+                    }
+                    if (stderrTruncated) {
+                        stderr += '\n[truncated]';
+                    }
                     await handleExecutionResult(error, stdout, stderr, executionTime, res, sessionOutputDir);
                     responseSent = true;
                 }
@@ -921,12 +970,18 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
                 const executionTime = Date.now() - startTime;
                 await cleanupFile(fullCodePath);
                 if (!responseSent) {
+                    if (stdoutTruncated) {
+                        stdout += '\n[truncated]';
+                    }
+                    if (stderrTruncated) {
+                        stderr += '\n[truncated]';
+                    }
                     await handleExecutionResult(error, stdout, stderr, executionTime, res, sessionOutputDir);
                     responseSent = true;
                 }
             });
 
-            dockerProcess.stdin.write(input);
+            dockerProcess.stdin.write(inputText);
             dockerProcess.stdin.end();
 
             setTimeout(() => {
@@ -942,13 +997,47 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
 
             let stdout = '';
             let stderr = '';
+            let stdoutBytes = 0;
+            let stderrBytes = 0;
+            let stdoutTruncated = false;
+            let stderrTruncated = false;
 
             dockerProcess.stdout.on('data', (data) => {
-                stdout += data.toString();
+                const s = data.toString('utf8');
+                const bytes = Buffer.byteLength(s, 'utf8');
+                const remaining = MAX_OUTPUT_BYTES - stdoutBytes;
+                if (remaining <= 0) {
+                    stdoutTruncated = true;
+                    return;
+                }
+                if (bytes <= remaining) {
+                    stdout += s;
+                    stdoutBytes += bytes;
+                } else {
+                    const slice = Buffer.from(s, 'utf8').subarray(0, remaining).toString('utf8');
+                    stdout += slice;
+                    stdoutBytes += remaining;
+                    stdoutTruncated = true;
+                }
             });
 
             dockerProcess.stderr.on('data', (data) => {
-                stderr += data.toString();
+                const s = data.toString('utf8');
+                const bytes = Buffer.byteLength(s, 'utf8');
+                const remaining = MAX_OUTPUT_BYTES - stderrBytes;
+                if (remaining <= 0) {
+                    stderrTruncated = true;
+                    return;
+                }
+                if (bytes <= remaining) {
+                    stderr += s;
+                    stderrBytes += bytes;
+                } else {
+                    const slice = Buffer.from(s, 'utf8').subarray(0, remaining).toString('utf8');
+                    stderr += slice;
+                    stderrBytes += remaining;
+                    stderrTruncated = true;
+                }
             });
 
             dockerProcess.on('close', async (code) => {
@@ -956,6 +1045,12 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
                 await cleanupFile(fullCodePath);
                 if (!responseSent) {
                     const error = code !== 0 ? { code, killed: false, signal: null } : null;
+                    if (stdoutTruncated) {
+                        stdout += '\n[truncated]';
+                    }
+                    if (stderrTruncated) {
+                        stderr += '\n[truncated]';
+                    }
                     await handleExecutionResult(error, stdout, stderr, executionTime, res, sessionOutputDir);
                     responseSent = true;
                 }
@@ -965,6 +1060,12 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
                 const executionTime = Date.now() - startTime;
                 await cleanupFile(fullCodePath);
                 if (!responseSent) {
+                    if (stdoutTruncated) {
+                        stdout += '\n[truncated]';
+                    }
+                    if (stderrTruncated) {
+                        stderr += '\n[truncated]';
+                    }
                     await handleExecutionResult(error, stdout, stderr, executionTime, res, sessionOutputDir);
                     responseSent = true;
                 }
@@ -997,15 +1098,23 @@ ensureDirectories()
         await warmupKotlinOnStart();
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
-            preloadDockerImages();
+            if (ENABLE_PRELOAD) {
+                preloadDockerImages();
+            }
         });
-        warmupContainers();
+        if (ENABLE_WARMUP) {
+            warmupContainers();
+        }
     })
     .catch((e) => {
         console.error('Startup error:', e);
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
-            preloadDockerImages();
+            if (ENABLE_PRELOAD) {
+                preloadDockerImages();
+            }
         });
-        warmupContainers();
+        if (ENABLE_WARMUP) {
+            warmupContainers();
+        }
     });
