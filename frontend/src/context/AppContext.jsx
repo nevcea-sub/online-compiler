@@ -35,6 +35,8 @@ export const AppProvider = ({ children }) => {
     const [error, setError] = useState('');
     const [isRunning, setIsRunning] = useState(false);
     const [currentPage, setCurrentPage] = useState('compiler');
+    const [toast, setToast] = useState(null);
+    const [executionTime, setExecutionTime] = useState(null);
 
     useEffect(() => {
         localStorage.setItem('language', currentLang);
@@ -87,6 +89,14 @@ export const AppProvider = ({ children }) => {
 
     const t = useCallback((key) => getTranslation(key, currentLang), [currentLang]);
 
+    const showToast = useCallback((message, type = 'info', duration = 3000) => {
+        setToast({ message, type, duration });
+    }, []);
+
+    const hideToast = useCallback(() => {
+        setToast(null);
+    }, []);
+
     const value = {
         currentLang,
         currentLanguage,
@@ -99,6 +109,8 @@ export const AppProvider = ({ children }) => {
         error,
         isRunning,
         currentPage,
+        toast,
+        executionTime,
         setCurrentLang: changeLanguage,
         setCurrentLanguage: changeProgrammingLanguage,
         setTheme,
@@ -110,6 +122,9 @@ export const AppProvider = ({ children }) => {
         setError,
         setIsRunning,
         setCurrentPage,
+        setExecutionTime,
+        showToast,
+        hideToast,
         t,
         getSystemTheme
     };

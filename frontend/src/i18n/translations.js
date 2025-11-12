@@ -55,7 +55,17 @@ export const translations = {
         'server-error': '서버 오류가 발생했습니다.',
         'cannot-process-response': '응답을 처리할 수 없습니다.',
         'more-error-messages': '... (더 많은 오류 메시지가 있습니다)',
-        settings: '설정'
+        settings: '설정',
+        'execution-completed': '실행 완료',
+        'execution-completed-with-errors': '실행 완료 (오류 포함)',
+        'code-cleared': '코드가 초기화되었습니다.',
+        'keyboard-shortcuts': '키보드 단축키',
+        'shortcut-run-code': '코드 실행',
+        'shortcut-show-help': '도움말 표시',
+        'shortcut-clear': '코드 초기화',
+        'shortcut-close-modal': '모달 닫기',
+        close: '닫기',
+        'to-run': '실행'
     },
     en: {
         title: 'Online Compiler',
@@ -114,7 +124,17 @@ export const translations = {
         'server-error': 'Server error occurred.',
         'cannot-process-response': 'Cannot process response.',
         'more-error-messages': '... (more error messages)',
-        settings: 'Settings'
+        settings: 'Settings',
+        'execution-completed': 'Execution completed',
+        'execution-completed-with-errors': 'Execution completed with errors',
+        'code-cleared': 'Code cleared',
+        'keyboard-shortcuts': 'Keyboard Shortcuts',
+        'shortcut-run-code': 'Run code',
+        'shortcut-show-help': 'Show keyboard shortcuts',
+        'shortcut-clear': 'Clear code',
+        'shortcut-close-modal': 'Close modal/dropdown',
+        close: 'Close',
+        'to-run': 'to run'
     }
 };
 

@@ -2,7 +2,7 @@ import { useApp } from '../context/AppContext';
 import { CONFIG } from '../config/constants';
 
 const OutputPanel = ({ input, setInput, output, error }) => {
-    const { t, setOutput } = useApp();
+    const { t, setOutput, executionTime, isRunning } = useApp();
 
     const handleClear = () => {
         setOutput('');
@@ -16,10 +16,15 @@ const OutputPanel = ({ input, setInput, output, error }) => {
         <div className="flex flex-col bg-bg-secondary/80 backdrop-blur-sm border border-border-color rounded-xl overflow-hidden min-h-[400px] h-full shadow-lg transition-all duration-300 relative hover:shadow-xl hover:border-accent-primary/30 hover:-translate-y-0.5 group md:min-h-[300px]" style={{ gridArea: 'output' }}>
             <div className="bg-gradient-to-r from-bg-tertiary to-bg-tertiary/50 px-6 py-4 border-b border-border-color/50 flex justify-between items-center min-h-[52px] md:px-4 md:min-h-[48px] md:flex-wrap md:gap-2">
                 <div className="flex items-center gap-3 flex-1">
-                    <div className="w-2 h-2 rounded-full bg-success"></div>
+                    <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-warning animate-pulse' : error ? 'bg-error' : 'bg-success'}`}></div>
                     <span className="font-bold text-text-primary text-sm uppercase tracking-widest">
                         {t('execution-result')}
                     </span>
+                    {executionTime !== null && !isRunning && (
+                        <span className="text-xs text-text-muted font-normal normal-case tracking-normal">
+                            ({executionTime}ms)
+                        </span>
+                    )}
                 </div>
                 {hasContent && (
                     <button 
@@ -36,8 +41,20 @@ const OutputPanel = ({ input, setInput, output, error }) => {
             </div>
             <div id="output" className="flex-1 flex flex-col min-h-[120px]">
                 <div className="flex-1 p-5 font-mono text-sm leading-[1.7] whitespace-pre-wrap break-words overflow-y-auto text-text-primary min-h-[100px] max-h-[500px] bg-bg-primary relative md:p-4 md:text-[13px] md:max-h-[400px]">
-                    {!hasContent ? (
-                        <p className="m-0 p-0 text-text-muted font-mono text-sm leading-[1.7] relative top-0 left-0 w-auto h-auto md:text-[13px]">{t('output-placeholder')}</p>
+                    {isRunning ? (
+                        <div className="flex flex-col items-center justify-center h-full gap-4">
+                            <div className="relative">
+                                <div className="w-12 h-12 border-4 border-accent-primary/20 border-t-accent-primary rounded-full animate-spin"></div>
+                            </div>
+                            <p className="text-text-muted text-sm">{t('executing') || 'Executing code...'}</p>
+                        </div>
+                    ) : !hasContent ? (
+                        <div className="flex flex-col items-center justify-center h-full gap-3">
+                            <svg className="w-16 h-16 text-text-muted/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p className="m-0 p-0 text-text-muted font-mono text-sm leading-[1.7] text-center md:text-[13px]">{t('output-placeholder')}</p>
+                        </div>
                     ) : (
                         <>
                             {images.map((img, index) => (

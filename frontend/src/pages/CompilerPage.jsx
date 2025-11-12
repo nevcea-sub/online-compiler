@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import CodeEditor from '../components/CodeEditor';
 import LanguageSelector from '../components/LanguageSelector';
 import OutputPanel from '../components/OutputPanel';
 import Header from '../components/Header';
+import Toast from '../components/Toast';
+import KeyboardShortcuts from '../components/KeyboardShortcuts';
 import { executeCode as apiExecuteCode } from '../services/api';
 import { CONFIG, LANGUAGE_CONFIG } from '../config/constants';
 import { formatOutput, formatError } from '../utils/outputFormatter';
@@ -22,22 +24,48 @@ const CompilerPage = () => {
         setIsRunning,
         currentLanguage,
         setCurrentLanguage,
+        setExecutionTime,
+        showToast,
+        toast,
+        hideToast,
         t
     } = useApp();
     const [pendingLanguageChange, setPendingLanguageChange] = useState(null);
 
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !isRunning) {
+                e.preventDefault();
+                handleRun();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                handleClear();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [code, isRunning]);
+
     const handleRun = async () => {
         if (!code || !code.trim()) {
-            setOutput(t('no-code-error'));
+            showToast(t('no-code-error'), 'warning');
             return;
         }
 
         setIsRunning(true);
         setOutput('');
         setError('');
+        setExecutionTime(null);
+        const startTime = Date.now();
 
         try {
             const result = await apiExecuteCode(code, currentLanguage, input);
+            const endTime = Date.now();
+            const executionTimeMs = endTime - startTime;
+            setExecutionTime(executionTimeMs);
+
             const formattedOutput = formatOutput(result.output || '');
             const formattedError = formatError(result.error || '');
             
@@ -50,7 +78,15 @@ const CompilerPage = () => {
                 setOutput(formattedOutput);
             }
             setError(formattedError);
+
+            if (formattedError) {
+                showToast(t('execution-completed-with-errors') || 'Execution completed with errors', 'warning');
+            } else {
+                showToast(t('execution-completed') || `Execution completed in ${executionTimeMs}ms`, 'success');
+            }
         } catch (err) {
+            const endTime = Date.now();
+            setExecutionTime(Date.now() - startTime);
             let userMessage = t('connection-error');
             if (err.message) {
                 const msg = err.message.toLowerCase();
@@ -70,6 +106,7 @@ const CompilerPage = () => {
                 }
             }
             setError(userMessage);
+            showToast(userMessage, 'error');
         } finally {
             setIsRunning(false);
         }
@@ -81,6 +118,8 @@ const CompilerPage = () => {
         localStorage.removeItem(`code_${currentLanguage}`);
         setOutput('');
         setError('');
+        setExecutionTime(null);
+        showToast(t('code-cleared') || 'Code cleared', 'info');
     };
 
     const handleLanguageChange = (lang) => {
@@ -101,6 +140,8 @@ const CompilerPage = () => {
     return (
         <>
             <Header />
+            {toast && <Toast message={toast.message} type={toast.type} duration={toast.duration} onClose={hideToast} />}
+            <KeyboardShortcuts />
             <main className="container">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[calc(100vh-180px)] items-start xl:gap-8 xl:min-h-[calc(100vh-200px)]" style={{ gridTemplateRows: 'auto 1fr auto', gridTemplateAreas: "'language language' 'editor output' 'actions actions'" }}>
                     <div className="[grid-area:language] md:[grid-area:language]">
@@ -113,12 +154,18 @@ const CompilerPage = () => {
                     </div>
                     <div className="flex flex-col bg-bg-secondary/80 backdrop-blur-sm border border-border-color rounded-xl overflow-hidden h-full min-h-[400px] shadow-lg transition-all duration-300 relative hover:shadow-xl hover:border-accent-primary/30 hover:-translate-y-0.5 group md:min-h-[350px]" style={{ gridArea: 'editor' }}>
                         <div className="relative before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-accent-gradient before:opacity-0 before:transition-opacity before:duration-300 group-hover:before:opacity-100">
-                            <div className="bg-gradient-to-r from-bg-tertiary to-bg-tertiary/50 px-6 py-4 border-b border-border-color/50 flex items-center min-h-[52px]">
+                            <div className="bg-gradient-to-r from-bg-tertiary to-bg-tertiary/50 px-6 py-4 border-b border-border-color/50 flex items-center justify-between min-h-[52px]">
                                 <div className="flex items-center gap-3">
                                     <div className="w-2 h-2 rounded-full bg-accent-primary"></div>
-                                    <span className="font-bold text-text-primary text-sm uppercase tracking-widest flex items-center gap-3">
+                                    <span className="font-bold text-text-primary text-sm uppercase tracking-widest">
                                         {t('code-editor')}
                                     </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-text-muted">
+                                    <kbd className="px-2 py-1 bg-bg-secondary border border-border-color rounded text-[10px]">Ctrl</kbd>
+                                    <span>+</span>
+                                    <kbd className="px-2 py-1 bg-bg-secondary border border-border-color rounded text-[10px]">Enter</kbd>
+                                    <span className="ml-1">{t('to-run') || 'to run'}</span>
                                 </div>
                             </div>
                             <div className="flex relative min-h-[350px] flex-1 md:min-h-[300px]">
