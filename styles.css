@@ -1194,7 +1194,6 @@ tr:hover {
     align-items: start;
 }
 
-/* 데스크톱 (1400px 이상) */
 @media (min-width: 1400px) {
     .compiler-layout {
         gap: 2rem;
@@ -1202,7 +1201,6 @@ tr:hover {
     }
 }
 
-/* 태블릿 (768px ~ 1199px) */
 @media (max-width: 1199px) {
     .compiler-layout {
         grid-template-columns: 1fr;
@@ -1215,7 +1213,6 @@ tr:hover {
     }
 }
 
-/* 모바일 (768px 이하) */
 @media (max-width: 768px) {
     .compiler-layout {
         gap: 1rem;
@@ -1524,6 +1521,58 @@ tr:hover {
     flex: 1;
     min-height: 350px;
     width: 100%;
+    position: relative;
+    outline: none !important;
+    background-color: var(--bg-secondary) !important;
+    display: block !important;
+}
+
+#code-editor:focus,
+#code-editor:focus-within,
+#code-editor:focus-visible {
+    outline: none !important;
+}
+
+.ace_editor {
+    font-family: var(--font-family, 'Consolas', 'Monaco', 'Courier New', monospace) !important;
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 350px !important;
+    position: relative !important;
+    display: block !important;
+}
+
+.ace_gutter {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-muted) !important;
+    border-right: 1px solid var(--border-color) !important;
+}
+
+.ace_gutter-active-line {
+    background-color: var(--bg-elevated) !important;
+}
+
+.ace_cursor {
+    color: var(--text-primary) !important;
+}
+
+.ace_marker-layer .ace_selection {
+    background-color: rgba(99, 102, 241, 0.3) !important;
+}
+
+.ace_marker-layer .ace_active-line {
+    background-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+.ace_scrollbar {
+    display: none !important;
+}
+
+.ace_scrollbar-v,
+.ace_scrollbar-h {
+    display: none !important;
 }
 
 @media (max-width: 768px) {
@@ -1536,246 +1585,118 @@ tr:hover {
     }
 }
 
-.monaco-editor {
+.ace_content {
     background-color: var(--bg-secondary) !important;
 }
 
-.monaco-editor *,
-.monaco-editor *:hover,
-.monaco-editor *:active,
-.monaco-editor *:focus,
-.monaco-editor *:focus-within {
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-}
-
-.monaco-editor *::-webkit-scrollbar,
-.monaco-editor *:hover::-webkit-scrollbar,
-.monaco-editor *:active::-webkit-scrollbar,
-.monaco-editor *:focus::-webkit-scrollbar {
+.ace_print-margin {
     display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
 }
 
-.monaco-editor *::-webkit-scrollbar-track,
-.monaco-editor *:hover::-webkit-scrollbar-track,
-.monaco-editor *:active::-webkit-scrollbar-track,
-.monaco-editor *:focus::-webkit-scrollbar-track {
-    display: none !important;
-    background: transparent !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-}
-
-.monaco-editor *::-webkit-scrollbar-thumb,
-.monaco-editor *:hover::-webkit-scrollbar-thumb,
-.monaco-editor *:active::-webkit-scrollbar-thumb,
-.monaco-editor *:focus::-webkit-scrollbar-thumb {
-    display: none !important;
-    background: transparent !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-}
-
-.monaco-editor .monaco-scrollable-element,
-.monaco-editor .monaco-scrollable-element:hover,
-.monaco-editor .monaco-scrollable-element:active,
-.monaco-editor .monaco-scrollable-element:focus {
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-}
-
-.monaco-editor .monaco-scrollable-element::-webkit-scrollbar,
-.monaco-editor .monaco-scrollable-element:hover::-webkit-scrollbar,
-.monaco-editor .monaco-scrollable-element:active::-webkit-scrollbar,
-.monaco-editor .monaco-scrollable-element:focus::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-}
-
-.monaco-editor .overflow-guard,
-.monaco-editor .overflow-guard:hover,
-.monaco-editor .overflow-guard:active,
-.monaco-editor .overflow-guard:focus {
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-}
-
-.monaco-editor .overflow-guard::-webkit-scrollbar,
-.monaco-editor .overflow-guard:hover::-webkit-scrollbar,
-.monaco-editor .overflow-guard:active::-webkit-scrollbar,
-.monaco-editor .overflow-guard:focus::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-}
-
-.monaco-editor .monaco-scrollbar,
-.monaco-editor .monaco-scrollbar:hover,
-.monaco-editor .monaco-scrollbar:active,
-.monaco-editor .monaco-scrollbar:focus {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    width: 0 !important;
-    height: 0 !important;
-}
-
-.monaco-editor .slider {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-}
-
-.monaco-editor .margin {
-    background-color: var(--bg-tertiary) !important;
-}
-
-.monaco-editor .monaco-editor-background {
-    background-color: var(--bg-secondary) !important;
-}
-
-.monaco-editor .line-numbers {
+.ace_gutter-cell {
     color: var(--text-muted) !important;
 }
 
-.monaco-editor .current-line {
-    background-color: rgba(74, 158, 255, 0.1) !important;
+.ace_line {
+    color: var(--text-primary) !important;
 }
 
-.monaco-editor .selected-text {
-    background-color: rgba(74, 158, 255, 0.3) !important;
-}
-
-.monaco-editor .monaco-editor-background {
+[data-theme='light'] .ace_editor {
     background-color: var(--bg-secondary) !important;
-}
-
-.monaco-editor .view-lines {
     color: var(--text-primary) !important;
 }
 
-.monaco-editor .mtk1 {
-    color: var(--text-primary) !important;
-}
-
-.monaco-editor .cursor {
-    background-color: var(--text-primary) !important;
-}
-
-.monaco-editor .monaco-list .monaco-list-row {
+[data-theme='light'] .ace_gutter {
     background-color: var(--bg-tertiary) !important;
+    color: var(--text-muted) !important;
+}
+
+.ace_text-input {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    color: transparent !important;
+    caret-color: var(--text-primary) !important;
+}
+
+.ace_search {
+    background-color: var(--bg-tertiary) !important;
+    border: 1px solid var(--border-color) !important;
     color: var(--text-primary) !important;
 }
 
-.monaco-editor .monaco-list .monaco-list-row:hover {
+.ace_search_field {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.ace_searchbtn {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.ace_searchbtn:hover {
     background-color: var(--bg-secondary) !important;
 }
 
-.monaco-editor .monaco-list .monaco-list-row.selected {
-    background-color: rgba(74, 158, 255, 0.2) !important;
-    color: var(--accent-primary) !important;
+.ace_replacebtn {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
 }
 
-.monaco-editor .suggest-widget {
+.ace_replacebtn:hover {
+    background-color: var(--bg-secondary) !important;
+}
+
+.ace_button {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.ace_button:hover {
+    background-color: var(--bg-secondary) !important;
+}
+
+.ace_button.checked {
+    background-color: var(--accent-primary) !important;
+    color: white !important;
+}
+
+.ace_autocomplete {
     background-color: var(--bg-tertiary) !important;
     border: 1px solid var(--border-color) !important;
     box-shadow: 0 4px 12px var(--shadow-color) !important;
-}
-
-.monaco-editor .suggest-widget * {
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-}
-
-.monaco-editor .suggest-widget *::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent !important;
-}
-
-.monaco-editor .suggest-widget *::-webkit-scrollbar-track {
-    display: none !important;
-    background: transparent !important;
-}
-
-.monaco-editor .suggest-widget *::-webkit-scrollbar-thumb {
-    display: none !important;
-    background: transparent !important;
-}
-
-.monaco-editor .suggest-widget .monaco-list {
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-    overflow-y: auto !important;
-}
-
-.monaco-editor .suggest-widget .monaco-list::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent !important;
-}
-
-.monaco-editor .suggest-widget .monaco-list .monaco-scrollable-element {
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-}
-
-.monaco-editor .suggest-widget .monaco-list .monaco-scrollable-element::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent !important;
-}
-
-.monaco-editor .suggest-widget .monaco-list .monaco-scrollable-element .monaco-list-rows {
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-}
-
-.monaco-editor
-    .suggest-widget
-    .monaco-list
-    .monaco-scrollable-element
-    .monaco-list-rows::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent !important;
-}
-
-.monaco-editor .suggest-widget .monaco-list .monaco-list-row {
     color: var(--text-primary) !important;
 }
 
-.monaco-editor .suggest-widget .monaco-list .monaco-list-row.selected {
-    background-color: rgba(74, 158, 255, 0.2) !important;
+.ace_autocomplete .ace_line {
+    color: var(--text-primary) !important;
+}
+
+.ace_autocomplete .ace_line-hover {
+    background-color: var(--bg-secondary) !important;
+}
+
+.ace_autocomplete .ace_selected-line {
+    background-color: rgba(99, 102, 241, 0.2) !important;
     color: var(--accent-primary) !important;
 }
 
-[data-theme='light'] .monaco-editor {
+[data-theme='dark'] .ace_editor {
     background-color: var(--bg-secondary) !important;
 }
 
-[data-theme='light'] .monaco-editor .margin {
+[data-theme='dark'] .ace_gutter {
     background-color: var(--bg-tertiary) !important;
+    color: var(--text-muted) !important;
 }
 
-[data-theme='light'] .monaco-editor .monaco-editor-background {
-    background-color: var(--bg-secondary) !important;
+[data-theme='dark'] .ace_gutter-active-line {
+    background-color: var(--bg-elevated) !important;
 }
 
 .action-buttons {

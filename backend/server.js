@@ -417,7 +417,7 @@ function getWarmupConfigs() {
             image: 'php:8.3-alpine',
             command: 'php -v',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 5000
+            timeout: 10000
         },
         {
             language: 'r',
@@ -438,7 +438,7 @@ function getWarmupConfigs() {
             image: 'mcr.microsoft.com/dotnet/sdk:8.0',
             command: 'dotnet --version',
             tmpfsSize: TMPFS_SIZES.csharp,
-            timeout: 5000
+            timeout: 10000
         },
         {
             language: 'kotlin',
@@ -448,12 +448,74 @@ function getWarmupConfigs() {
                 : 'if [ ! -f /opt/kotlin/kotlinc/lib/kotlin-compiler.jar ]; then cd /tmp && (busybox wget -q --timeout=10 --tries=2 https://github.com/JetBrains/kotlin/releases/download/v2.0.21/kotlin-compiler-2.0.21.zip -O kotlin.zip || wget -q --timeout=10 --tries=2 https://github.com/JetBrains/kotlin/releases/download/v2.0.21/kotlin-compiler-2.0.21.zip -O kotlin.zip) && jar xf kotlin.zip && mkdir -p /opt/kotlin && mv kotlinc /opt/kotlin; fi; java -jar /opt/kotlin/kotlinc/lib/kotlin-compiler.jar -version',
             tmpfsSize: TMPFS_SIZES.kotlin,
             timeout: 15000
+        },
+        {
+            language: 'go',
+            image: 'golang:1.23-alpine',
+            command: 'go version',
+            tmpfsSize: TMPFS_SIZES.default,
+            timeout: 5000
+        },
+        {
+            language: 'typescript',
+            image: 'node:20-slim',
+            command: 'node -v',
+            tmpfsSize: TMPFS_SIZES.default,
+            timeout: 10000
+        },
+        {
+            language: 'swift',
+            image: 'swift:5.10',
+            command: 'swift --version',
+            tmpfsSize: TMPFS_SIZES.swift,
+            timeout: 15000
+        },
+        {
+            language: 'perl',
+            image: 'perl:5.40-slim',
+            command: 'perl -v',
+            tmpfsSize: TMPFS_SIZES.default,
+            timeout: 10000
+        },
+        {
+            language: 'haskell',
+            image: 'haskell:9.6',
+            command: 'ghc --version',
+            tmpfsSize: TMPFS_SIZES.haskell,
+            timeout: 15000
+        },
+        {
+            language: 'bash',
+            image: 'alpine:3.19',
+            command: 'echo "Alpine Linux ready for bash"',
+            tmpfsSize: TMPFS_SIZES.default,
+            timeout: 10000
         }
     ];
 }
 
 async function warmupContainer(config) {
     try {
+        let retries = 3;
+        let imageExists = false;
+        while (retries > 0 && !imageExists) {
+            imageExists = await checkImageExists(config.image);
+            if (!imageExists) {
+                retries--;
+                if (retries > 0) {
+                    await new Promise((resolve) => setTimeout(resolve, 2000));
+                }
+            }
+        }
+
+        if (!imageExists) {
+            return {
+                success: false,
+                language: config.language,
+                error: `Image ${config.image} not found after waiting`
+            };
+        }
+
         const allowNetwork = config.language === 'kotlin';
         const result = await runDockerCommand(
             config.image,
@@ -790,7 +852,9 @@ function buildDockerArgs(language, hostCodePath, opts = {}) {
     args.push(
         `--cpus=${language === 'kotlin' ? CONFIG.MAX_CPU_PERCENT_KOTLIN : CONFIG.MAX_CPU_PERCENT}`
     );
-    args.push('--network=none');
+    if (language !== 'typescript' && language !== 'bash') {
+        args.push('--network=none');
+    }
     args.push('--read-only');
     args.push('--tmpfs');
     args.push(`/tmp:rw,exec,nosuid,size=${tmpfsSize},noatime`);
@@ -939,9 +1003,7 @@ async function findImageFiles(outputDir) {
                         name: file,
                         data: `data:${mimeType};base64,${base64}`
                     });
-                    await fs.unlink(filePath).catch(() => {
-                        // Ignore unlink errors
-                    });
+                    await fs.unlink(filePath).catch(() => {});
                 } catch {
                     // Ignore file read errors
                 }

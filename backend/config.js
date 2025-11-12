@@ -31,6 +31,8 @@ const TMPFS_SIZES = {
     rust: '200m',
     kotlin: '200m',
     csharp: '100m',
+    haskell: '150m',
+    swift: '150m',
     default: '50m'
 };
 
@@ -50,7 +52,13 @@ const LANGUAGE_EXTENSIONS = {
     r: '.r',
     ruby: '.rb',
     csharp: '.cs',
-    kotlin: '.kt'
+    kotlin: '.kt',
+    go: '.go',
+    typescript: '.ts',
+    swift: '.swift',
+    perl: '.pl',
+    haskell: '.hs',
+    bash: '.sh'
 };
 
 const LANGUAGE_CONFIGS = {
@@ -189,6 +197,78 @@ const LANGUAGE_CONFIGS = {
             }
         },
         timeout: MAX_EXECUTION_TIME * 3
+    },
+    go: {
+        image: 'golang:1.23-alpine',
+        command: (path, inputPath) => {
+            if (inputPath) {
+                const tmpInputPath = '/tmp/input.txt';
+                return `cd /tmp && export GOCACHE=/tmp/.cache/go-build && export HOME=/tmp && cp "${inputPath}" "${tmpInputPath}" && go run "${path}" < "${tmpInputPath}" 2>&1`;
+            } else {
+                return `cd /tmp && export GOCACHE=/tmp/.cache/go-build && export HOME=/tmp && go run "${path}" 2>&1`;
+            }
+        },
+        timeout: MAX_EXECUTION_TIME * 2
+    },
+    typescript: {
+        image: 'node:20-slim',
+        command: (path, inputPath) => {
+            if (inputPath) {
+                const tmpInputPath = '/tmp/input.txt';
+                return `cd /tmp && export HOME=/tmp && export npm_config_cache=/tmp/.npm && cp "${inputPath}" "${tmpInputPath}" && npx -y tsx "${path}" < "${tmpInputPath}" 2>&1`;
+            } else {
+                return `cd /tmp && export HOME=/tmp && export npm_config_cache=/tmp/.npm && npx -y tsx "${path}" 2>&1`;
+            }
+        },
+        timeout: MAX_EXECUTION_TIME * 2
+    },
+    swift: {
+        image: 'swift:5.10',
+        command: (path, inputPath) => {
+            if (inputPath) {
+                const tmpInputPath = '/tmp/input.txt';
+                return `cd /tmp && export HOME=/tmp && cp "${inputPath}" "${tmpInputPath}" && swift "${path}" < "${tmpInputPath}" 2>&1`;
+            } else {
+                return `cd /tmp && export HOME=/tmp && swift "${path}" 2>&1`;
+            }
+        },
+        timeout: MAX_EXECUTION_TIME * 2
+    },
+    perl: {
+        image: 'perl:5.40-slim',
+        command: (path, inputPath) => {
+            if (inputPath) {
+                const tmpInputPath = '/tmp/input.txt';
+                return `cd /tmp && cp "${inputPath}" "${tmpInputPath}" && perl "${path}" < "${tmpInputPath}" 2>&1`;
+            } else {
+                return `cd /tmp && perl "${path}" 2>&1`;
+            }
+        },
+        timeout: MAX_EXECUTION_TIME
+    },
+    haskell: {
+        image: 'haskell:9.6',
+        command: (path, inputPath) => {
+            if (inputPath) {
+                const tmpInputPath = '/tmp/input.txt';
+                return `cd /tmp && ghc -o /tmp/a.out "${path}" 2>&1 && cp "${inputPath}" "${tmpInputPath}" && /tmp/a.out < "${tmpInputPath}" 2>&1`;
+            } else {
+                return `cd /tmp && ghc -o /tmp/a.out "${path}" 2>&1 && /tmp/a.out 2>&1`;
+            }
+        },
+        timeout: MAX_EXECUTION_TIME * 3
+    },
+    bash: {
+        image: 'alpine:3.19',
+        command: (path, inputPath) => {
+            if (inputPath) {
+                const tmpInputPath = '/tmp/input.txt';
+                return `cd /tmp && apk add --no-cache --cache-dir /tmp/apk-cache bash >/dev/null 2>&1 && cp "${inputPath}" "${tmpInputPath}" && bash "${path}" < "${tmpInputPath}" 2>&1`;
+            } else {
+                return `cd /tmp && apk add --no-cache --cache-dir /tmp/apk-cache bash >/dev/null 2>&1 && bash "${path}" 2>&1`;
+            }
+        },
+        timeout: MAX_EXECUTION_TIME
     }
 };
 

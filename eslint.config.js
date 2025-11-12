@@ -11,7 +11,8 @@ export default [
                 ...globals.browser,
                 ...globals.node,
                 monaco: 'readonly',
-                require: 'readonly'
+                require: 'readonly',
+                ace: 'readonly'
             }
         },
         rules: {

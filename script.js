@@ -154,14 +154,20 @@ const LANGUAGE_CONFIG = {
         python: 'python',
         javascript: 'javascript',
         java: 'java',
-        cpp: 'cpp',
-        c: 'c',
+        cpp: 'c_cpp',
+        c: 'c_cpp',
         rust: 'rust',
         php: 'php',
         r: 'r',
         ruby: 'ruby',
         csharp: 'csharp',
-        kotlin: 'kotlin'
+        kotlin: 'kotlin',
+        go: 'golang',
+        typescript: 'typescript',
+        swift: 'swift',
+        perl: 'perl',
+        haskell: 'haskell',
+        bash: 'sh'
     },
     templates: {
         python: 'print("Hello, World!")',
@@ -174,7 +180,13 @@ const LANGUAGE_CONFIG = {
         r: 'cat("Hello, World!\\n")',
         ruby: 'puts "Hello, World!"',
         csharp: 'using System;\n\nclass Program\n{\n    static void Main()\n    {\n        Console.WriteLine("Hello, World!");\n    }\n}',
-        kotlin: 'fun main() {\n    println("Hello, World!")\n}'
+        kotlin: 'fun main() {\n    println("Hello, World!")\n}',
+        go: 'package main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, World!")\n}',
+        typescript: 'console.log("Hello, World!");',
+        swift: 'print("Hello, World!")',
+        perl: 'print "Hello, World!\\n";',
+        haskell: 'main = putStrLn "Hello, World!"',
+        bash: 'echo "Hello, World!"'
     },
     icons: {
         python: 'https://img.icons8.com/color/48/python.png',
@@ -187,7 +199,13 @@ const LANGUAGE_CONFIG = {
         r: 'https://www.r-project.org/logo/Rlogo.png',
         ruby: 'https://img.icons8.com/color/48/ruby-programming-language.png',
         csharp: 'https://img.icons8.com/color/48/c-sharp-logo.png',
-        kotlin: 'https://img.icons8.com/color/48/kotlin.png'
+        kotlin: 'https://img.icons8.com/color/48/kotlin.png',
+        go: 'https://img.icons8.com/color/48/golang.png',
+        typescript: 'https://img.icons8.com/color/48/typescript.png',
+        swift: 'https://img.icons8.com/color/48/swift.png',
+        perl: 'https://img.icons8.com/color/48/perl.png',
+        haskell: 'https://img.icons8.com/color/48/haskell.png',
+        bash: 'https://img.icons8.com/color/48/bash.png'
     },
     names: {
         python: 'Python',
@@ -200,7 +218,13 @@ const LANGUAGE_CONFIG = {
         r: 'R',
         ruby: 'Ruby',
         csharp: 'C#',
-        kotlin: 'Kotlin'
+        kotlin: 'Kotlin',
+        go: 'Go',
+        typescript: 'TypeScript',
+        swift: 'Swift',
+        perl: 'Perl',
+        haskell: 'Haskell',
+        bash: 'Bash'
     }
 };
 
@@ -239,69 +263,10 @@ const FONT_CONFIG = {
 
 let currentLang = localStorage.getItem('language') || 'ko';
 let codeEditor = null;
+let currentLanguage = CONFIG.DEFAULT_LANGUAGE;
+let pendingLanguageChange = null;
 
 const cleanupFunctions = [];
-const eventListeners = new Map();
-
-function addEventListenerSafe(element, event, handler, options = false) {
-    if (!element) {
-        return null;
-    }
-    element.addEventListener(event, handler, options);
-    const key = `${element.constructor.name}_${event}`;
-    if (!eventListeners.has(key)) {
-        eventListeners.set(key, []);
-    }
-    eventListeners.get(key).push({ element, event, handler, options });
-    return () => {
-        element.removeEventListener(event, handler, options);
-        const listeners = eventListeners.get(key);
-        if (listeners) {
-            const index = listeners.findIndex((l) => l.handler === handler);
-            if (index > -1) {
-                listeners.splice(index, 1);
-            }
-        }
-    };
-}
-
-function cleanupEventListeners() {
-    eventListeners.forEach((listeners) => {
-        listeners.forEach(({ element, event, handler, options }) => {
-            element.removeEventListener(event, handler, options);
-        });
-    });
-    eventListeners.clear();
-}
-
-function cleanup() {
-    cleanupFunctions.forEach((fn) => {
-        try {
-            fn();
-        } catch (error) {
-            console.error('Cleanup error:', error);
-        }
-    });
-    cleanupFunctions.length = 0;
-    cleanupEventListeners();
-    if (codeEditor) {
-        try {
-            codeEditor.dispose();
-            codeEditor = null;
-        } catch (error) {
-            console.error('Editor dispose error:', error);
-        }
-    }
-}
-
-if (typeof window !== 'undefined') {
-    window.addEventListener('pagehide', cleanup);
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') {
-            cleanup();
-        }
-    });
-}
 
 function debounce(fn, delay) {
     let timer = null;
@@ -323,27 +288,6 @@ function debounce(fn, delay) {
         }
     };
     return debounced;
-}
-
-const domCache = new Map();
-
-function getCachedElement(selector, useCache = true) {
-    if (!useCache) {
-        return document.querySelector(selector);
-    }
-    if (!domCache.has(selector)) {
-        const element = document.querySelector(selector);
-        if (element) {
-            domCache.set(selector, element);
-        }
-        return element;
-    }
-    const cached = domCache.get(selector);
-    if (cached && document.contains(cached)) {
-        return cached;
-    }
-    domCache.delete(selector);
-    return getCachedElement(selector, false);
 }
 
 function updateLanguage(lang) {
@@ -402,17 +346,6 @@ function updateLanguage(lang) {
     } else if (translations[lang]?.['title']) {
         document.title = translations[lang]['title'];
     }
-
-    const langIcon = getCachedElement('#lang-icon');
-    if (langIcon) {
-        langIcon.className = `fi ${lang === 'ko' ? 'fi-kr' : 'fi-us'}`;
-    }
-
-    const langName = getCachedElement('#lang-name');
-    if (langName) {
-        langName.textContent =
-            lang === 'ko' ? translations.ko['korean'] : translations.en['english'];
-    }
 }
 
 function getSystemTheme() {
@@ -422,8 +355,9 @@ function getSystemTheme() {
 function applyTheme(themePreference) {
     const actualTheme = themePreference === 'system' ? getSystemTheme() : themePreference;
     document.documentElement.setAttribute('data-theme', actualTheme);
-    if (codeEditor) {
-        monaco.editor.setTheme(actualTheme === 'dark' ? 'vs-dark' : 'vs');
+    if (codeEditor && typeof ace !== 'undefined') {
+        const aceTheme = actualTheme === 'dark' ? 'monokai' : 'github';
+        codeEditor.setTheme(`ace/theme/${aceTheme}`);
     }
 }
 
@@ -436,6 +370,9 @@ function createIconElement(iconUrl) {
 }
 
 function updateIcon(element, iconUrl) {
+    if (!element) {
+        return;
+    }
     element.innerHTML = '';
     element.appendChild(createIconElement(iconUrl));
 }
@@ -448,7 +385,9 @@ function showPage(pageId) {
     }
 
     if (pageId === 'compiler-page' && codeEditor) {
-        setTimeout(() => codeEditor.layout(), 100);
+        setTimeout(() => {
+            codeEditor.resize();
+        }, 100);
     }
 }
 
@@ -459,13 +398,17 @@ class ModalManager {
     }
 
     show() {
-        this.modal?.classList.add('show');
-        this.isVisible = true;
+        if (this.modal) {
+            this.modal.classList.add('show');
+            this.isVisible = true;
+        }
     }
 
     hide() {
-        this.modal?.classList.remove('show');
-        this.isVisible = false;
+        if (this.modal) {
+            this.modal.classList.remove('show');
+            this.isVisible = false;
+        }
     }
 
     toggle() {
@@ -485,14 +428,22 @@ class DropdownManager {
     }
 
     open() {
-        this.button?.classList.add('active');
-        this.dropdown?.classList.add('show');
+        if (this.button) {
+            this.button.classList.add('active');
+        }
+        if (this.dropdown) {
+            this.dropdown.classList.add('show');
+        }
         this.isOpen = true;
     }
 
     close() {
-        this.button?.classList.remove('active');
-        this.dropdown?.classList.remove('show');
+        if (this.button) {
+            this.button.classList.remove('active');
+        }
+        if (this.dropdown) {
+            this.dropdown.classList.remove('show');
+        }
         this.isOpen = false;
     }
 
@@ -506,18 +457,17 @@ class DropdownManager {
 }
 
 function initEditor() {
-    if (typeof require === 'undefined') {
+    if (typeof ace === 'undefined') {
         setTimeout(initEditor, 100);
         return;
     }
 
-    require.config({
-        paths: {
-            vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
-        }
-    });
+    if (window._editorInitializing) {
+        return;
+    }
+    window._editorInitializing = true;
 
-    require(['vs/editor/editor.main'], function () {
+    (function () {
         const elements = {
             languageSelect: document.getElementById('language-select'),
             languageSelectButton: document.getElementById('language-select-button'),
@@ -533,6 +483,12 @@ function initEditor() {
             output: document.getElementById('output')
         };
 
+        if (!elements.codeEditorElement) {
+            console.error('Code editor element not found');
+            window._editorInitializing = false;
+            return;
+        }
+
         const modals = {
             languageChange: new ModalManager('language-change-modal'),
             clearConfirm: new ModalManager('clear-confirm-modal')
@@ -542,15 +498,11 @@ function initEditor() {
             language: new DropdownManager('language-select-button', 'language-dropdown')
         };
 
-        let currentLanguage = CONFIG.DEFAULT_LANGUAGE;
-        let pendingLanguageChange = null;
-
         const savedTheme = localStorage.getItem('theme') || CONFIG.DEFAULT_THEME;
         applyTheme(savedTheme);
 
-        let mediaQueryList = null;
         if (window.matchMedia) {
-            mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
+            const mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
             const handleThemeChange = () => {
                 const currentThemePreference =
                     localStorage.getItem('theme') || CONFIG.DEFAULT_THEME;
@@ -561,16 +513,12 @@ function initEditor() {
             if (mediaQueryList.addEventListener) {
                 mediaQueryList.addEventListener('change', handleThemeChange);
                 cleanupFunctions.push(() => {
-                    if (mediaQueryList) {
-                        mediaQueryList.removeEventListener('change', handleThemeChange);
-                    }
+                    mediaQueryList.removeEventListener('change', handleThemeChange);
                 });
             } else {
                 mediaQueryList.addListener(handleThemeChange);
                 cleanupFunctions.push(() => {
-                    if (mediaQueryList) {
-                        mediaQueryList.removeListener(handleThemeChange);
-                    }
+                    mediaQueryList.removeListener(handleThemeChange);
                 });
             }
         }
@@ -582,163 +530,330 @@ function initEditor() {
             localStorage.getItem('fontSize') || CONFIG.DEFAULT_FONT_SIZE
         );
         const actualEditorTheme = savedTheme === 'system' ? getSystemTheme() : savedTheme;
-        const monacoTheme = actualEditorTheme === 'dark' ? 'vs-dark' : 'vs';
+        const aceTheme = actualEditorTheme === 'dark' ? 'monokai' : 'github';
 
-        codeEditor = monaco.editor.create(elements.codeEditorElement, {
-            value: LANGUAGE_CONFIG.templates[currentLanguage] || '',
-            language: LANGUAGE_CONFIG.modes[currentLanguage] || 'plaintext',
-            theme: monacoTheme,
-            lineNumbers: 'on',
-            wordWrap: 'on',
-            tabSize: 4,
-            insertSpaces: true,
-            automaticLayout: true,
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            fontSize: savedFontSize,
-            fontFamily: savedFontFamily,
-            fontLigatures: true,
-            suggestOnTriggerCharacters: true,
-            quickSuggestions: { other: true, comments: true, strings: true },
-            quickSuggestionsDelay: 10,
-            acceptSuggestionOnEnter: 'on',
-            acceptSuggestionOnCommitCharacter: true,
-            snippetSuggestions: 'top',
-            tabCompletion: 'on',
-            wordBasedSuggestions: 'allDocuments',
-            parameterHints: { enabled: true, cycle: true },
-            formatOnPaste: true,
-            formatOnType: true,
-            unicodeHighlight: {
-                ambiguousCharacters: false,
-                invisibleCharacters: false,
-                nonBasicASCII: false
-            },
-            renderWhitespace: 'selection',
-            renderControlCharacters: false,
-            renderIndentGuides: true,
-            renderLineHighlight: 'all',
-            cursorBlinking: 'smooth',
-            cursorSmoothCaretAnimation: 'on',
-            smoothScrolling: true,
-            mouseWheelZoom: true,
-            multiCursorModifier: 'ctrlCmd',
-            accessibilitySupport: 'auto',
-            autoIndent: 'full',
-            bracketPairColorization: { enabled: true },
-            guides: {
-                bracketPairs: true,
-                indentation: true
-            },
-            suggest: {
-                showKeywords: true,
-                showSnippets: true,
-                showClasses: true,
-                showFunctions: true,
-                showVariables: true,
-                showFields: true,
-                showMethods: true,
-                showProperties: true,
-                showEvents: true,
-                showOperators: true,
-                showUnits: true,
-                showValues: true,
-                showText: true,
-                showColors: true,
-                showFiles: true,
-                showReferences: true,
-                showFolders: true,
-                showTypeParameters: true,
-                showIssues: true,
-                showUsers: true,
-                showWords: true,
-                showDeprecated: true,
-                maxVisibleSuggestions: 12,
-                filterGraceful: true,
-                shareSuggestSelections: false,
-                showIcons: true,
-                preview: true,
-                previewMode: 'prefix',
-                showStatusBar: true,
-                insertMode: 'replace'
-            },
-            scrollbar: {
-                vertical: 'hidden',
-                horizontal: 'hidden',
-                verticalScrollbarSize: 0,
-                horizontalScrollbarSize: 0,
-                useShadows: false,
-                alwaysConsumeMouseWheel: false
+        if (elements.languageSelect) {
+            elements.languageSelect.value = CONFIG.DEFAULT_LANGUAGE;
+        }
+        currentLanguage = CONFIG.DEFAULT_LANGUAGE;
+
+        if (codeEditor) {
+            try {
+                codeEditor.destroy();
+            } catch (e) {
+                console.warn('Error destroying old editor:', e);
             }
-        });
+            codeEditor = null;
+        }
+
+        const initialTemplate =
+            LANGUAGE_CONFIG.templates[CONFIG.DEFAULT_LANGUAGE] || 'print("Hello, World!")';
+        let savedInitialCode = null;
+        try {
+            savedInitialCode = localStorage.getItem(`code_${CONFIG.DEFAULT_LANGUAGE}`);
+        } catch (e) {
+            console.warn('Failed to load saved code:', e);
+        }
+        const initialValue =
+            savedInitialCode && savedInitialCode.trim() ? savedInitialCode : initialTemplate;
+
+        if (!elements.codeEditorElement || !elements.codeEditorElement.parentElement) {
+            console.error('Editor container not ready');
+            setTimeout(() => initEditor(), 200);
+            return;
+        }
+
+        try {
+            const containerRect = elements.codeEditorElement.getBoundingClientRect();
+            if (containerRect.width === 0 || containerRect.height === 0) {
+                console.warn('Editor container has zero size, retrying...');
+                window._editorInitializing = false;
+                setTimeout(() => initEditor(), 200);
+                return;
+            }
+
+            if (codeEditor) {
+                try {
+                    codeEditor.destroy();
+                } catch (e) {
+                    console.warn('Error destroying old editor:', e);
+                }
+                codeEditor = null;
+            }
+
+            window.codeEditor = ace.edit(elements.codeEditorElement);
+            codeEditor = window.codeEditor;
+
+            codeEditor.setOptions({
+                fontSize: savedFontSize,
+                fontFamily: savedFontFamily,
+                showPrintMargin: false,
+                displayIndentGuides: true,
+                showFoldWidgets: false,
+                highlightActiveLine: true,
+                showInvisibles: false,
+                behavioursEnabled: true,
+                wrapBehavioursEnabled: true,
+                autoScrollEditorIntoView: true,
+                animatedScroll: false,
+                vScrollBarAlwaysVisible: false,
+                hScrollBarAlwaysVisible: false,
+                highlightSelectedWord: true,
+                selectionStyle: 'text',
+                fadeFoldWidgets: true,
+                useWorker: false,
+                showLineNumbers: true,
+                tabSize: 4,
+                useSoftTabs: true,
+                wrap: true,
+                indentedSoftWrap: false,
+                foldStyle: 'markbegin',
+                readOnly: false
+            });
+
+            codeEditor.setTheme(`ace/theme/${aceTheme}`);
+
+            const mode = LANGUAGE_CONFIG.modes[CONFIG.DEFAULT_LANGUAGE] || 'text';
+            codeEditor.session.setMode(`ace/mode/${mode}`);
+
+            codeEditor.resize();
+
+            requestAnimationFrame(() => {
+                if (!codeEditor) {
+                    return;
+                }
+
+                const valueToSet =
+                    initialValue && initialValue.trim()
+                        ? initialValue
+                        : LANGUAGE_CONFIG.templates[CONFIG.DEFAULT_LANGUAGE] ||
+                          'print("Hello, World!")';
+
+                codeEditor.setValue(valueToSet);
+                codeEditor.clearSelection();
+                codeEditor.moveCursorTo(0, 0);
+
+                codeEditor.resize();
+
+                requestAnimationFrame(() => {
+                    if (codeEditor) {
+                        codeEditor.resize();
+                    }
+                });
+
+                setTimeout(() => {
+                    if (codeEditor) {
+                        try {
+                            codeEditor.focus();
+                            setupEditorCommands();
+                        } catch (e) {
+                            console.warn('Failed to focus editor:', e);
+                        }
+                    }
+                }, 100);
+            });
+
+            const resizeEditor = () => {
+                if (codeEditor) {
+                    codeEditor.resize();
+                }
+            };
+
+            window.addEventListener('resize', resizeEditor);
+            cleanupFunctions.push(() => {
+                window.removeEventListener('resize', resizeEditor);
+            });
+        } catch (error) {
+            console.error('Failed to create Ace Editor:', error);
+            window._editorInitializing = false;
+            setTimeout(() => initEditor(), 500);
+            return;
+        }
+
+        const setupEditorCommands = () => {
+            if (codeEditor && codeEditor.commands) {
+                try {
+                    codeEditor.commands.addCommand({
+                        name: 'runCode',
+                        bindKey: { win: 'Ctrl-Enter', mac: 'Cmd-Enter' },
+                        exec: () => {
+                            if (codeEditor && getEditorValue().trim()) {
+                                elements.runButton?.click();
+                            } else {
+                                if (elements.consoleOutput) {
+                                    elements.consoleOutput.innerHTML = `<p class="text-muted">${translations[currentLang]['no-code-error']}</p>`;
+                                }
+                            }
+                        }
+                    });
+
+                    codeEditor.commands.addCommand({
+                        name: 'clearCode',
+                        bindKey: { win: 'Ctrl-K', mac: 'Cmd-K' },
+                        exec: () => {
+                            if (
+                                codeEditor &&
+                                getEditorValue().trim() &&
+                                getEditorValue() !== LANGUAGE_CONFIG.templates[currentLanguage]
+                            ) {
+                                modals.clearConfirm.show();
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.warn('Failed to add editor commands:', e);
+                }
+            }
+        };
 
         function getEditorValue() {
-            return codeEditor.getValue();
+            if (!codeEditor) {
+                return '';
+            }
+            try {
+                return codeEditor.getValue() || '';
+            } catch (e) {
+                console.error('Error getting editor value:', e);
+                return '';
+            }
         }
 
         function setEditorValue(value) {
-            codeEditor.setValue(value);
+            if (!codeEditor) {
+                return;
+            }
+            codeEditor.setValue(value || '');
+            codeEditor.clearSelection();
+            codeEditor.moveCursorTo(0, 0);
+            codeEditor.resize();
             saveCodeToStorage();
         }
 
         function saveCodeToStorage() {
+            if (!codeEditor) {
+                return;
+            }
             const code = getEditorValue();
-            const language = elements.languageSelect.value;
-            if (code.trim()) {
-                localStorage.setItem(`code_${language}`, code);
+            const language = elements.languageSelect?.value || currentLanguage;
+            if (code && code.trim()) {
+                try {
+                    localStorage.setItem(`code_${language}`, code);
+                } catch (e) {
+                    console.error('Failed to save code:', e);
+                }
             }
         }
+
         const saveCodeToStorageDebounced = debounce(saveCodeToStorage, 300);
         cleanupFunctions.push(() => {
-            if (saveCodeToStorageDebounced && saveCodeToStorageDebounced.flush) {
-                saveCodeToStorageDebounced.flush();
-            }
-            if (saveCodeToStorageDebounced && saveCodeToStorageDebounced.cancel) {
-                saveCodeToStorageDebounced.cancel();
-            }
+            saveCodeToStorageDebounced.flush();
+            saveCodeToStorageDebounced.cancel();
         });
 
-        function loadCodeFromStorage() {
-            const language = elements.languageSelect.value;
-            const savedCode = localStorage.getItem(`code_${language}`);
-            if (savedCode && savedCode.trim()) {
-                return savedCode;
+        function loadCodeFromStorage(language) {
+            const lang = language || currentLanguage;
+            try {
+                const savedCode = localStorage.getItem(`code_${lang}`);
+                if (savedCode && savedCode.trim()) {
+                    return savedCode;
+                }
+            } catch (e) {
+                console.error('Failed to load code:', e);
             }
-            return LANGUAGE_CONFIG.templates[language] || '';
+            return LANGUAGE_CONFIG.templates[lang] || '';
         }
 
-        function updateSelectedLanguage(language) {
-            saveCodeToStorage();
-            elements.languageSelect.value = language;
-            currentLanguage = language;
-
-            const iconUrl = LANGUAGE_CONFIG.icons[language];
-            if (iconUrl) {
-                updateIcon(elements.languageIcon, iconUrl);
+        function updateSelectedLanguage(language, skipSave = false) {
+            if (!language) {
+                console.warn('Invalid language');
+                return;
             }
-            elements.languageName.textContent = LANGUAGE_CONFIG.names[language] || language;
 
-            const mode = LANGUAGE_CONFIG.modes[language] || 'plaintext';
-            monaco.editor.setModelLanguage(codeEditor.getModel(), mode);
-
-            elements.languageDropdown.querySelectorAll('.select-option').forEach((option) => {
-                const optionLanguage = option.dataset.value;
-                const optionIconElement = option.querySelector('.language-icon');
-
-                option.classList.toggle('selected', optionLanguage === language);
-
-                if (optionIconElement && LANGUAGE_CONFIG.icons[optionLanguage]) {
-                    updateIcon(optionIconElement, LANGUAGE_CONFIG.icons[optionLanguage]);
+            try {
+                if (elements.languageSelect) {
+                    elements.languageSelect.value = language;
                 }
-            });
+                currentLanguage = language;
 
-            const savedCode = loadCodeFromStorage();
-            setEditorValue(savedCode);
-            updateAutoComplete();
+                const iconUrl = LANGUAGE_CONFIG.icons[language];
+                if (iconUrl && elements.languageIcon) {
+                    updateIcon(elements.languageIcon, iconUrl);
+                }
+                if (elements.languageName) {
+                    elements.languageName.textContent = LANGUAGE_CONFIG.names[language] || language;
+                }
 
-            clearConsole();
-            if (elements.consoleOutput) {
-                elements.consoleOutput.innerHTML = `<p class="text-muted">${translations[currentLang]['output-placeholder']}</p>`;
+                if (elements.languageDropdown) {
+                    elements.languageDropdown
+                        .querySelectorAll('.select-option')
+                        .forEach((option) => {
+                            const optionLanguage = option.dataset.value;
+                            if (optionLanguage) {
+                                option.classList.toggle('selected', optionLanguage === language);
+                                const optionIconElement = option.querySelector('.language-icon');
+                                if (optionIconElement && LANGUAGE_CONFIG.icons[optionLanguage]) {
+                                    updateIcon(
+                                        optionIconElement,
+                                        LANGUAGE_CONFIG.icons[optionLanguage]
+                                    );
+                                }
+                            }
+                        });
+                }
+
+                if (codeEditor) {
+                    if (!skipSave) {
+                        saveCodeToStorage();
+                    }
+
+                    if (!skipSave) {
+                        const mode = LANGUAGE_CONFIG.modes[language] || 'text';
+                        if (codeEditor.session) {
+                            const currentMode = codeEditor.session.getMode().$id || '';
+                            const newMode = `ace/mode/${mode}`;
+                            if (currentMode !== newMode) {
+                                codeEditor.session.setMode(newMode);
+                                requestAnimationFrame(() => {
+                                    if (codeEditor) {
+                                        codeEditor.resize();
+                                    }
+                                });
+                            }
+                        }
+                    }
+
+                    if (!skipSave) {
+                        const savedCode = loadCodeFromStorage(language);
+                        const template = LANGUAGE_CONFIG.templates[language] || '';
+                        const finalCode = savedCode && savedCode.trim() ? savedCode : template;
+                        const currentValue = getEditorValue();
+
+                        if (
+                            !currentValue.trim() ||
+                            currentValue === LANGUAGE_CONFIG.templates[currentLanguage]
+                        ) {
+                            if (finalCode && currentValue !== finalCode) {
+                                codeEditor.setValue(finalCode);
+                                codeEditor.clearSelection();
+                                codeEditor.moveCursorTo(0, 0);
+                                codeEditor.resize();
+                            } else if (!currentValue.trim() && template) {
+                                codeEditor.setValue(template);
+                                codeEditor.clearSelection();
+                                codeEditor.moveCursorTo(0, 0);
+                                codeEditor.resize();
+                            }
+                        }
+                    }
+
+                    if (!skipSave) {
+                        saveCodeToStorage();
+                    }
+                }
+
+                resetConsoleOutput();
+            } catch (error) {
+                console.error('Error updating language:', error);
             }
         }
 
@@ -753,115 +868,17 @@ function initEditor() {
         }
 
         function confirmClear() {
-            const selectedLanguage = elements.languageSelect.value;
+            const selectedLanguage = elements.languageSelect?.value || currentLanguage;
             const template = LANGUAGE_CONFIG.templates[selectedLanguage] || '';
             setEditorValue(template);
-            localStorage.removeItem(`code_${selectedLanguage}`);
+            try {
+                localStorage.removeItem(`code_${selectedLanguage}`);
+            } catch (e) {
+                console.error('Failed to remove code:', e);
+            }
             clearConsole();
-            if (elements.consoleOutput) {
-                elements.consoleOutput.innerHTML = `<p class="text-muted">${translations[currentLang]['output-placeholder']}</p>`;
-            }
+            resetConsoleOutput();
             modals.clearConfirm.hide();
-        }
-
-        function updateMonacoTheme() {
-            const theme = document.documentElement.getAttribute('data-theme');
-            monaco.editor.setTheme(theme === 'dark' ? 'vs-dark' : 'vs');
-        }
-
-        elements.languageSelectButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            dropdowns.language.toggle();
-        });
-
-        document.getElementById('modal-confirm-btn')?.addEventListener('click', () => {
-            confirmLanguageChange();
-        });
-
-        document.getElementById('modal-cancel-btn')?.addEventListener('click', () => {
-            modals.languageChange.hide();
-        });
-
-        document.getElementById('clear-modal-confirm-btn')?.addEventListener('click', confirmClear);
-        document.getElementById('clear-modal-cancel-btn')?.addEventListener('click', () => {
-            modals.clearConfirm.hide();
-        });
-
-        elements.languageDropdown.querySelectorAll('.select-option').forEach((option) => {
-            option.addEventListener('click', function () {
-                const selectedLanguage = this.dataset.value;
-                const currentLangValue = elements.languageSelect.value;
-
-                if (currentLangValue === selectedLanguage) {
-                    dropdowns.language.close();
-                    return;
-                }
-
-                if (getEditorValue().trim() === '') {
-                    updateSelectedLanguage(selectedLanguage);
-                    setEditorValue(LANGUAGE_CONFIG.templates[selectedLanguage] || '');
-                    dropdowns.language.close();
-                } else {
-                    pendingLanguageChange = selectedLanguage;
-                    modals.languageChange.show();
-                }
-            });
-        });
-
-        document.addEventListener('click', (e) => {
-            if (elements.runButton?.contains(e.target)) {
-                return;
-            }
-            if (
-                !elements.languageSelectButton?.contains(e.target) &&
-                !elements.languageDropdown?.contains(e.target)
-            ) {
-                dropdowns.language.close();
-            }
-        });
-
-        elements.languageSelect.addEventListener('change', () => {
-            updateSelectedLanguage(elements.languageSelect.value);
-        });
-
-        elements.clearButton.addEventListener('click', () => {
-            modals.clearConfirm.show();
-        });
-
-        if (elements.clearOutputButton) {
-            elements.clearOutputButton.addEventListener('click', () => {
-                clearConsole();
-                if (elements.consoleOutput) {
-                    elements.consoleOutput.innerHTML = `<p class="text-muted">${translations[currentLang]['output-placeholder']}</p>`;
-                }
-            });
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                modals.languageChange.hide();
-                modals.clearConfirm.hide();
-            }
-        });
-
-        let abortController = null;
-
-        function appendToConsole(text, type = 'output') {
-            if (!elements.consoleOutput) {
-                return;
-            }
-
-            const line = document.createElement('div');
-            line.className = `console-line console-${type}`;
-
-            if (type === 'input') {
-                line.textContent = text;
-            } else {
-                line.textContent = text;
-            }
-
-            elements.consoleOutput.appendChild(line);
-            elements.consoleOutput.scrollTop = elements.consoleOutput.scrollHeight;
         }
 
         function clearConsole() {
@@ -873,22 +890,64 @@ function initEditor() {
             }
         }
 
-        async function executeCode() {
-            const code = getEditorValue();
-            const language = elements.languageSelect.value;
-            const input = elements.consoleInput ? elements.consoleInput.value : '';
+        function resetConsoleOutput() {
+            if (elements.consoleOutput) {
+                elements.consoleOutput.innerHTML = `<p class="text-muted">${translations[currentLang]['output-placeholder']}</p>`;
+            }
+        }
 
-            if (!code.trim()) {
+        function appendToConsole(text, type = 'output') {
+            if (!elements.consoleOutput) {
+                return;
+            }
+
+            const line = document.createElement('div');
+            line.className = `console-line console-${type}`;
+            line.textContent = text;
+            elements.consoleOutput.appendChild(line);
+            elements.consoleOutput.scrollTop = elements.consoleOutput.scrollHeight;
+        }
+
+        async function executeCode() {
+            if (!codeEditor || !window.codeEditor) {
+                codeEditor = window.codeEditor;
+
+                if (!codeEditor) {
+                    console.warn('Editor not ready, waiting...');
+                    let retries = 0;
+                    const maxRetries = 20;
+                    while (!codeEditor && !window.codeEditor && retries < maxRetries) {
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                        codeEditor = window.codeEditor;
+                        retries++;
+                    }
+                    if (!codeEditor && !window.codeEditor) {
+                        if (elements.consoleOutput) {
+                            elements.consoleOutput.innerHTML = `<p class="text-muted">${translations[currentLang]?.['connection-error'] || translations.en['connection-error']}: 에디터가 준비되지 않았습니다. 페이지를 새로고침해주세요.</p>`;
+                        }
+                        return;
+                    }
+                    if (!codeEditor && window.codeEditor) {
+                        codeEditor = window.codeEditor;
+                    }
+                }
+            }
+
+            const code = getEditorValue();
+            const language = elements.languageSelect?.value || currentLanguage;
+            const input = elements.consoleInput?.value || '';
+
+            if (!code || !code.trim()) {
                 if (elements.consoleOutput) {
                     elements.consoleOutput.innerHTML = `<p class="text-muted">${translations[currentLang]['no-code-error']}</p>`;
                 }
                 return;
             }
 
-            if (abortController) {
-                abortController.abort();
+            if (!elements.runButton || !elements.consoleOutput) {
+                console.warn('Required elements not found');
+                return;
             }
-            abortController = new AbortController();
 
             saveCodeToStorage();
 
@@ -902,6 +961,10 @@ function initEditor() {
             elements.runButton.textContent =
                 translations[currentLang]['running'] || translations.en['running'];
 
+            if (elements.consoleOutput) {
+                elements.consoleOutput.innerHTML = '';
+            }
+
             if (inputValue && inputValue.trim()) {
                 appendToConsole(inputValue, 'input');
             }
@@ -910,8 +973,7 @@ function initEditor() {
                 const response = await fetch(`${CONFIG.API_URL}/api/execute`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code, language, input }),
-                    signal: abortController.signal
+                    body: JSON.stringify({ code, language, input })
                 });
 
                 if (!response.ok) {
@@ -929,12 +991,7 @@ function initEditor() {
                     throw new Error(`HTTP ${response.status}: ${errorMessage}`);
                 }
 
-                let data;
-                try {
-                    data = await response.json();
-                } catch (parseError) {
-                    throw new Error(`Failed to parse response: ${parseError.message}`);
-                }
+                const data = await response.json();
                 const hasOutput = data.output?.trim().length > 0;
                 const hasError = data.error?.trim().length > 0;
 
@@ -1023,17 +1080,6 @@ function initEditor() {
                     elements.consoleInput.focus();
                 }
             } catch (error) {
-                if (error.name === 'AbortError') {
-                    if (elements.runButton) {
-                        elements.runButton.disabled = false;
-                        elements.runButton.textContent = translations[currentLang]['run'];
-                    }
-                    if (elements.consoleInput) {
-                        elements.consoleInput.disabled = false;
-                    }
-                    abortController = null;
-                    return;
-                }
                 console.error('Execution error:', error);
                 if (elements.consoleOutput) {
                     let userMessage =
@@ -1071,2568 +1117,229 @@ function initEditor() {
                     }
 
                     appendToConsole(userMessage, 'error');
-                    const checkBackendMsg =
+                    appendToConsole(
                         translations[currentLang]?.['check-backend'] ||
-                        translations.en['check-backend'];
-                    appendToConsole(checkBackendMsg, 'info');
-                }
-                if (elements.consoleInput) {
-                    elements.consoleInput.disabled = false;
+                            translations.en['check-backend'],
+                        'info'
+                    );
                 }
             } finally {
-                elements.runButton.disabled = false;
-                elements.runButton.textContent = translations[currentLang]['run'];
-                abortController = null;
-            }
-        }
-
-        elements.runButton.addEventListener(
-            'click',
-            async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-
-                if (elements.consoleOutput) {
-                    clearConsole();
-                    elements.consoleOutput.innerHTML = '';
+                if (elements.runButton) {
+                    elements.runButton.disabled = false;
+                    elements.runButton.textContent =
+                        translations[currentLang]?.['run'] || translations.en?.['run'] || 'Run';
                 }
-
                 if (elements.consoleInput) {
                     elements.consoleInput.disabled = false;
-                    elements.consoleInput.focus();
                 }
-
-                await executeCode();
-
-                return false;
-            },
-            true
-        );
-
-        codeEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-            if (getEditorValue().trim()) {
-                elements.runButton.click();
-            } else {
-                elements.output.innerHTML = `<p class="text-muted">${translations[currentLang]['no-code-error']}</p>`;
             }
-        });
+        }
 
-        codeEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
-            if (
-                getEditorValue().trim() &&
-                getEditorValue() !== LANGUAGE_CONFIG.templates[currentLanguage]
-            ) {
-                modals.clearConfirm.show();
-            }
-        });
-
-        let isComposing = false;
-        let compositionTimeout = null;
-        let originalQuickSuggestions = null;
-        let originalFormatOnType = null;
-        let originalAcceptSuggestionOnCommitCharacter = null;
-        let contentChangeDisposable = null;
-        let compositionCleanups = [];
-
-        const cleanupComposition = () => {
-            if (compositionTimeout) {
-                clearTimeout(compositionTimeout);
-                compositionTimeout = null;
-            }
-            compositionCleanups.forEach((fn) => {
-                try {
-                    fn();
-                } catch (error) {
-                    console.error('Composition cleanup error:', error);
-                }
-            });
-            compositionCleanups = [];
-        };
-
-        contentChangeDisposable = codeEditor.onDidChangeModelContent(() => {
-            if (!isComposing) {
+        if (codeEditor && codeEditor.session) {
+            codeEditor.session.on('change', () => {
                 saveCodeToStorageDebounced();
-            }
-        });
-        cleanupFunctions.push(() => {
-            if (contentChangeDisposable) {
-                contentChangeDisposable.dispose();
-            }
-        });
-
-        const editorDomNode = codeEditor.getDomNode();
-        if (editorDomNode) {
-            const textArea = editorDomNode.querySelector('textarea');
-            if (textArea) {
-                const handleCompositionStart = (e) => {
-                    e.stopPropagation();
-                    isComposing = true;
-
-                    cleanupComposition();
-
-                    const options = codeEditor.getOptions();
-                    if (originalQuickSuggestions === null) {
-                        originalQuickSuggestions = options.get(
-                            monaco.editor.EditorOption.quickSuggestions
-                        );
-                        originalFormatOnType = options.get(monaco.editor.EditorOption.formatOnType);
-                        originalAcceptSuggestionOnCommitCharacter = options.get(
-                            monaco.editor.EditorOption.acceptSuggestionOnCommitCharacter
-                        );
-                    }
-
-                    codeEditor.updateOptions({
-                        quickSuggestions: false,
-                        formatOnType: false,
-                        formatOnPaste: false,
-                        suggestOnTriggerCharacters: false,
-                        acceptSuggestionOnCommitCharacter: false,
-                        acceptSuggestionOnEnter: 'off'
-                    });
-                };
-
-                const handleCompositionUpdate = (e) => {
-                    e.stopPropagation();
-                    if (isComposing) {
-                        codeEditor.updateOptions({
-                            quickSuggestions: false,
-                            formatOnType: false,
-                            suggestOnTriggerCharacters: false,
-                            acceptSuggestionOnCommitCharacter: false
-                        });
-                    }
-                };
-
-                const handleCompositionEnd = (e) => {
-                    e.stopPropagation();
-                    isComposing = false;
-
-                    if (compositionTimeout) {
-                        clearTimeout(compositionTimeout);
-                    }
-
-                    compositionTimeout = setTimeout(() => {
-                        if (!isComposing && originalQuickSuggestions !== null) {
-                            codeEditor.updateOptions({
-                                quickSuggestions: originalQuickSuggestions,
-                                formatOnType: originalFormatOnType,
-                                formatOnPaste: true,
-                                suggestOnTriggerCharacters: true,
-                                acceptSuggestionOnCommitCharacter:
-                                    originalAcceptSuggestionOnCommitCharacter,
-                                acceptSuggestionOnEnter: 'on'
-                            });
-                            saveCodeToStorageDebounced();
-                        }
-                        compositionTimeout = null;
-                    }, 100);
-                };
-                textArea.addEventListener('compositionstart', handleCompositionStart, true);
-                textArea.addEventListener('compositionupdate', handleCompositionUpdate, true);
-                textArea.addEventListener('compositionend', handleCompositionEnd, true);
-
-                compositionCleanups.push(
-                    () =>
-                        textArea.removeEventListener(
-                            'compositionstart',
-                            handleCompositionStart,
-                            true
-                        ),
-                    () =>
-                        textArea.removeEventListener(
-                            'compositionupdate',
-                            handleCompositionUpdate,
-                            true
-                        ),
-                    () => textArea.removeEventListener('compositionend', handleCompositionEnd, true)
-                );
-            }
-        }
-
-        cleanupFunctions.push(cleanupComposition);
-
-        codeEditor.updateOptions({
-            domReadOnly: false,
-            readOnly: false,
-            disableLayerHinting: false,
-            stopRenderingLineAfter: 10000,
-            renderValidationDecorations: 'on',
-            renderLineHighlightOnlyWhenFocus: false
-        });
-
-        function updateAutoComplete() {
-            const model = codeEditor.getModel();
-            if (!model) {
-                return;
-            }
-
-            if (currentLanguage === 'javascript') {
-                return;
-            }
-
-            try {
-                monaco.languages.setLanguageConfiguration(currentLanguage, {
-                    wordPattern: /[a-zA-Z_$][a-zA-Z0-9_$]*/g,
-                    comments: {
-                        lineComment: getLineComment(currentLanguage),
-                        blockComment: getBlockComment(currentLanguage)
-                    },
-                    brackets: getBrackets(currentLanguage),
-                    autoClosingPairs: getAutoClosingPairs(currentLanguage),
-                    surroundingPairs: getSurroundingPairs(currentLanguage)
-                });
-
-                registerCompletionProvider(currentLanguage);
-            } catch (error) {
-                console.debug('Language configuration failed:', error);
-            }
-        }
-
-        const registeredProviders = new Set();
-
-        function registerCompletionProvider(language) {
-            if (registeredProviders.has(language) || language === 'javascript') {
-                return;
-            }
-
-            try {
-                monaco.languages.registerCompletionItemProvider(language, {
-                    triggerCharacters: ['.', '(', '[', '{', ':', ' '],
-                    provideCompletionItems: function (model, position) {
-                        const text = model.getValue();
-                        const words = extractWords(text, language);
-                        const wordAtPosition = model.getWordUntilPosition(position);
-                        const currentWord = wordAtPosition.word;
-
-                        const suggestions = [];
-
-                        const snippets = getSnippets(language);
-                        snippets.forEach((snippet) => {
-                            if (currentWord && currentWord.length > 0) {
-                                const wordLower = currentWord.toLowerCase();
-                                const prefixLower = snippet.prefix.toLowerCase();
-                                if (
-                                    prefixLower.startsWith(wordLower) ||
-                                    wordLower === prefixLower
-                                ) {
-                                    suggestions.push({
-                                        label: snippet.prefix,
-                                        kind: monaco.languages.CompletionItemKind.Snippet,
-                                        insertText: snippet.body,
-                                        insertTextRules:
-                                            monaco.languages.CompletionItemInsertTextRule
-                                                .InsertAsSnippet,
-                                        documentation: snippet.description,
-                                        detail: snippet.label,
-                                        range: {
-                                            startLineNumber: position.lineNumber,
-                                            endLineNumber: position.lineNumber,
-                                            startColumn: wordAtPosition.startColumn,
-                                            endColumn: wordAtPosition.endColumn
-                                        },
-                                        sortText: '0' + snippet.prefix
-                                    });
-                                }
-                            }
-                        });
-
-                        const keywords = getKeywords(language);
-                        keywords.forEach((keyword) => {
-                            if (
-                                !currentWord ||
-                                keyword.toLowerCase().startsWith(currentWord.toLowerCase())
-                            ) {
-                                suggestions.push({
-                                    label: keyword,
-                                    kind: monaco.languages.CompletionItemKind.Keyword,
-                                    insertText: keyword,
-                                    range: {
-                                        startLineNumber: position.lineNumber,
-                                        endLineNumber: position.lineNumber,
-                                        startColumn: wordAtPosition.startColumn,
-                                        endColumn: wordAtPosition.endColumn
-                                    },
-                                    sortText: '1' + keyword
-                                });
-                            }
-                        });
-
-                        const wordSuggestions = words
-                            .filter(
-                                (word) =>
-                                    (!currentWord ||
-                                        word.toLowerCase().startsWith(currentWord.toLowerCase())) &&
-                                    word !== currentWord &&
-                                    word.length > 1 &&
-                                    !keywords.includes(word)
-                            )
-                            .slice(0, CONFIG.MAX_AUTOCOMPLETE_SUGGESTIONS_WITH_SNIPPETS)
-                            .map((word) => ({
-                                label: word,
-                                kind: monaco.languages.CompletionItemKind.Variable,
-                                insertText: word,
-                                range: {
-                                    startLineNumber: position.lineNumber,
-                                    endLineNumber: position.lineNumber,
-                                    startColumn: wordAtPosition.startColumn,
-                                    endColumn: wordAtPosition.endColumn
-                                },
-                                sortText: '2' + word
-                            }));
-
-                        suggestions.push(...wordSuggestions);
-
-                        const sortedSuggestions = suggestions.sort((a, b) => {
-                            if (a.sortText && b.sortText) {
-                                return a.sortText.localeCompare(b.sortText);
-                            }
-                            return 0;
-                        });
-
-                        if (!currentWord || currentWord.length === 0) {
-                            const nonSnippetSuggestions = sortedSuggestions.filter(
-                                (s) => s.kind !== monaco.languages.CompletionItemKind.Snippet
-                            );
-                            return {
-                                suggestions: nonSnippetSuggestions.slice(
-                                    0,
-                                    CONFIG.MAX_AUTOCOMPLETE_SUGGESTIONS
-                                )
-                            };
-                        }
-
-                        return {
-                            suggestions: sortedSuggestions.slice(
-                                0,
-                                CONFIG.MAX_AUTOCOMPLETE_SUGGESTIONS_WITH_SNIPPETS
-                            )
-                        };
-                    }
-                });
-
-                registeredProviders.add(language);
-            } catch (error) {
-                console.debug('Completion provider registration failed:', error);
-            }
-        }
-
-        function getKeywords(language) {
-            const allKeywords = {
-                python: [
-                    'if',
-                    'else',
-                    'elif',
-                    'for',
-                    'while',
-                    'def',
-                    'class',
-                    'import',
-                    'from',
-                    'as',
-                    'return',
-                    'try',
-                    'except',
-                    'finally',
-                    'with',
-                    'pass',
-                    'break',
-                    'continue',
-                    'and',
-                    'or',
-                    'not',
-                    'in',
-                    'is',
-                    'None',
-                    'True',
-                    'False',
-                    'lambda',
-                    'yield',
-                    'global',
-                    'nonlocal',
-                    'assert',
-                    'raise',
-                    'del',
-                    'print',
-                    'len',
-                    'range',
-                    'str',
-                    'int',
-                    'float',
-                    'list',
-                    'dict',
-                    'tuple',
-                    'set',
-                    'bool',
-                    'abs',
-                    'all',
-                    'any',
-                    'bin',
-                    'bool',
-                    'chr',
-                    'dict',
-                    'dir',
-                    'divmod',
-                    'enumerate',
-                    'eval',
-                    'exec',
-                    'filter',
-                    'float',
-                    'format',
-                    'frozenset',
-                    'getattr',
-                    'hasattr',
-                    'hash',
-                    'help',
-                    'hex',
-                    'id',
-                    'input',
-                    'int',
-                    'isinstance',
-                    'issubclass',
-                    'iter',
-                    'len',
-                    'list',
-                    'locals',
-                    'map',
-                    'max',
-                    'min',
-                    'next',
-                    'oct',
-                    'open',
-                    'ord',
-                    'pow',
-                    'print',
-                    'property',
-                    'range',
-                    'repr',
-                    'reversed',
-                    'round',
-                    'set',
-                    'setattr',
-                    'slice',
-                    'sorted',
-                    'str',
-                    'sum',
-                    'super',
-                    'tuple',
-                    'type',
-                    'vars',
-                    'zip',
-                    'append',
-                    'extend',
-                    'insert',
-                    'remove',
-                    'pop',
-                    'index',
-                    'count',
-                    'sort',
-                    'reverse',
-                    'copy',
-                    'clear',
-                    'keys',
-                    'values',
-                    'items',
-                    'get',
-                    'update',
-                    'popitem',
-                    'setdefault',
-                    'split',
-                    'join',
-                    'strip',
-                    'replace',
-                    'find',
-                    'index',
-                    'startswith',
-                    'endswith',
-                    'lower',
-                    'upper',
-                    'title',
-                    'capitalize',
-                    'isalpha',
-                    'isdigit',
-                    'isalnum',
-                    'isspace',
-                    'format',
-                    'f-string',
-                    'open',
-                    'read',
-                    'write',
-                    'close',
-                    'readline',
-                    'readlines',
-                    'writelines',
-                    'seek',
-                    'tell',
-                    'with',
-                    'as'
-                ],
-                java: [
-                    'if',
-                    'else',
-                    'for',
-                    'while',
-                    'class',
-                    'public',
-                    'private',
-                    'protected',
-                    'static',
-                    'void',
-                    'return',
-                    'try',
-                    'catch',
-                    'finally',
-                    'import',
-                    'package',
-                    'extends',
-                    'implements',
-                    'new',
-                    'this',
-                    'super',
-                    'final',
-                    'abstract',
-                    'interface',
-                    'enum',
-                    'switch',
-                    'case',
-                    'default',
-                    'break',
-                    'continue',
-                    'int',
-                    'String',
-                    'boolean',
-                    'char',
-                    'double',
-                    'float',
-                    'long',
-                    'short',
-                    'byte',
-                    'System',
-                    'out',
-                    'println',
-                    'main',
-                    'args',
-                    'Scanner',
-                    'ArrayList',
-                    'HashMap',
-                    'HashSet',
-                    'LinkedList',
-                    'Vector',
-                    'Stack',
-                    'Queue',
-                    'TreeMap',
-                    'TreeSet',
-                    'Arrays',
-                    'Collections',
-                    'Math',
-                    'Random',
-                    'Date',
-                    'Calendar',
-                    'StringBuilder',
-                    'StringBuffer',
-                    'Integer',
-                    'Double',
-                    'Float',
-                    'Boolean',
-                    'Character',
-                    'Long',
-                    'Short',
-                    'Byte',
-                    'BigInteger',
-                    'BigDecimal',
-                    'Object',
-                    'equals',
-                    'hashCode',
-                    'toString',
-                    'clone',
-                    'getClass',
-                    'notify',
-                    'notifyAll',
-                    'wait',
-                    'finalize',
-                    'length',
-                    'charAt',
-                    'substring',
-                    'indexOf',
-                    'lastIndexOf',
-                    'contains',
-                    'startsWith',
-                    'endsWith',
-                    'replace',
-                    'replaceAll',
-                    'split',
-                    'trim',
-                    'toLowerCase',
-                    'toUpperCase',
-                    'valueOf',
-                    'parseInt',
-                    'parseDouble',
-                    'parseFloat',
-                    'parseLong',
-                    'parseBoolean',
-                    'format',
-                    'printf',
-                    'nextInt',
-                    'nextDouble',
-                    'nextLine',
-                    'next',
-                    'hasNext',
-                    'hasNextInt',
-                    'hasNextDouble',
-                    'close',
-                    'add',
-                    'remove',
-                    'get',
-                    'set',
-                    'size',
-                    'isEmpty',
-                    'contains',
-                    'indexOf',
-                    'clear',
-                    'toArray',
-                    'iterator',
-                    'addAll',
-                    'removeAll',
-                    'retainAll',
-                    'containsAll'
-                ],
-                cpp: [
-                    'if',
-                    'else',
-                    'for',
-                    'while',
-                    'class',
-                    'public',
-                    'private',
-                    'protected',
-                    'static',
-                    'void',
-                    'return',
-                    'try',
-                    'catch',
-                    'include',
-                    'using',
-                    'namespace',
-                    'new',
-                    'delete',
-                    'this',
-                    'const',
-                    'int',
-                    'char',
-                    'string',
-                    'bool',
-                    'double',
-                    'float',
-                    'auto',
-                    'nullptr',
-                    'true',
-                    'false',
-                    'cout',
-                    'cin',
-                    'endl',
-                    'std',
-                    'vector',
-                    'map',
-                    'set',
-                    'list',
-                    'deque',
-                    'queue',
-                    'stack',
-                    'priority_queue',
-                    'array',
-                    'tuple',
-                    'pair',
-                    'unordered_map',
-                    'unordered_set',
-                    'multimap',
-                    'multiset',
-                    'bitset',
-                    'algorithm',
-                    'numeric',
-                    'functional',
-                    'iterator',
-                    'memory',
-                    'utility',
-                    'type_traits',
-                    'limits',
-                    'cmath',
-                    'cstring',
-                    'cstdlib',
-                    'cstdio',
-                    'ctime',
-                    'cassert',
-                    'fstream',
-                    'sstream',
-                    'iomanip',
-                    'regex',
-                    'thread',
-                    'mutex',
-                    'condition_variable',
-                    'future',
-                    'async',
-                    'promise',
-                    'size',
-                    'empty',
-                    'push_back',
-                    'pop_back',
-                    'push_front',
-                    'pop_front',
-                    'insert',
-                    'erase',
-                    'clear',
-                    'begin',
-                    'end',
-                    'rbegin',
-                    'rend',
-                    'find',
-                    'count',
-                    'lower_bound',
-                    'upper_bound',
-                    'equal_range',
-                    'sort',
-                    'reverse',
-                    'unique',
-                    'remove',
-                    'remove_if',
-                    'transform',
-                    'for_each',
-                    'accumulate',
-                    'max_element',
-                    'min_element',
-                    'max',
-                    'min',
-                    'abs',
-                    'pow',
-                    'sqrt',
-                    'sin',
-                    'cos',
-                    'tan',
-                    'log',
-                    'exp',
-                    'ceil',
-                    'floor',
-                    'round',
-                    'strlen',
-                    'strcpy',
-                    'strcat',
-                    'strcmp',
-                    'strstr',
-                    'strtok',
-                    'atoi',
-                    'atof',
-                    'itoa',
-                    'sprintf',
-                    'sscanf',
-                    'malloc',
-                    'calloc',
-                    'realloc',
-                    'free',
-                    'memset',
-                    'memcpy',
-                    'memmove'
-                ],
-                c: [
-                    'if',
-                    'else',
-                    'for',
-                    'while',
-                    'return',
-                    'include',
-                    'define',
-                    'typedef',
-                    'struct',
-                    'enum',
-                    'union',
-                    'int',
-                    'char',
-                    'float',
-                    'double',
-                    'void',
-                    'const',
-                    'static',
-                    'extern',
-                    'printf',
-                    'scanf',
-                    'malloc',
-                    'free',
-                    'NULL',
-                    'size_t',
-                    'FILE',
-                    'fopen',
-                    'fclose',
-                    'fread',
-                    'fwrite',
-                    'fgets',
-                    'fputs',
-                    'fprintf',
-                    'fscanf',
-                    'feof',
-                    'ferror',
-                    'fseek',
-                    'ftell',
-                    'rewind',
-                    'remove',
-                    'rename',
-                    'tmpfile',
-                    'tmpnam',
-                    'strlen',
-                    'strcpy',
-                    'strncpy',
-                    'strcat',
-                    'strncat',
-                    'strcmp',
-                    'strncmp',
-                    'strchr',
-                    'strrchr',
-                    'strstr',
-                    'strtok',
-                    'strspn',
-                    'strcspn',
-                    'strpbrk',
-                    'memset',
-                    'memcpy',
-                    'memmove',
-                    'memcmp',
-                    'memchr',
-                    'atoi',
-                    'atol',
-                    'atof',
-                    'strtol',
-                    'strtoul',
-                    'strtod',
-                    'sprintf',
-                    'snprintf',
-                    'sscanf',
-                    'calloc',
-                    'realloc',
-                    'abort',
-                    'exit',
-                    'atexit',
-                    'system',
-                    'getenv',
-                    'time',
-                    'clock',
-                    'difftime',
-                    'ctime',
-                    'localtime',
-                    'gmtime',
-                    'mktime',
-                    'strftime',
-                    'asctime',
-                    'rand',
-                    'srand',
-                    'abs',
-                    'labs',
-                    'div',
-                    'ldiv',
-                    'ceil',
-                    'floor',
-                    'fabs',
-                    'sqrt',
-                    'pow',
-                    'exp',
-                    'log',
-                    'log10',
-                    'sin',
-                    'cos',
-                    'tan',
-                    'asin',
-                    'acos',
-                    'atan',
-                    'atan2',
-                    'sinh',
-                    'cosh',
-                    'tanh',
-                    'isalnum',
-                    'isalpha',
-                    'iscntrl',
-                    'isdigit',
-                    'isgraph',
-                    'islower',
-                    'isprint',
-                    'ispunct',
-                    'isspace',
-                    'isupper',
-                    'isxdigit',
-                    'tolower',
-                    'toupper',
-                    'assert',
-                    'setjmp',
-                    'longjmp',
-                    'signal',
-                    'raise',
-                    'va_start',
-                    'va_arg',
-                    'va_end'
-                ],
-                rust: [
-                    'fn',
-                    'let',
-                    'mut',
-                    'const',
-                    'static',
-                    'if',
-                    'else',
-                    'match',
-                    'for',
-                    'while',
-                    'loop',
-                    'return',
-                    'break',
-                    'continue',
-                    'struct',
-                    'enum',
-                    'impl',
-                    'trait',
-                    'pub',
-                    'use',
-                    'mod',
-                    'self',
-                    'Self',
-                    'true',
-                    'false',
-                    'Some',
-                    'None',
-                    'Ok',
-                    'Err',
-                    'Result',
-                    'Option',
-                    'String',
-                    'Vec',
-                    'i32',
-                    'i64',
-                    'u32',
-                    'u64',
-                    'f32',
-                    'f64',
-                    'bool',
-                    'char',
-                    'println!',
-                    'print!',
-                    'format!',
-                    'Box',
-                    'Rc',
-                    'Arc',
-                    'RefCell',
-                    'Cell',
-                    'Mutex',
-                    'RwLock',
-                    'HashMap',
-                    'HashSet',
-                    'BTreeMap',
-                    'BTreeSet',
-                    'VecDeque',
-                    'LinkedList',
-                    'BinaryHeap',
-                    'String',
-                    'str',
-                    'OsString',
-                    'Path',
-                    'PathBuf',
-                    'File',
-                    'BufReader',
-                    'BufWriter',
-                    'Read',
-                    'Write',
-                    'Seek',
-                    'Clone',
-                    'Copy',
-                    'Debug',
-                    'Display',
-                    'Default',
-                    'PartialEq',
-                    'Eq',
-                    'PartialOrd',
-                    'Ord',
-                    'Hash',
-                    'Iterator',
-                    'IntoIterator',
-                    'FromIterator',
-                    'Extend',
-                    'From',
-                    'Into',
-                    'AsRef',
-                    'AsMut',
-                    'Deref',
-                    'DerefMut',
-                    'Drop',
-                    'Send',
-                    'Sync',
-                    'Sized',
-                    'Unpin',
-                    'UnsafeCell',
-                    'PhantomData',
-                    'MaybeUninit',
-                    'ManuallyDrop',
-                    'NonNull',
-                    'NonZero',
-                    'Wrapping',
-                    'Saturating',
-                    'Checked',
-                    'Overflowing',
-                    'len',
-                    'capacity',
-                    'push',
-                    'pop',
-                    'insert',
-                    'remove',
-                    'get',
-                    'get_mut',
-                    'contains',
-                    'is_empty',
-                    'clear',
-                    'iter',
-                    'iter_mut',
-                    'into_iter',
-                    'map',
-                    'filter',
-                    'fold',
-                    'collect',
-                    'find',
-                    'find_map',
-                    'any',
-                    'all',
-                    'sum',
-                    'product',
-                    'max',
-                    'min',
-                    'unwrap',
-                    'unwrap_or',
-                    'unwrap_or_else',
-                    'expect',
-                    'ok',
-                    'err',
-                    'is_ok',
-                    'is_err',
-                    'as_ref',
-                    'as_mut',
-                    'map',
-                    'map_err',
-                    'and_then',
-                    'or_else',
-                    'unwrap_or_default'
-                ],
-                php: [
-                    'if',
-                    'else',
-                    'elseif',
-                    'for',
-                    'foreach',
-                    'while',
-                    'do',
-                    'switch',
-                    'case',
-                    'function',
-                    'class',
-                    'public',
-                    'private',
-                    'protected',
-                    'static',
-                    'return',
-                    'try',
-                    'catch',
-                    'finally',
-                    'throw',
-                    'new',
-                    'this',
-                    'self',
-                    'parent',
-                    'echo',
-                    'print',
-                    'var_dump',
-                    'isset',
-                    'empty',
-                    'array',
-                    'string',
-                    'int',
-                    'bool',
-                    'float',
-                    'null',
-                    'true',
-                    'false',
-                    '$_GET',
-                    '$_POST',
-                    '$_SESSION',
-                    '$_COOKIE',
-                    '$_FILES',
-                    '$_SERVER',
-                    '$_ENV',
-                    '$_REQUEST',
-                    '$GLOBALS',
-                    'array',
-                    'array_push',
-                    'array_pop',
-                    'array_shift',
-                    'array_unshift',
-                    'array_merge',
-                    'array_slice',
-                    'array_splice',
-                    'array_keys',
-                    'array_values',
-                    'array_search',
-                    'array_key_exists',
-                    'in_array',
-                    'count',
-                    'sizeof',
-                    'empty',
-                    'isset',
-                    'unset',
-                    'strlen',
-                    'strpos',
-                    'strrpos',
-                    'substr',
-                    'str_replace',
-                    'str_ireplace',
-                    'strtolower',
-                    'strtoupper',
-                    'ucfirst',
-                    'ucwords',
-                    'trim',
-                    'ltrim',
-                    'rtrim',
-                    'explode',
-                    'implode',
-                    'join',
-                    'split',
-                    'preg_match',
-                    'preg_replace',
-                    'preg_split',
-                    'htmlspecialchars',
-                    'htmlentities',
-                    'strip_tags',
-                    'addslashes',
-                    'stripslashes',
-                    'md5',
-                    'sha1',
-                    'hash',
-                    'base64_encode',
-                    'base64_decode',
-                    'json_encode',
-                    'json_decode',
-                    'serialize',
-                    'unserialize',
-                    'date',
-                    'time',
-                    'strtotime',
-                    'mktime',
-                    'date_format',
-                    'gmdate',
-                    'file_get_contents',
-                    'file_put_contents',
-                    'fopen',
-                    'fclose',
-                    'fread',
-                    'fwrite',
-                    'fgets',
-                    'feof',
-                    'file_exists',
-                    'is_file',
-                    'is_dir',
-                    'mkdir',
-                    'rmdir',
-                    'unlink',
-                    'copy',
-                    'move_uploaded_file',
-                    'header',
-                    'setcookie',
-                    'session_start',
-                    'session_destroy',
-                    'session_id',
-                    'session_name',
-                    'mysqli_connect',
-                    'mysqli_query',
-                    'mysqli_fetch_array',
-                    'mysqli_fetch_assoc',
-                    'mysqli_fetch_row',
-                    'mysqli_close',
-                    'PDO',
-                    'prepare',
-                    'execute',
-                    'fetch',
-                    'fetchAll',
-                    'bindParam',
-                    'bindValue'
-                ],
-                r: [
-                    'if',
-                    'else',
-                    'for',
-                    'while',
-                    'repeat',
-                    'function',
-                    'return',
-                    'break',
-                    'next',
-                    'TRUE',
-                    'FALSE',
-                    'NULL',
-                    'NA',
-                    'Inf',
-                    'NaN',
-                    'c',
-                    'list',
-                    'data.frame',
-                    'matrix',
-                    'vector',
-                    'array',
-                    'cat',
-                    'print',
-                    'paste',
-                    'paste0',
-                    'strsplit',
-                    'length',
-                    'nrow',
-                    'ncol',
-                    'dim',
-                    'names',
-                    'colnames',
-                    'rownames',
-                    'factor',
-                    'as.factor',
-                    'as.character',
-                    'as.numeric',
-                    'as.integer',
-                    'as.logical',
-                    'as.Date',
-                    'as.POSIXct',
-                    'as.POSIXlt',
-                    'str',
-                    'summary',
-                    'head',
-                    'tail',
-                    'View',
-                    'glimpse',
-                    'class',
-                    'typeof',
-                    'mode',
-                    'attributes',
-                    'attr',
-                    'structure',
-                    'is.numeric',
-                    'is.character',
-                    'is.logical',
-                    'is.factor',
-                    'is.data.frame',
-                    'is.matrix',
-                    'is.vector',
-                    'is.list',
-                    'is.na',
-                    'is.null',
-                    'is.infinite',
-                    'is.nan',
-                    'which',
-                    'which.max',
-                    'which.min',
-                    'which.min',
-                    'which.max',
-                    'which',
-                    'any',
-                    'all',
-                    'sum',
-                    'mean',
-                    'median',
-                    'sd',
-                    'var',
-                    'min',
-                    'max',
-                    'range',
-                    'quantile',
-                    'IQR',
-                    'cor',
-                    'cov',
-                    'lm',
-                    'glm',
-                    'aov',
-                    't.test',
-                    'chisq.test',
-                    'plot',
-                    'hist',
-                    'boxplot',
-                    'barplot',
-                    'pie',
-                    'lines',
-                    'points',
-                    'abline',
-                    'legend',
-                    'title',
-                    'xlab',
-                    'ylab',
-                    'par',
-                    'dev.off',
-                    'png',
-                    'pdf',
-                    'jpeg',
-                    'read.csv',
-                    'read.table',
-                    'read.delim',
-                    'write.csv',
-                    'write.table',
-                    'readLines',
-                    'writeLines',
-                    'readRDS',
-                    'saveRDS',
-                    'load',
-                    'save',
-                    'library',
-                    'require',
-                    'install.packages',
-                    'dplyr',
-                    'filter',
-                    'select',
-                    'mutate',
-                    'arrange',
-                    'group_by',
-                    'summarise',
-                    'summarize',
-                    'distinct',
-                    'slice',
-                    'pull',
-                    'rename',
-                    'bind_rows',
-                    'bind_cols',
-                    'left_join',
-                    'right_join',
-                    'inner_join',
-                    'full_join',
-                    'anti_join',
-                    'semi_join'
-                ],
-                ruby: [
-                    'if',
-                    'else',
-                    'elsif',
-                    'unless',
-                    'for',
-                    'while',
-                    'until',
-                    'def',
-                    'class',
-                    'module',
-                    'end',
-                    'return',
-                    'yield',
-                    'next',
-                    'break',
-                    'redo',
-                    'retry',
-                    'begin',
-                    'rescue',
-                    'ensure',
-                    'raise',
-                    'require',
-                    'include',
-                    'extend',
-                    'true',
-                    'false',
-                    'nil',
-                    'self',
-                    'super',
-                    'puts',
-                    'print',
-                    'p',
-                    'gets',
-                    'chomp',
-                    'to_s',
-                    'to_i',
-                    'to_f',
-                    'to_a',
-                    'to_h',
-                    'to_sym',
-                    'each',
-                    'map',
-                    'select',
-                    'reject',
-                    'find',
-                    'detect',
-                    'find_all',
-                    'collect',
-                    'inject',
-                    'reduce',
-                    'each_with_index',
-                    'each_with_object',
-                    'group_by',
-                    'partition',
-                    'sort',
-                    'sort_by',
-                    'reverse',
-                    'uniq',
-                    'compact',
-                    'flatten',
-                    'zip',
-                    'transpose',
-                    'first',
-                    'last',
-                    'take',
-                    'drop',
-                    'take_while',
-                    'drop_while',
-                    'slice',
-                    'slice_before',
-                    'slice_after',
-                    'slice_when',
-                    'chunk',
-                    'chunk_while',
-                    'grep',
-                    'grep_v',
-                    'scan',
-                    'match',
-                    'gsub',
-                    'sub',
-                    'split',
-                    'join',
-                    'strip',
-                    'lstrip',
-                    'rstrip',
-                    'chop',
-                    'chomp',
-                    'upcase',
-                    'downcase',
-                    'capitalize',
-                    'swapcase',
-                    'reverse',
-                    'length',
-                    'size',
-                    'empty?',
-                    'nil?',
-                    'include?',
-                    'start_with?',
-                    'end_with?',
-                    'index',
-                    'rindex',
-                    'insert',
-                    'delete',
-                    'delete_at',
-                    'delete_if',
-                    'keep_if',
-                    'clear',
-                    'push',
-                    'pop',
-                    'shift',
-                    'unshift',
-                    'concat',
-                    '<<',
-                    '[]',
-                    '[]=',
-                    'at',
-                    'fetch',
-                    'values_at',
-                    'assoc',
-                    'rassoc',
-                    'key',
-                    'keys',
-                    'values',
-                    'has_key?',
-                    'has_value?',
-                    'merge',
-                    'merge!',
-                    'update',
-                    'invert',
-                    'transform_keys',
-                    'transform_values',
-                    'File',
-                    'Dir',
-                    'FileUtils',
-                    'open',
-                    'read',
-                    'write',
-                    'readlines',
-                    'writelines',
-                    'readline',
-                    'gets',
-                    'puts',
-                    'print',
-                    'printf',
-                    'sprintf',
-                    'format',
-                    'File.exist?',
-                    'File.file?',
-                    'File.directory?',
-                    'File.size',
-                    'File.mtime',
-                    'File.ctime',
-                    'File.atime',
-                    'Dir.glob',
-                    'Dir.entries',
-                    'Dir.mkdir',
-                    'Dir.rmdir',
-                    'Dir.pwd',
-                    'Dir.chdir',
-                    'Dir.chroot',
-                    'Time',
-                    'Date',
-                    'DateTime',
-                    'now',
-                    'today',
-                    'parse',
-                    'strftime',
-                    'to_s',
-                    'to_i',
-                    'to_f',
-                    'year',
-                    'month',
-                    'day',
-                    'hour',
-                    'min',
-                    'sec',
-                    'wday',
-                    'yday',
-                    'zone',
-                    'utc',
-                    'localtime',
-                    'gmtime',
-                    'JSON',
-                    'parse',
-                    'generate',
-                    'pretty_generate',
-                    'load',
-                    'dump',
-                    'YAML',
-                    'load',
-                    'dump',
-                    'to_yaml'
-                ],
-                csharp: [
-                    'if',
-                    'else',
-                    'for',
-                    'foreach',
-                    'while',
-                    'do',
-                    'switch',
-                    'case',
-                    'class',
-                    'public',
-                    'private',
-                    'protected',
-                    'internal',
-                    'static',
-                    'void',
-                    'return',
-                    'try',
-                    'catch',
-                    'finally',
-                    'throw',
-                    'using',
-                    'namespace',
-                    'new',
-                    'this',
-                    'base',
-                    'var',
-                    'int',
-                    'string',
-                    'bool',
-                    'double',
-                    'float',
-                    'char',
-                    'object',
-                    'Console',
-                    'WriteLine',
-                    'ReadLine',
-                    'Main',
-                    'args',
-                    'true',
-                    'false',
-                    'null',
-                    'List',
-                    'Dictionary',
-                    'HashSet',
-                    'Queue',
-                    'Stack',
-                    'LinkedList',
-                    'SortedList',
-                    'SortedDictionary',
-                    'Array',
-                    'ArrayList',
-                    'Hashtable',
-                    'Tuple',
-                    'ValueTuple',
-                    'StringBuilder',
-                    'StringReader',
-                    'StringWriter',
-                    'StreamReader',
-                    'StreamWriter',
-                    'File',
-                    'FileInfo',
-                    'Directory',
-                    'DirectoryInfo',
-                    'Path',
-                    'FileStream',
-                    'MemoryStream',
-                    'BinaryReader',
-                    'BinaryWriter',
-                    'XmlReader',
-                    'XmlWriter',
-                    'XDocument',
-                    'XElement',
-                    'XAttribute',
-                    'JsonSerializer',
-                    'JsonConvert',
-                    'JObject',
-                    'JArray',
-                    'JToken',
-                    'HttpClient',
-                    'HttpRequestMessage',
-                    'HttpResponseMessage',
-                    'WebRequest',
-                    'WebResponse',
-                    'Socket',
-                    'TcpClient',
-                    'TcpListener',
-                    'UdpClient',
-                    'Thread',
-                    'Task',
-                    'async',
-                    'await',
-                    'Parallel',
-                    'ThreadPool',
-                    'Semaphore',
-                    'Mutex',
-                    'Monitor',
-                    'lock',
-                    'Interlocked',
-                    'ConcurrentDictionary',
-                    'ConcurrentQueue',
-                    'ConcurrentStack',
-                    'BlockingCollection',
-                    'CancellationToken',
-                    'CancellationTokenSource',
-                    'Timer',
-                    'Stopwatch',
-                    'DateTime',
-                    'TimeSpan',
-                    'DateTimeOffset',
-                    'TimeZoneInfo',
-                    'CultureInfo',
-                    'Regex',
-                    'Match',
-                    'MatchCollection',
-                    'Group',
-                    'GroupCollection',
-                    'Capture',
-                    'Math',
-                    'Random',
-                    'Guid',
-                    'Environment',
-                    'Process',
-                    'Assembly',
-                    'Type',
-                    'Activator',
-                    'Reflection',
-                    'Attribute',
-                    'LINQ',
-                    'Where',
-                    'Select',
-                    'OrderBy',
-                    'OrderByDescending',
-                    'ThenBy',
-                    'ThenByDescending',
-                    'GroupBy',
-                    'Join',
-                    'GroupJoin',
-                    'SelectMany',
-                    'Aggregate',
-                    'Sum',
-                    'Average',
-                    'Min',
-                    'Max',
-                    'Count',
-                    'LongCount',
-                    'First',
-                    'FirstOrDefault',
-                    'Last',
-                    'LastOrDefault',
-                    'Single',
-                    'SingleOrDefault',
-                    'ElementAt',
-                    'ElementAtOrDefault',
-                    'Any',
-                    'All',
-                    'Contains',
-                    'Distinct',
-                    'Except',
-                    'Intersect',
-                    'Union',
-                    'Concat',
-                    'Skip',
-                    'SkipWhile',
-                    'Take',
-                    'TakeWhile',
-                    'Reverse',
-                    'DefaultIfEmpty',
-                    'OfType',
-                    'Cast',
-                    'ToArray',
-                    'ToList',
-                    'ToDictionary',
-                    'ToLookup',
-                    'Zip',
-                    'SequenceEqual',
-                    'Append',
-                    'Prepend',
-                    'Chunk',
-                    'Split',
-                    'Join',
-                    'Substring',
-                    'IndexOf',
-                    'LastIndexOf',
-                    'Contains',
-                    'StartsWith',
-                    'EndsWith',
-                    'Replace',
-                    'Remove',
-                    'Insert',
-                    'PadLeft',
-                    'PadRight',
-                    'Trim',
-                    'TrimStart',
-                    'TrimEnd',
-                    'ToLower',
-                    'ToUpper',
-                    'ToLowerInvariant',
-                    'ToUpperInvariant',
-                    'Format',
-                    'Concat',
-                    'Compare',
-                    'CompareTo',
-                    'Equals',
-                    'GetHashCode',
-                    'ToString',
-                    'Parse',
-                    'TryParse',
-                    'Convert',
-                    'ChangeType',
-                    'IsNullOrEmpty',
-                    'IsNullOrWhiteSpace',
-                    'Length',
-                    'Count',
-                    'Capacity',
-                    'Add',
-                    'AddRange',
-                    'Remove',
-                    'RemoveAt',
-                    'RemoveAll',
-                    'RemoveRange',
-                    'Insert',
-                    'InsertRange',
-                    'Clear',
-                    'Contains',
-                    'IndexOf',
-                    'LastIndexOf',
-                    'Find',
-                    'FindAll',
-                    'FindIndex',
-                    'FindLast',
-                    'FindLastIndex',
-                    'Exists',
-                    'TrueForAll',
-                    'ForEach',
-                    'Sort',
-                    'Reverse',
-                    'ToArray',
-                    'AsReadOnly',
-                    'BinarySearch',
-                    'CopyTo',
-                    'GetRange'
-                ],
-                kotlin: [
-                    'fun',
-                    'val',
-                    'var',
-                    'if',
-                    'else',
-                    'when',
-                    'for',
-                    'while',
-                    'do',
-                    'class',
-                    'interface',
-                    'object',
-                    'enum',
-                    'data',
-                    'sealed',
-                    'abstract',
-                    'open',
-                    'private',
-                    'protected',
-                    'internal',
-                    'public',
-                    'return',
-                    'break',
-                    'continue',
-                    'try',
-                    'catch',
-                    'finally',
-                    'throw',
-                    'import',
-                    'package',
-                    'this',
-                    'super',
-                    'null',
-                    'true',
-                    'false',
-                    'Int',
-                    'String',
-                    'Boolean',
-                    'Double',
-                    'Float',
-                    'Long',
-                    'Short',
-                    'Byte',
-                    'Char',
-                    'Array',
-                    'List',
-                    'Set',
-                    'Map',
-                    'println',
-                    'mutableListOf',
-                    'listOf',
-                    'arrayListOf',
-                    'mutableSetOf',
-                    'setOf',
-                    'hashSetOf',
-                    'linkedSetOf',
-                    'sortedSetOf',
-                    'mutableMapOf',
-                    'mapOf',
-                    'hashMapOf',
-                    'linkedMapOf',
-                    'sortedMapOf',
-                    'emptyList',
-                    'emptySet',
-                    'emptyMap',
-                    'listOfNotNull',
-                    'setOfNotNull',
-                    'buildList',
-                    'buildSet',
-                    'buildMap',
-                    'toList',
-                    'toSet',
-                    'toMap',
-                    'toMutableList',
-                    'toMutableSet',
-                    'toMutableMap',
-                    'toTypedArray',
-                    'toIntArray',
-                    'toLongArray',
-                    'toShortArray',
-                    'toByteArray',
-                    'toCharArray',
-                    'toFloatArray',
-                    'toDoubleArray',
-                    'toBooleanArray',
-                    'asList',
-                    'asSequence',
-                    'asIterable',
-                    'asCollection',
-                    'asReversed',
-                    'shuffled',
-                    'sorted',
-                    'sortedBy',
-                    'sortedWith',
-                    'sortedDescending',
-                    'sortedByDescending',
-                    'reversed',
-                    'distinct',
-                    'distinctBy',
-                    'union',
-                    'intersect',
-                    'subtract',
-                    'plus',
-                    'minus',
-                    'contains',
-                    'containsAll',
-                    'isEmpty',
-                    'isNotEmpty',
-                    'isNullOrEmpty',
-                    'isNullOrBlank',
-                    'ifEmpty',
-                    'ifBlank',
-                    'orEmpty',
-                    'orElse',
-                    'orElseGet',
-                    'take',
-                    'takeLast',
-                    'takeWhile',
-                    'takeLastWhile',
-                    'drop',
-                    'dropLast',
-                    'dropWhile',
-                    'dropLastWhile',
-                    'first',
-                    'firstOrNull',
-                    'last',
-                    'lastOrNull',
-                    'single',
-                    'singleOrNull',
-                    'elementAt',
-                    'elementAtOrNull',
-                    'elementAtOrElse',
-                    'get',
-                    'getOrNull',
-                    'getOrElse',
-                    'indexOf',
-                    'indexOfFirst',
-                    'indexOfLast',
-                    'lastIndexOf',
-                    'find',
-                    'findLast',
-                    'any',
-                    'all',
-                    'none',
-                    'count',
-                    'sum',
-                    'sumOf',
-                    'average',
-                    'min',
-                    'minOf',
-                    'minWith',
-                    'minBy',
-                    'max',
-                    'maxOf',
-                    'maxWith',
-                    'maxBy',
-                    'reduce',
-                    'reduceIndexed',
-                    'reduceOrNull',
-                    'fold',
-                    'foldIndexed',
-                    'runningFold',
-                    'runningReduce',
-                    'scan',
-                    'groupBy',
-                    'groupingBy',
-                    'partition',
-                    'chunked',
-                    'windowed',
-                    'zip',
-                    'zipWithNext',
-                    'unzip',
-                    'flatten',
-                    'flatMap',
-                    'map',
-                    'mapIndexed',
-                    'mapNotNull',
-                    'mapIndexedNotNull',
-                    'associate',
-                    'associateBy',
-                    'associateWith',
-                    'associateByTo',
-                    'associateWithTo',
-                    'filter',
-                    'filterIndexed',
-                    'filterNot',
-                    'filterNotNull',
-                    'filterIsInstance',
-                    'filterIsInstanceTo',
-                    'onEach',
-                    'forEach',
-                    'forEachIndexed',
-                    'withIndex',
-                    'joinToString',
-                    'joinTo',
-                    'plus',
-                    'minus',
-                    'times',
-                    'div',
-                    'rem',
-                    'rangeTo',
-                    'downTo',
-                    'until',
-                    'step',
-                    'repeat',
-                    'also',
-                    'let',
-                    'run',
-                    'with',
-                    'apply',
-                    'takeIf',
-                    'takeUnless',
-                    'require',
-                    'requireNotNull',
-                    'check',
-                    'checkNotNull',
-                    'error',
-                    'TODO',
-                    'lazy',
-                    'lazyOf',
-                    'suspend',
-                    'coroutineScope',
-                    'async',
-                    'await',
-                    'delay',
-                    'launch',
-                    'job',
-                    'Deferred',
-                    'Flow',
-                    'flowOf',
-                    'flow',
-                    'collect',
-                    'collectLatest',
-                    'map',
-                    'filter',
-                    'transform',
-                    'onEach',
-                    'catch',
-                    'onCompletion',
-                    'retry',
-                    'retryWhen',
-                    'buffer',
-                    'conflate',
-                    'flowOn',
-                    'shareIn',
-                    'stateIn',
-                    'asSharedFlow',
-                    'asStateFlow',
-                    'combine',
-                    'merge',
-                    'zip',
-                    'flatMapConcat',
-                    'flatMapMerge',
-                    'flatMapLatest',
-                    'scan',
-                    'fold',
-                    'reduce',
-                    'first',
-                    'firstOrNull',
-                    'single',
-                    'singleOrNull',
-                    'toList',
-                    'toSet',
-                    'toCollection',
-                    'File',
-                    'readText',
-                    'readLines',
-                    'readBytes',
-                    'writeText',
-                    'writeBytes',
-                    'appendText',
-                    'appendBytes',
-                    'forEachLine',
-                    'useLines',
-                    'copyTo',
-                    'copyRecursively',
-                    'deleteRecursively',
-                    'walk',
-                    'walkTopDown',
-                    'walkBottomUp',
-                    'listFiles',
-                    'list',
-                    'exists',
-                    'isFile',
-                    'isDirectory',
-                    'canRead',
-                    'canWrite',
-                    'canExecute',
-                    'length',
-                    'lastModified',
-                    'extension',
-                    'name',
-                    'nameWithoutExtension',
-                    'parent',
-                    'parentFile',
-                    'absolutePath',
-                    'canonicalPath',
-                    'separator',
-                    'pathSeparator',
-                    'createTempFile',
-                    'createTempDirectory'
-                ]
-            };
-
-            return allKeywords[language] || [];
-        }
-
-        function getSnippets(language) {
-            const allSnippets = {
-                python: [
-                    {
-                        prefix: 'if',
-                        label: 'if statement',
-                        description: 'if condition',
-                        body: 'if ${1:condition}:\n    ${2:pass}'
-                    },
-                    {
-                        prefix: 'ifelse',
-                        label: 'if-else statement',
-                        description: 'if-else condition',
-                        body: 'if ${1:condition}:\n    ${2:pass}\nelse:\n    ${3:pass}'
-                    },
-                    {
-                        prefix: 'for',
-                        label: 'for loop',
-                        description: 'for loop',
-                        body: 'for ${1:item} in ${2:iterable}:\n    ${3:pass}'
-                    },
-                    {
-                        prefix: 'while',
-                        label: 'while loop',
-                        description: 'while loop',
-                        body: 'while ${1:condition}:\n    ${2:pass}'
-                    },
-                    {
-                        prefix: 'def',
-                        label: 'function definition',
-                        description: 'define function',
-                        body: 'def ${1:function_name}(${2:args}):\n    """${3:docstring}"""\n    ${4:pass}\n    return ${5:None}'
-                    },
-                    {
-                        prefix: 'class',
-                        label: 'class definition',
-                        description: 'define class',
-                        body: 'class ${1:ClassName}:\n    """${2:docstring}"""\n    \n    def __init__(self${3:, args}):\n        ${4:pass}'
-                    },
-                    {
-                        prefix: 'try',
-                        label: 'try-except',
-                        description: 'try-except block',
-                        body: 'try:\n    ${1:pass}\nexcept ${2:Exception} as ${3:e}:\n    ${4:pass}'
-                    },
-                    {
-                        prefix: 'with',
-                        label: 'with statement',
-                        description: 'with context manager',
-                        body: 'with ${1:resource} as ${2:alias}:\n    ${3:pass}'
-                    },
-                    {
-                        prefix: 'main',
-                        label: 'main function',
-                        description: 'if __name__ == "__main__"',
-                        body: 'if __name__ == "__main__":\n    ${1:main()}'
-                    }
-                ],
-                java: [
-                    {
-                        prefix: 'main',
-                        label: 'main method',
-                        description: 'public static void main',
-                        body: 'public static void main(String[] args) {\n    ${1:// code}\n}'
-                    },
-                    {
-                        prefix: 'class',
-                        label: 'class definition',
-                        description: 'class definition',
-                        body: 'public class ${1:ClassName} {\n    ${2:// code}\n}'
-                    },
-                    {
-                        prefix: 'for',
-                        label: 'for loop',
-                        description: 'for loop',
-                        body: 'for (${1:int i = 0}; ${2:i < n}; ${3:i++}) {\n    ${4:// code}\n}'
-                    },
-                    {
-                        prefix: 'foreach',
-                        label: 'for-each loop',
-                        description: 'enhanced for loop',
-                        body: 'for (${1:Type} ${2:item} : ${3:collection}) {\n    ${4:// code}\n}'
-                    },
-                    {
-                        prefix: 'if',
-                        label: 'if statement',
-                        description: 'if condition',
-                        body: 'if (${1:condition}) {\n    ${2:// code}\n}'
-                    },
-                    {
-                        prefix: 'ifelse',
-                        label: 'if-else statement',
-                        description: 'if-else condition',
-                        body: 'if (${1:condition}) {\n    ${2:// code}\n} else {\n    ${3:// code}\n}'
-                    },
-                    {
-                        prefix: 'try',
-                        label: 'try-catch',
-                        description: 'try-catch block',
-                        body: 'try {\n    ${1:// code}\n} catch (${2:Exception} ${3:e}) {\n    ${4:// code}\n}'
-                    },
-                    {
-                        prefix: 'sysout',
-                        label: 'System.out.println',
-                        description: 'print statement',
-                        body: 'System.out.println(${1:message});'
-                    }
-                ],
-                cpp: [
-                    {
-                        prefix: 'main',
-                        label: 'main function',
-                        description: 'int main()',
-                        body: 'int main() {\n    ${1:// code}\n    return 0;\n}'
-                    },
-                    {
-                        prefix: 'for',
-                        label: 'for loop',
-                        description: 'for loop',
-                        body: 'for (${1:int i = 0}; ${2:i < n}; ${3:i++}) {\n    ${4:// code}\n}'
-                    },
-                    {
-                        prefix: 'if',
-                        label: 'if statement',
-                        description: 'if condition',
-                        body: 'if (${1:condition}) {\n    ${2:// code}\n}'
-                    },
-                    {
-                        prefix: 'ifelse',
-                        label: 'if-else statement',
-                        description: 'if-else condition',
-                        body: 'if (${1:condition}) {\n    ${2:// code}\n} else {\n    ${3:// code}\n}'
-                    },
-                    {
-                        prefix: 'class',
-                        label: 'class definition',
-                        description: 'class definition',
-                        body: 'class ${1:ClassName} {\npublic:\n    ${2:// code}\nprivate:\n    ${3:// code}\n};'
-                    },
-                    {
-                        prefix: 'cout',
-                        label: 'std::cout',
-                        description: 'output statement',
-                        body: 'std::cout << ${1:message} << std::endl;'
-                    },
-                    {
-                        prefix: 'cin',
-                        label: 'std::cin',
-                        description: 'input statement',
-                        body: 'std::cin >> ${1:variable};'
-                    }
-                ],
-                c: [
-                    {
-                        prefix: 'main',
-                        label: 'main function',
-                        description: 'int main()',
-                        body: 'int main() {\n    ${1:// code}\n    return 0;\n}'
-                    },
-                    {
-                        prefix: 'for',
-                        label: 'for loop',
-                        description: 'for loop',
-                        body: 'for (${1:int i = 0}; ${2:i < n}; ${3:i++}) {\n    ${4:// code}\n}'
-                    },
-                    {
-                        prefix: 'if',
-                        label: 'if statement',
-                        description: 'if condition',
-                        body: 'if (${1:condition}) {\n    ${2:// code}\n}'
-                    },
-                    {
-                        prefix: 'printf',
-                        label: 'printf',
-                        description: 'print statement',
-                        body: 'printf("${1:format}\\n"${2:, args});'
-                    },
-                    {
-                        prefix: 'scanf',
-                        label: 'scanf',
-                        description: 'input statement',
-                        body: 'scanf("${1:format}", ${2:&variable});'
-                    }
-                ],
-                rust: [
-                    {
-                        prefix: 'main',
-                        label: 'main function',
-                        description: 'fn main()',
-                        body: 'fn main() {\n    ${1:// code}\n}'
-                    },
-                    {
-                        prefix: 'fn',
-                        label: 'function definition',
-                        description: 'define function',
-                        body: 'fn ${1:function_name}(${2:args}) -> ${3:ReturnType} {\n    ${4:// code}\n}'
-                    },
-                    {
-                        prefix: 'for',
-                        label: 'for loop',
-                        description: 'for loop',
-                        body: 'for ${1:item} in ${2:iterable} {\n    ${3:// code}\n}'
-                    },
-                    {
-                        prefix: 'if',
-                        label: 'if statement',
-                        description: 'if condition',
-                        body: 'if ${1:condition} {\n    ${2:// code}\n}'
-                    },
-                    {
-                        prefix: 'match',
-                        label: 'match expression',
-                        description: 'match pattern',
-                        body: 'match ${1:value} {\n    ${2:pattern} => ${3:// code},\n    _ => ${4:// code}\n}'
-                    },
-                    {
-                        prefix: 'struct',
-                        label: 'struct definition',
-                        description: 'define struct',
-                        body: 'struct ${1:StructName} {\n    ${2:field}: ${3:Type},\n}'
-                    },
-                    {
-                        prefix: 'impl',
-                        label: 'impl block',
-                        description: 'implementation block',
-                        body: 'impl ${1:Type} {\n    fn ${2:method}(${3:&self}) {\n        ${4:// code}\n    }\n}'
-                    }
-                ],
-                php: [
-                    {
-                        prefix: 'if',
-                        label: 'if statement',
-                        description: 'if condition',
-                        body: 'if (${1:condition}) {\n    ${2:// code}\n}'
-                    },
-                    {
-                        prefix: 'foreach',
-                        label: 'foreach loop',
-                        description: 'foreach loop',
-                        body: 'foreach (${1:$array} as ${2:$key} => ${3:$value}) {\n    ${4:// code}\n}'
-                    },
-                    {
-                        prefix: 'function',
-                        label: 'function definition',
-                        description: 'define function',
-                        body: 'function ${1:function_name}(${2:$args}) {\n    ${3:// code}\n    return ${4:null};\n}'
-                    },
-                    {
-                        prefix: 'class',
-                        label: 'class definition',
-                        description: 'define class',
-                        body: 'class ${1:ClassName} {\n    ${2:// code}\n}'
-                    }
-                ],
-                r: [
-                    {
-                        prefix: 'for',
-                        label: 'for loop',
-                        description: 'for loop',
-                        body: 'for (${1:i} in ${2:1:n}) {\n    ${3:# code}\n}'
-                    },
-                    {
-                        prefix: 'if',
-                        label: 'if statement',
-                        description: 'if condition',
-                        body: 'if (${1:condition}) {\n    ${2:# code}\n}'
-                    },
-                    {
-                        prefix: 'function',
-                        label: 'function definition',
-                        description: 'define function',
-                        body: '${1:function_name} <- function(${2:args}) {\n    ${3:# code}\n    return(${4:value})\n}'
-                    }
-                ],
-                ruby: [
-                    {
-                        prefix: 'def',
-                        label: 'method definition',
-                        description: 'define method',
-                        body: 'def ${1:method_name}${2:(args)}\n    ${3:# code}\nend'
-                    },
-                    {
-                        prefix: 'class',
-                        label: 'class definition',
-                        description: 'define class',
-                        body: 'class ${1:ClassName}\n    ${2:# code}\nend'
-                    },
-                    {
-                        prefix: 'each',
-                        label: 'each block',
-                        description: 'each iterator',
-                        body: '${1:collection}.each do |${2:item}|\n    ${3:# code}\nend'
-                    }
-                ],
-                csharp: [
-                    {
-                        prefix: 'main',
-                        label: 'Main method',
-                        description: 'static void Main',
-                        body: 'static void Main(string[] args) {\n    ${1:// code}\n}'
-                    },
-                    {
-                        prefix: 'class',
-                        label: 'class definition',
-                        description: 'class definition',
-                        body: 'public class ${1:ClassName} {\n    ${2:// code}\n}'
-                    },
-                    {
-                        prefix: 'for',
-                        label: 'for loop',
-                        description: 'for loop',
-                        body: 'for (${1:int i = 0}; ${2:i < n}; ${3:i++}) {\n    ${4:// code}\n}'
-                    },
-                    {
-                        prefix: 'foreach',
-                        label: 'foreach loop',
-                        description: 'foreach loop',
-                        body: 'foreach (${1:var item} in ${2:collection}) {\n    ${3:// code}\n}'
-                    },
-                    {
-                        prefix: 'cw',
-                        label: 'Console.WriteLine',
-                        description: 'print statement',
-                        body: 'Console.WriteLine(${1:message});'
-                    }
-                ],
-                kotlin: [
-                    {
-                        prefix: 'main',
-                        label: 'main function',
-                        description: 'fun main()',
-                        body: 'fun main() {\n    ${1:// code}\n}'
-                    },
-                    {
-                        prefix: 'fun',
-                        label: 'function definition',
-                        description: 'define function',
-                        body: 'fun ${1:functionName}(${2:args}): ${3:ReturnType} {\n    ${4:// code}\n    return ${5:value}\n}'
-                    },
-                    {
-                        prefix: 'for',
-                        label: 'for loop',
-                        description: 'for loop',
-                        body: 'for (${1:item} in ${2:collection}) {\n    ${3:// code}\n}'
-                    },
-                    {
-                        prefix: 'when',
-                        label: 'when expression',
-                        description: 'when statement',
-                        body: 'when (${1:value}) {\n    ${2:condition} -> ${3:// code}\n    else -> ${4:// code}\n}'
-                    },
-                    {
-                        prefix: 'class',
-                        label: 'class definition',
-                        description: 'class definition',
-                        body: 'class ${1:ClassName}(${2:args}) {\n    ${3:// code}\n}'
-                    }
-                ]
-            };
-
-            return allSnippets[language] || [];
-        }
-
-        function extractWords(text, language) {
-            const wordPatterns = {
-                python: /[a-zA-Z_][a-zA-Z0-9_]*/g,
-                javascript: /[a-zA-Z_$][a-zA-Z0-9_$]*/g,
-                java: /[a-zA-Z_$][a-zA-Z0-9_$]*/g,
-                cpp: /[a-zA-Z_][a-zA-Z0-9_]*/g,
-                c: /[a-zA-Z_][a-zA-Z0-9_]*/g,
-                rust: /[a-zA-Z_][a-zA-Z0-9_]*/g,
-                php: /[a-zA-Z_$][a-zA-Z0-9_$]*/g,
-                r: /[a-zA-Z_][a-zA-Z0-9_.]*/g,
-                ruby: /[a-zA-Z_][a-zA-Z0-9_?!]*/g,
-                csharp: /[a-zA-Z_][a-zA-Z0-9_]*/g,
-                kotlin: /[a-zA-Z_][a-zA-Z0-9_]*/g
-            };
-
-            const pattern = wordPatterns[language] || /[a-zA-Z_][a-zA-Z0-9_]*/g;
-            const words = new Set();
-            let match;
-
-            const keywords = getKeywords(language);
-            while ((match = pattern.exec(text)) !== null) {
-                const word = match[0];
-                if (word.length > 1 && !keywords.includes(word)) {
-                    words.add(word);
-                }
-            }
-
-            return Array.from(words);
-        }
-
-        function getLineComment(language) {
-            const comments = {
-                python: '#',
-                javascript: '//',
-                java: '//',
-                cpp: '//',
-                c: '//',
-                rust: '//',
-                php: '//',
-                r: '#',
-                ruby: '#',
-                csharp: '//',
-                kotlin: '//'
-            };
-            return comments[language] || '//';
-        }
-
-        function getBlockComment(language) {
-            const comments = {
-                python: null,
-                javascript: ['/*', '*/'],
-                java: ['/*', '*/'],
-                cpp: ['/*', '*/'],
-                c: ['/*', '*/'],
-                rust: ['/*', '*/'],
-                php: ['/*', '*/'],
-                r: null,
-                ruby: null,
-                csharp: ['/*', '*/'],
-                kotlin: ['/*', '*/']
-            };
-            return comments[language] || null;
-        }
-
-        function getBrackets(_language) {
-            return [
-                ['{', '}'],
-                ['[', ']'],
-                ['(', ')']
-            ];
-        }
-
-        function getAutoClosingPairs(language) {
-            const pairs = [
-                { open: '{', close: '}' },
-                { open: '[', close: ']' },
-                { open: '(', close: ')' },
-                { open: '"', close: '"' },
-                { open: "'", close: "'" }
-            ];
-
-            if (language === 'python') {
-                pairs.push({ open: '"""', close: '"""' });
-                pairs.push({ open: "'''", close: "'''" });
-            }
-
-            return pairs;
-        }
-
-        function getSurroundingPairs(_language) {
-            return [
-                { open: '{', close: '}' },
-                { open: '[', close: ']' },
-                { open: '(', close: ')' },
-                { open: '"', close: '"' },
-                { open: "'", close: "'" }
-            ];
-        }
-
-        updateSelectedLanguage(CONFIG.DEFAULT_LANGUAGE);
-        updateMonacoTheme();
-        updateAutoComplete();
-
-        elements.languageDropdown.querySelectorAll('.select-option').forEach((option) => {
-            const optionLanguage = option.dataset.value;
-            const optionIconElement = option.querySelector('.language-icon');
-            if (optionIconElement && LANGUAGE_CONFIG.icons[optionLanguage]) {
-                updateIcon(optionIconElement, LANGUAGE_CONFIG.icons[optionLanguage]);
-            }
-        });
-
-        let resizeTimer = null;
-        const handleResize = () => {
-            if (resizeTimer) {
-                return;
-            }
-            resizeTimer = requestAnimationFrame(() => {
-                if (codeEditor) {
-                    codeEditor.layout();
-                }
-                resizeTimer = null;
             });
-        };
-        const cleanupResize = addEventListenerSafe(window, 'resize', handleResize);
-        if (cleanupResize) {
-            cleanupFunctions.push(cleanupResize);
         }
-    });
+
+        if (elements.languageSelectButton) {
+            elements.languageSelectButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdowns.language.toggle();
+            });
+        }
+
+        if (elements.languageDropdown) {
+            elements.languageDropdown.querySelectorAll('.select-option').forEach((option) => {
+                option.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    const selectedLanguage = this.dataset.value;
+                    if (!selectedLanguage) {
+                        return;
+                    }
+
+                    const currentLangValue = elements.languageSelect?.value || currentLanguage;
+
+                    if (currentLangValue === selectedLanguage) {
+                        dropdowns.language.close();
+                        return;
+                    }
+
+                    const currentCode = getEditorValue();
+                    if (!currentCode || !currentCode.trim()) {
+                        updateSelectedLanguage(selectedLanguage);
+                        dropdowns.language.close();
+                    } else {
+                        pendingLanguageChange = selectedLanguage;
+                        modals.languageChange.show();
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (elements.runButton?.contains(e.target)) {
+                return;
+            }
+            if (
+                !elements.languageSelectButton?.contains(e.target) &&
+                !elements.languageDropdown?.contains(e.target)
+            ) {
+                dropdowns.language.close();
+            }
+        });
+
+        if (elements.languageSelect) {
+            elements.languageSelect.addEventListener('change', () => {
+                const lang = elements.languageSelect.value;
+                if (lang) {
+                    updateSelectedLanguage(lang);
+                }
+            });
+        }
+
+        if (elements.runButton) {
+            elements.runButton.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (elements.runButton.disabled) {
+                    return;
+                }
+                await executeCode();
+            });
+        }
+
+        if (codeEditor) {
+            setupEditorCommands();
+        } else {
+            setTimeout(() => {
+                setupEditorCommands();
+            }, 500);
+        }
+
+        if (elements.clearButton) {
+            elements.clearButton.addEventListener('click', () => {
+                modals.clearConfirm.show();
+            });
+        }
+
+        if (elements.clearOutputButton) {
+            elements.clearOutputButton.addEventListener('click', () => {
+                clearConsole();
+                resetConsoleOutput();
+            });
+        }
+
+        document.getElementById('modal-confirm-btn')?.addEventListener('click', () => {
+            confirmLanguageChange();
+        });
+
+        document.getElementById('modal-cancel-btn')?.addEventListener('click', () => {
+            modals.languageChange.hide();
+            pendingLanguageChange = null;
+        });
+
+        document.getElementById('clear-modal-confirm-btn')?.addEventListener('click', confirmClear);
+        document.getElementById('clear-modal-cancel-btn')?.addEventListener('click', () => {
+            modals.clearConfirm.hide();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                modals.languageChange.hide();
+                modals.clearConfirm.hide();
+                pendingLanguageChange = null;
+            }
+        });
+
+        window.addEventListener('focus', () => {
+            const editor = codeEditor || window.codeEditor;
+            if (editor) {
+                try {
+                    editor.setReadOnly(false);
+                    editor.resize();
+                    const currentValue = editor.getValue();
+                    if (currentValue) {
+                        editor.renderer.updateFull();
+                    }
+                    editor.focus();
+                } catch (e) {
+                    console.warn('Error restoring editor on focus:', e);
+                }
+            }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                const editor = codeEditor || window.codeEditor;
+                if (editor) {
+                    setTimeout(() => {
+                        try {
+                            editor.setReadOnly(false);
+                            editor.resize();
+                            const currentValue = editor.getValue();
+                            if (currentValue) {
+                                editor.renderer.updateFull();
+                            }
+                        } catch (e) {
+                            console.warn('Error restoring editor on visibility change:', e);
+                        }
+                    }, 100);
+                }
+            }
+        });
+
+        setTimeout(() => {
+            if (codeEditor) {
+                const currentValue = getEditorValue();
+
+                if (!currentValue || !currentValue.trim()) {
+                    const template =
+                        LANGUAGE_CONFIG.templates[CONFIG.DEFAULT_LANGUAGE] ||
+                        'print("Hello, World!")';
+                    const savedCode = localStorage.getItem(`code_${CONFIG.DEFAULT_LANGUAGE}`);
+                    const finalValue = savedCode && savedCode.trim() ? savedCode : template;
+                    if (finalValue && finalValue.trim()) {
+                        codeEditor.setValue(finalValue);
+                        codeEditor.clearSelection();
+                        codeEditor.moveCursorTo(0, 0);
+                        codeEditor.resize();
+                    }
+                } else {
+                    codeEditor.resize();
+                }
+            }
+
+            const lang = CONFIG.DEFAULT_LANGUAGE;
+            if (elements.languageSelect) {
+                elements.languageSelect.value = lang;
+            }
+            currentLanguage = lang;
+
+            const iconUrl = LANGUAGE_CONFIG.icons[lang];
+            if (iconUrl && elements.languageIcon) {
+                updateIcon(elements.languageIcon, iconUrl);
+            }
+            if (elements.languageName) {
+                elements.languageName.textContent = LANGUAGE_CONFIG.names[lang] || lang;
+            }
+
+            if (elements.languageDropdown) {
+                elements.languageDropdown.querySelectorAll('.select-option').forEach((option) => {
+                    const optionLanguage = option.dataset.value;
+                    if (optionLanguage) {
+                        option.classList.toggle('selected', optionLanguage === lang);
+                        const optionIconElement = option.querySelector('.language-icon');
+                        if (optionIconElement && LANGUAGE_CONFIG.icons[optionLanguage]) {
+                            updateIcon(optionIconElement, LANGUAGE_CONFIG.icons[optionLanguage]);
+                        }
+                    }
+                });
+            }
+
+            window._editorInitializing = false;
+            window._editorReady = true;
+        }, 300);
+    })();
 }
 
 function initSettings() {
@@ -3674,9 +1381,11 @@ function initSettings() {
         elements.fontSelectName.textContent = selectedName;
         elements.fontSelectName.style.fontFamily = selectedValue;
 
-        elements.fontSelectDropdown.querySelectorAll('.font-option').forEach((option) => {
-            option.classList.toggle('selected', option.dataset.value === selectedValue);
-        });
+        if (elements.fontSelectDropdown) {
+            elements.fontSelectDropdown.querySelectorAll('.font-option').forEach((option) => {
+                option.classList.toggle('selected', option.dataset.value === selectedValue);
+            });
+        }
     }
 
     function updateThemeSelectDisplay() {
@@ -3691,9 +1400,11 @@ function initSettings() {
             elements.themeSelectName.textContent = themeNames[currentTheme] || themeNames.system;
         }
 
-        elements.themeSelectDropdown.querySelectorAll('.theme-option').forEach((option) => {
-            option.classList.toggle('selected', option.dataset.theme === currentTheme);
-        });
+        if (elements.themeSelectDropdown) {
+            elements.themeSelectDropdown.querySelectorAll('.theme-option').forEach((option) => {
+                option.classList.toggle('selected', option.dataset.theme === currentTheme);
+            });
+        }
     }
 
     function updateSettingsLangDisplay() {
@@ -3705,9 +1416,11 @@ function initSettings() {
                 currentLang === 'ko' ? translations.ko['korean'] : translations.en['english'];
         }
 
-        elements.settingsLangDropdown.querySelectorAll('.lang-option').forEach((option) => {
-            option.classList.toggle('selected', option.dataset.lang === currentLang);
-        });
+        if (elements.settingsLangDropdown) {
+            elements.settingsLangDropdown.querySelectorAll('.lang-option').forEach((option) => {
+                option.classList.toggle('selected', option.dataset.lang === currentLang);
+            });
+        }
     }
 
     function applyThemeFromSettings(themePreference) {
@@ -3727,20 +1440,22 @@ function initSettings() {
         });
     }
 
-    elements.fontSelectDropdown.querySelectorAll('.font-option').forEach((option) => {
-        option.addEventListener('click', function () {
-            const selectedValue = this.dataset.value;
-            if (elements.fontFamilySelect) {
-                elements.fontFamilySelect.value = selectedValue;
-            }
-            localStorage.setItem('fontFamily', selectedValue);
-            if (codeEditor) {
-                codeEditor.updateOptions({ fontFamily: selectedValue });
-            }
-            updateFontSelectDisplay();
-            dropdowns.font.close();
+    if (elements.fontSelectDropdown) {
+        elements.fontSelectDropdown.querySelectorAll('.font-option').forEach((option) => {
+            option.addEventListener('click', function () {
+                const selectedValue = this.dataset.value;
+                if (elements.fontFamilySelect) {
+                    elements.fontFamilySelect.value = selectedValue;
+                }
+                localStorage.setItem('fontFamily', selectedValue);
+                if (codeEditor) {
+                    codeEditor.setOptions({ fontFamily: selectedValue });
+                }
+                updateFontSelectDisplay();
+                dropdowns.font.close();
+            });
         });
-    });
+    }
 
     if (elements.themeSelectButton) {
         elements.themeSelectButton.addEventListener('click', (e) => {
@@ -3753,12 +1468,14 @@ function initSettings() {
         });
     }
 
-    elements.themeSelectDropdown.querySelectorAll('.theme-option').forEach((option) => {
-        option.addEventListener('click', function () {
-            applyThemeFromSettings(this.dataset.theme);
-            dropdowns.theme.close();
+    if (elements.themeSelectDropdown) {
+        elements.themeSelectDropdown.querySelectorAll('.theme-option').forEach((option) => {
+            option.addEventListener('click', function () {
+                applyThemeFromSettings(this.dataset.theme);
+                dropdowns.theme.close();
+            });
         });
-    });
+    }
 
     if (elements.settingsLangSelectButton) {
         elements.settingsLangSelectButton.addEventListener('click', (e) => {
@@ -3771,17 +1488,19 @@ function initSettings() {
         });
     }
 
-    elements.settingsLangDropdown.querySelectorAll('.lang-option').forEach((option) => {
-        option.addEventListener('click', function () {
-            const selectedLang = this.dataset.lang;
-            if (selectedLang !== currentLang) {
-                updateLanguage(selectedLang);
-                updateSettingsLangDisplay();
-                updateThemeSelectDisplay();
-            }
-            dropdowns.lang.close();
+    if (elements.settingsLangDropdown) {
+        elements.settingsLangDropdown.querySelectorAll('.lang-option').forEach((option) => {
+            option.addEventListener('click', function () {
+                const selectedLang = this.dataset.lang;
+                if (selectedLang !== currentLang) {
+                    updateLanguage(selectedLang);
+                    updateSettingsLangDisplay();
+                    updateThemeSelectDisplay();
+                }
+                dropdowns.lang.close();
+            });
         });
-    });
+    }
 
     if (elements.fontSizeSlider && elements.fontSizeDisplay) {
         const savedFontSize = localStorage.getItem('fontSize') || CONFIG.DEFAULT_FONT_SIZE;
@@ -3793,7 +1512,7 @@ function initSettings() {
             elements.fontSizeDisplay.textContent = `${fontSize}px`;
             localStorage.setItem('fontSize', fontSize);
             if (codeEditor) {
-                codeEditor.updateOptions({ fontSize: parseInt(fontSize) });
+                codeEditor.setOptions({ fontSize: parseInt(fontSize) });
             }
         });
     }
@@ -3817,9 +1536,8 @@ function initSettings() {
         updateFontSelectDisplay();
     }
 
-    let settingsMediaQueryList = null;
     if (window.matchMedia) {
-        settingsMediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
+        const settingsMediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
         const handleSettingsThemeChange = () => {
             const currentThemePreference = localStorage.getItem('theme') || CONFIG.DEFAULT_THEME;
             if (currentThemePreference === 'system') {
@@ -3829,16 +1547,12 @@ function initSettings() {
         if (settingsMediaQueryList.addEventListener) {
             settingsMediaQueryList.addEventListener('change', handleSettingsThemeChange);
             cleanupFunctions.push(() => {
-                if (settingsMediaQueryList) {
-                    settingsMediaQueryList.removeEventListener('change', handleSettingsThemeChange);
-                }
+                settingsMediaQueryList.removeEventListener('change', handleSettingsThemeChange);
             });
         } else {
             settingsMediaQueryList.addListener(handleSettingsThemeChange);
             cleanupFunctions.push(() => {
-                if (settingsMediaQueryList) {
-                    settingsMediaQueryList.removeListener(handleSettingsThemeChange);
-                }
+                settingsMediaQueryList.removeListener(handleSettingsThemeChange);
             });
         }
     }
@@ -3858,6 +1572,50 @@ function initSettings() {
             showPage('compiler-page');
         });
     }
+}
+
+function cleanup() {
+    cleanupFunctions.forEach((fn) => {
+        try {
+            fn();
+        } catch (error) {
+            console.error('Cleanup error:', error);
+        }
+    });
+    cleanupFunctions.length = 0;
+    if (codeEditor) {
+        try {
+            codeEditor.destroy();
+            codeEditor = null;
+        } catch (error) {
+            console.error('Editor destroy error:', error);
+        }
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', cleanup);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            if (codeEditor || window.codeEditor) {
+                const editor = codeEditor || window.codeEditor;
+                if (editor) {
+                    setTimeout(() => {
+                        try {
+                            editor.resize();
+                            const currentValue = editor.getValue();
+                            if (currentValue) {
+                                editor.renderer.updateFull();
+                            }
+                        } catch (e) {
+                            console.warn('Error resizing editor on visibility change:', e);
+                        }
+                    }, 100);
+                }
+            }
+        }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
