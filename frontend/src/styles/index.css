@@ -1,0 +1,11 @@
+@import './variables.css';
+@import './base.css';
+@import './utilities.css';
+@import './components/Header.css';
+@import './components/LanguageSelector.css';
+@import './components/CodeEditor.css';
+@import './components/OutputPanel.css';
+@import './components/Modal.css';
+@import './pages/CompilerPage.css';
+@import './pages/SettingsPage.css';
+

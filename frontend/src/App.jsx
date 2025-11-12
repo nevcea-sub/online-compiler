@@ -2,7 +2,7 @@ import { AppProvider } from './context/AppContext';
 import CompilerPage from './pages/CompilerPage';
 import SettingsPage from './pages/SettingsPage';
 import { useApp } from './context/AppContext';
-import './App.css';
+import './styles/index.css';
 
 const AppContent = () => {
     const { currentPage } = useApp();
