@@ -62,9 +62,9 @@ async function warmupKotlinOnStart() {
     }
     const image = 'eclipse-temurin:17-jdk-alpine';
     const cmd =
-        'if [ ! -f /opt/kotlin/kotlinc/lib/kotlin-compiler.jar ]; then cd /tmp && (busybox wget -q https://github.com/JetBrains/kotlin/releases/download/v2.0.21/kotlin-compiler-2.0.21.zip -O kotlin.zip || wget -q https://github.com/JetBrains/kotlin/releases/download/v2.0.21/kotlin-compiler-2.0.21.zip -O kotlin.zip) && jar xf kotlin.zip && mkdir -p /opt/kotlin && mv kotlinc /opt/kotlin; fi; java -jar /opt/kotlin/kotlinc/lib/kotlin-compiler.jar -version';
+        'if [ ! -f /opt/kotlin/kotlinc/lib/kotlin-compiler.jar ]; then cd /tmp && (busybox wget -q --timeout=10 --tries=2 https://github.com/JetBrains/kotlin/releases/download/v2.0.21/kotlin-compiler-2.0.21.zip -O kotlin.zip || wget -q --timeout=10 --tries=2 https://github.com/JetBrains/kotlin/releases/download/v2.0.21/kotlin-compiler-2.0.21.zip -O kotlin.zip) && jar xf kotlin.zip && mkdir -p /opt/kotlin && mv kotlinc /opt/kotlin; fi; java -jar /opt/kotlin/kotlinc/lib/kotlin-compiler.jar -version';
     try {
-        await runDockerCommand(image, cmd, TMPFS_SIZES.kotlin, CONFIG.MAX_EXECUTION_TIME * 3, true);
+        await runDockerCommand(image, cmd, TMPFS_SIZES.kotlin, 20000, true);
     } catch {
     }
 }
@@ -364,7 +364,7 @@ function getWarmupConfigs() {
             image: 'python:3.11-slim',
             command: 'python -V',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 10000
+            timeout: 5000
         },
         {
             language: 'javascript',
@@ -378,64 +378,65 @@ function getWarmupConfigs() {
             image: 'gcc:14',
             command: 'gcc --version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 10000
+            timeout: 5000
         },
         {
             language: 'cpp',
             image: 'gcc:14',
             command: 'g++ --version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 10000
+            timeout: 5000
         },
         {
             language: 'java',
             image: 'eclipse-temurin:17-jdk-alpine',
             command: 'java -version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 15000
+            timeout: 5000
         },
         {
             language: 'rust',
             image: 'rust:1.81',
             command: 'rustc --version',
             tmpfsSize: TMPFS_SIZES.rust,
-            timeout: 15000
+            timeout: 5000
         },
         {
             language: 'php',
             image: 'php:8.3-alpine',
             command: 'php -v',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 10000
+            timeout: 5000
         },
         {
             language: 'r',
             image: 'r-base:4.4.1',
             command: 'Rscript --version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 10000
+            timeout: 5000
         },
         {
             language: 'ruby',
             image: 'ruby:3.3-alpine',
             command: 'ruby -v',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 10000
+            timeout: 5000
         },
         {
             language: 'csharp',
             image: 'mcr.microsoft.com/dotnet/sdk:8.0',
             command: 'dotnet --version',
             tmpfsSize: TMPFS_SIZES.csharp,
-            timeout: 15000
+            timeout: 5000
         },
         {
             language: 'kotlin',
             image: 'eclipse-temurin:17-jdk-alpine',
-            command:
-                'if [ ! -f /opt/kotlin/kotlinc/lib/kotlin-compiler.jar ]; then cd /tmp && (busybox wget -q https://github.com/JetBrains/kotlin/releases/download/v2.0.21/kotlin-compiler-2.0.21.zip -O kotlin.zip || wget -q https://github.com/JetBrains/kotlin/releases/download/v2.0.21/kotlin-compiler-2.0.21.zip -O kotlin.zip) && jar xf kotlin.zip && mkdir -p /opt/kotlin && mv kotlinc /opt/kotlin; fi; java -jar /opt/kotlin/kotlinc/lib/kotlin-compiler.jar -version',
+            command: kotlinCompilerExistsOnHost() 
+                ? 'java -jar /opt/kotlin/kotlinc/lib/kotlin-compiler.jar -version'
+                : 'if [ ! -f /opt/kotlin/kotlinc/lib/kotlin-compiler.jar ]; then cd /tmp && (busybox wget -q --timeout=10 --tries=2 https://github.com/JetBrains/kotlin/releases/download/v2.0.21/kotlin-compiler-2.0.21.zip -O kotlin.zip || wget -q --timeout=10 --tries=2 https://github.com/JetBrains/kotlin/releases/download/v2.0.21/kotlin-compiler-2.0.21.zip -O kotlin.zip) && jar xf kotlin.zip && mkdir -p /opt/kotlin && mv kotlinc /opt/kotlin; fi; java -jar /opt/kotlin/kotlinc/lib/kotlin-compiler.jar -version',
             tmpfsSize: TMPFS_SIZES.kotlin,
-            timeout: CONFIG.MAX_EXECUTION_TIME * 3
+            timeout: 15000
         }
     ];
 }
@@ -450,10 +451,23 @@ async function warmupContainer(config) {
             config.timeout,
             allowNetwork
         );
+        
+        if (config.language === 'kotlin' && result.stderr && result.stderr.includes('kotlinc-jvm')) {
+            return { success: true, language: config.language, elapsed: result.elapsed };
+        }
+        
         return { success: true, language: config.language, elapsed: result.elapsed };
     } catch (error) {
         const errorInfo = error?.error || {};
         let errorMessage = errorInfo.message || error?.message || 'Unknown error';
+
+        if (error.name === 'AbortError' || errorMessage.includes('aborted') || errorMessage.includes('The operation was aborted')) {
+            errorMessage = `Timeout after ${config.timeout}ms`;
+        }
+
+        if (config.language === 'kotlin' && errorInfo.stderr && errorInfo.stderr.includes('kotlinc-jvm')) {
+            return { success: true, language: config.language, elapsed: error?.elapsed || 0 };
+        }
 
         if (errorInfo.stderr && errorInfo.stderr.trim()) {
             const stderrLines = errorInfo.stderr.trim().split('\n');
@@ -712,7 +726,7 @@ function buildDockerArgs(language, hostCodePath, opts = {}) {
 
     const extension = LANGUAGE_EXTENSIONS[language];
     const containerPath = getContainerCodePath(language, extension);
-    const containerBuildDir = language === 'kotlin' ? '/opt/kbuild' : undefined;
+    const containerBuildDir = language === 'kotlin' ? '/tmp/kbuild' : undefined;
     const containerInputPath = opts.inputPath ? `/input/${path.basename(opts.inputPath)}` : undefined;
     const command = language === 'kotlin' 
         ? config.command(containerPath, containerInputPath, containerBuildDir)
@@ -781,11 +795,6 @@ function buildDockerArgs(language, hostCodePath, opts = {}) {
         const hostKotlinCache = convertToDockerPath(kotlinCacheDir);
         args.push('-v');
         args.push(`${hostKotlinCache}:/opt/kotlin`);
-        if (opts.kotlinBuildDirHost) {
-            const hostBuildDir = convertToDockerPath(opts.kotlinBuildDirHost);
-            args.push('-v');
-            args.push(`${hostBuildDir}:/opt/kbuild`);
-        }
     }
     if (opts.outputDirHost) {
         const hostOutputDir = convertToDockerPath(opts.outputDirHost);
@@ -973,6 +982,16 @@ async function executeDockerProcess(
         maxBuffer: CONFIG.MAX_BUFFER_SIZE
     });
 
+    dockerProcess.stdout.setEncoding('utf8');
+    dockerProcess.stderr.setEncoding('utf8');
+    
+    if (dockerProcess.stdout.setDefaultEncoding) {
+        dockerProcess.stdout.setDefaultEncoding('utf8');
+    }
+    if (dockerProcess.stderr.setDefaultEncoding) {
+        dockerProcess.stderr.setDefaultEncoding('utf8');
+    }
+
     const outputCollector = new OutputCollector(CONFIG.MAX_OUTPUT_BYTES);
 
     dockerProcess.stdout.on('data', (data) => {
@@ -983,11 +1002,20 @@ async function executeDockerProcess(
         outputCollector.addStderr(data);
     });
 
+    let responseHandled = false;
+    const markResponseHandled = () => {
+        if (responseHandled) return false;
+        responseHandled = true;
+        return true;
+    };
+
     const handleClose = async (code) => {
-        const executionTime = Date.now() - startTime;
-        await cleanupResources(fullCodePath, fullInputPath);
+        if (!markResponseHandled()) return;
         
-        if (!getResponseSent()) {
+        try {
+            const executionTime = Date.now() - startTime;
+            await cleanupResources(fullCodePath, fullInputPath);
+            
             const error = code !== 0 ? { code, killed: false, signal: null } : null;
             const { stdout, stderr } = outputCollector.getFinalOutput();
             await handleExecutionResult(
@@ -999,14 +1027,26 @@ async function executeDockerProcess(
                 sessionOutputDir
             );
             setResponseSent(true);
+        } catch (err) {
+            console.error('[ERROR] Error in handleClose:', err);
+            if (!getResponseSent()) {
+                try {
+                    res.status(500).json({ error: 'An error occurred while processing execution result.' });
+                    setResponseSent(true);
+                } catch (sendErr) {
+                    console.error('[ERROR] Failed to send error response:', sendErr);
+                }
+            }
         }
     };
 
     const handleError = async (error) => {
-        const executionTime = Date.now() - startTime;
-        await cleanupResources(fullCodePath, fullInputPath);
+        if (!markResponseHandled()) return;
         
-        if (!getResponseSent()) {
+        try {
+            const executionTime = Date.now() - startTime;
+            await cleanupResources(fullCodePath, fullInputPath);
+            
             const { stdout, stderr } = outputCollector.getFinalOutput();
             await handleExecutionResult(
                 error,
@@ -1017,31 +1057,48 @@ async function executeDockerProcess(
                 sessionOutputDir
             );
             setResponseSent(true);
+        } catch (err) {
+            console.error('[ERROR] Error in handleError:', err);
+            if (!getResponseSent()) {
+                try {
+                    res.status(500).json({ error: 'An error occurred while processing execution error.' });
+                    setResponseSent(true);
+                } catch (sendErr) {
+                    console.error('[ERROR] Failed to send error response:', sendErr);
+                }
+            }
         }
     };
 
     dockerProcess.on('close', handleClose);
     dockerProcess.on('error', handleError);
 
-    const processTimeoutId = setTimeout(() => {
-        if (!getResponseSent() && dockerProcess && !dockerProcess.killed) {
-            try {
-                controller.abort();
-                dockerProcess.kill('SIGTERM');
-                const killTimeoutId = setTimeout(() => {
-                    if (dockerProcess && !dockerProcess.killed) {
-                        try {
-                            dockerProcess.kill('SIGKILL');
-                        } catch (killError) {
-                            console.error('[ERROR] Failed to kill Docker process:', killError);
-                        }
+    const processTimeoutId = setTimeout(async () => {
+        if (responseHandled || getResponseSent()) return;
+        if (!dockerProcess || dockerProcess.killed) return;
+        
+        try {
+            controller.abort();
+            dockerProcess.kill('SIGTERM');
+            
+            const killTimeoutId = setTimeout(() => {
+                if (dockerProcess && !dockerProcess.killed) {
+                    try {
+                        dockerProcess.kill('SIGKILL');
+                    } catch (killError) {
+                        console.error('[ERROR] Failed to kill Docker process:', killError);
                     }
-                }, CONFIG.SIGKILL_DELAY_MS);
-                dockerProcess.once('close', () => clearTimeout(killTimeoutId));
-                dockerProcess.once('error', () => clearTimeout(killTimeoutId));
-            } catch (killError) {
-                console.error('[ERROR] Failed to send SIGTERM to Docker process:', killError);
-            }
+                }
+            }, CONFIG.SIGKILL_DELAY_MS);
+            
+            dockerProcess.once('close', () => {
+                clearTimeout(killTimeoutId);
+            });
+            dockerProcess.once('error', () => {
+                clearTimeout(killTimeoutId);
+            });
+        } catch (killError) {
+            console.error('[ERROR] Failed to send SIGTERM to Docker process:', killError);
         }
     }, config.timeout + CONFIG.TIMEOUT_BUFFER_MS);
     
@@ -1208,10 +1265,6 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
                     error: 'Kotlin compiler is not available yet. Warming up; please retry shortly.'
                 });
             }
-            const codeHash = crypto.createHash('sha1').update(code).digest('hex');
-            const hostBuildDir = path.join(kotlinBuildsDir, codeHash);
-            await fs.mkdir(hostBuildDir, { recursive: true });
-            buildOptions.kotlinBuildDirHost = hostBuildDir;
         }
         buildOptions.hasInput = inputText && inputText.trim().length > 0;
         buildOptions.outputDirHost = sessionOutputDir;
@@ -1228,7 +1281,7 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
         
         const config = LANGUAGE_CONFIGS[language];
         const startTime = Date.now();
-        let responseSent = false;
+        let executionResponseSent = false;
 
         await executeDockerProcess(
             language,
@@ -1239,8 +1292,8 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
             res,
             sessionOutputDir,
             fullInputPath,
-            () => responseSent,
-            (value) => { responseSent = value; }
+            () => executionResponseSent,
+            (value) => { executionResponseSent = value; }
         );
     } catch (error) {
         await cleanupFile(fullCodePath);

@@ -1004,6 +1004,14 @@ function initEditor() {
                 }
             } catch (error) {
                 if (error.name === 'AbortError') {
+                    if (elements.runButton) {
+                        elements.runButton.disabled = false;
+                        elements.runButton.textContent = translations[currentLang]['run'];
+                    }
+                    if (elements.consoleInput) {
+                        elements.consoleInput.disabled = false;
+                    }
+                    abortController = null;
                     return;
                 }
                 console.error('Execution error:', error);
