@@ -793,10 +793,14 @@ async function findImageFiles(outputDir) {
                         data: `data:${mimeType};base64,${base64}`
                     });
                     await fs.unlink(filePath).catch(() => {});
-                } catch {}
+                } catch {
+                    // Ignore image read/parse errors
+                }
             }
         }
-    } catch {}
+    } catch {
+        // Ignore directory read errors
+    }
 
     return images;
 }
