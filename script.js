@@ -7,8 +7,6 @@ const CONFIG = {
     WARMUP_INTERVAL: 30000,
     MAX_ERROR_LINES: 20,
     MAX_ERROR_LENGTH: 500,
-    MAX_AUTOCOMPLETE_SUGGESTIONS: 20,
-    MAX_AUTOCOMPLETE_SUGGESTIONS_WITH_SNIPPETS: 50,
     IMAGE_STYLES: {
         maxWidth: '100%',
         height: 'auto',
@@ -45,7 +43,6 @@ const translations = {
         cancel: '취소',
         confirm: '확인',
         'no-code-error': '실행할 코드가 없습니다.',
-        'execution-not-implemented': '코드 실행 기능은 아직 구현되지 않았습니다.',
         'language-label': '언어:',
         running: '실행 중...',
         executing: '코드를 실행하고 있습니다...',
@@ -105,7 +102,6 @@ const translations = {
         cancel: 'Cancel',
         confirm: 'Confirm',
         'no-code-error': 'No code to execute.',
-        'execution-not-implemented': 'Code execution feature is not yet implemented.',
         'language-label': 'Language:',
         running: 'Running...',
         executing: 'Executing code...',
@@ -309,7 +305,7 @@ function updateLanguage(lang) {
     i18nElements.forEach((element) => {
         const key = element.getAttribute('data-i18n');
         if (translations[lang]?.[key]) {
-            element.textContent = translations[lang][key];
+            element.textContent = translations[lang][key].trim();
         }
     });
 
@@ -892,7 +888,7 @@ function initEditor() {
 
         function resetConsoleOutput() {
             if (elements.consoleOutput) {
-                elements.consoleOutput.innerHTML = `<p class="text-muted">${translations[currentLang]['output-placeholder']}</p>`;
+                elements.consoleOutput.innerHTML = `<p class="text-muted">${translations[currentLang]['output-placeholder'].trim()}</p>`;
             }
         }
 
@@ -1019,11 +1015,12 @@ function initEditor() {
                             (line) =>
                                 !CONFIG.DEBUG_PATTERNS.some((pattern) => pattern.test(line.trim()))
                         )
+                        .map((line) => line.replace(/[ \t]+$/, ''))
                         .join('\n');
                     const collapsed = filtered
-                        .replace(/\n{2,}/g, '\n')
+                        .replace(/\n{3,}/g, '\n\n')
                         .replace(/[ \t]+\n/g, '\n')
-                        .trimEnd();
+                        .trim();
                     const pre = document.createElement('pre');
                     pre.textContent = collapsed;
                     if (elements.consoleOutput) {
@@ -1035,9 +1032,12 @@ function initEditor() {
                 if (hasError) {
                     const normalizedErr = data.error.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
                     let collapsedErr = normalizedErr
-                        .replace(/\n{2,}/g, '\n')
+                        .split('\n')
+                        .map((line) => line.replace(/[ \t]+$/, ''))
+                        .join('\n')
+                        .replace(/\n{3,}/g, '\n\n')
                         .replace(/[ \t]+\n/g, '\n')
-                        .trimEnd();
+                        .trim();
 
                     const lines = collapsedErr.split('\n');
                     if (lines.length > CONFIG.MAX_ERROR_LINES) {
@@ -1335,6 +1335,8 @@ function initEditor() {
                     }
                 });
             }
+
+            resetConsoleOutput();
 
             window._editorInitializing = false;
             window._editorReady = true;

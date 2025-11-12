@@ -1881,6 +1881,17 @@ tr:hover {
     background-color: var(--bg-primary);
 }
 
+.console-output pre {
+    white-space: pre-line;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+
 @media (max-width: 768px) {
     .console-output {
         padding: 1rem;

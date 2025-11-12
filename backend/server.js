@@ -1305,8 +1305,6 @@ async function handleExecutionResult(error, stdout, stderr, executionTime, res, 
         if (isBuildSuccess || isWarningOnly) {
             finalOutput = '';
             finalError = '';
-        } else if (isBuildFailed) {
-            finalError = sanitizeErrorForUser(filteredStderr);
         } else {
             finalError = sanitizeErrorForUser(filteredStderr);
         }
