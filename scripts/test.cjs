@@ -25,14 +25,16 @@ try {
     } else {
         console.log('Running tests...');
 
+        console.log('Checking code formatting...');
+        execSync('npm run format', { stdio: 'inherit', cwd: rootDir });
+        execSync('npm run format:check', { stdio: 'inherit', cwd: rootDir });
+
         console.log('Running ESLint...');
         execSync('npm run lint', { stdio: 'inherit', cwd: rootDir });
 
-        console.log('Checking code formatting...');
-        execSync('npm run format:check', { stdio: 'inherit', cwd: rootDir });
-
         console.log('Running backend ESLint...');
-        execSync('npx eslint server.js', { stdio: 'inherit', cwd: path.join(rootDir, 'backend') });
+        // use root eslint config explicitly
+        execSync('npx eslint server.js -c ../eslint.config.js', { stdio: 'inherit', cwd: path.join(rootDir, 'backend') });
 
         console.log('[OK] All checks passed!');
     }

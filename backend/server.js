@@ -19,12 +19,18 @@ const MAX_OUTPUT_BYTES = parseInt(process.env.MAX_OUTPUT_BYTES || '1048576', 10)
 const MAX_INPUT_LENGTH = parseInt(process.env.MAX_INPUT_LENGTH || '1000000', 10); // 1MB
 const ENABLE_PRELOAD = (process.env.ENABLE_PRELOAD || 'true').toLowerCase() === 'true';
 const ENABLE_WARMUP = (process.env.ENABLE_WARMUP || 'true').toLowerCase() === 'true';
+const TRUST_PROXY = (process.env.TRUST_PROXY || 'false').toLowerCase() === 'true';
 
 const codeDir = path.join(__dirname, 'code');
 const outputDir = path.join(__dirname, 'output');
 const toolCacheDir = path.join(__dirname, 'tool_cache');
 const kotlinCacheDir = path.join(toolCacheDir, 'kotlin');
 const kotlinBuildsDir = path.join(toolCacheDir, 'kotlin_builds');
+
+app.disable('x-powered-by');
+if (TRUST_PROXY) {
+    app.set('trust proxy', 1);
+}
 
 async function isDockerAvailable() {
     return new Promise((resolve) => {
@@ -92,32 +98,32 @@ const LANGUAGE_CONFIGS = {
         timeout: MAX_EXECUTION_TIME * 2
     },
     cpp: {
-        image: 'gcc:latest',
+        image: 'gcc:14',
         command: (path) => `g++ -O2 -s -o /tmp/a.out ${path} && /tmp/a.out`,
         timeout: MAX_EXECUTION_TIME * 2
     },
     c: {
-        image: 'gcc:latest',
+        image: 'gcc:14',
         command: (path) => `gcc -O2 -s -o /tmp/a.out ${path} && /tmp/a.out`,
         timeout: MAX_EXECUTION_TIME * 2
     },
     rust: {
-        image: 'rust:latest',
+        image: 'rust:1.81',
         command: (path) => `rustc ${path} -o /tmp/a.out && chmod +x /tmp/a.out && /tmp/a.out`,
         timeout: MAX_EXECUTION_TIME * 3
     },
     php: {
-        image: 'php:alpine',
+        image: 'php:8.3-alpine',
         command: (path) => `php ${path}`,
         timeout: MAX_EXECUTION_TIME
     },
     r: {
-        image: 'r-base:latest',
+        image: 'r-base:4.4.1',
         command: (path) => `Rscript ${path}`,
         timeout: MAX_EXECUTION_TIME
     },
     ruby: {
-        image: 'ruby:alpine',
+        image: 'ruby:3.3-alpine',
         command: (path) => `ruby ${path}`,
         timeout: MAX_EXECUTION_TIME
     },
@@ -179,12 +185,69 @@ app.use(
     })
 );
 
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+const isProduction = (process.env.NODE_ENV || '').toLowerCase() === 'production';
+const devLocalhostRegex = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 const corsOptions = {
-    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
+    origin: (origin, callback) => {
+        // Allow requests with no origin (e.g., curl, same-origin)
+        if (!origin) {
+            return callback(null, true);
+        }
+        const isNullOrigin = origin === 'null';
+        const isLocalhost = devLocalhostRegex.test(origin);
+        const allowInDev = !isProduction && (isLocalhost || isNullOrigin);
+
+        if (allowedOrigins.length > 0) {
+            if (allowedOrigins.includes(origin) || allowInDev) {
+                return callback(null, true);
+            }
+            return callback(new Error('Not allowed by CORS'), false);
+        }
+
+        if (allowInDev) {
+            return callback(null, true);
+        }
+
+        return callback(new Error('Not allowed by CORS'), false);
+    },
     credentials: true,
     optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
+
+app.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+        const origin = req.headers.origin || '';
+        let allowed = false;
+        if (!origin) {
+            allowed = true;
+        } else if (allowedOrigins.length > 0) {
+            allowed =
+                allowedOrigins.includes(origin) ||
+                (!isProduction && origin === 'null') ||
+                (!isProduction && devLocalhostRegex.test(origin));
+        } else if (!isProduction && (devLocalhostRegex.test(origin) || origin === 'null')) {
+            allowed = true;
+        }
+        if (!allowed) {
+            return res.status(403).send('Not allowed by CORS');
+        }
+        res.header('Access-Control-Allow-Origin', origin || '*');
+        res.header('Vary', 'Origin');
+        res.header('Access-Control-Allow-Credentials', 'true');
+        res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+        res.header(
+            'Access-Control-Allow-Headers',
+            req.headers['access-control-request-headers'] || 'Content-Type, Authorization'
+        );
+        return res.sendStatus(204);
+    }
+    next();
+});
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -294,7 +357,9 @@ async function pullDockerImage(image, retries = 2) {
 
 async function preloadDockerImages() {
     if (!(await isDockerAvailable())) {
-        console.warn('⚠️  Docker is not available. Skipping preload. (Start Docker Desktop to auto-pull on first use)');
+        console.warn(
+            '⚠️  Docker is not available. Skipping preload. (Start Docker Desktop to auto-pull on first use)'
+        );
         return;
     }
     console.log('🚀 Starting Docker images preload...');
@@ -314,7 +379,9 @@ async function preloadDockerImages() {
     const existingImages = checkResults.filter(({ exists }) => exists).map(({ image }) => image);
 
     if (existingImages.length > 0) {
-        console.log(`✅ ${existingImages.length} images already exist: ${existingImages.join(', ')}`);
+        console.log(
+            `✅ ${existingImages.length} images already exist: ${existingImages.join(', ')}`
+        );
     }
 
     if (imagesToPull.length === 0) {
@@ -335,7 +402,9 @@ async function preloadDockerImages() {
 
         const successCount = batchResults.filter((r) => r.success).length;
         const failCount = batchResults.filter((r) => !r.success).length;
-        console.log(`📊 Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${successCount} succeeded, ${failCount} failed`);
+        console.log(
+            `📊 Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${successCount} succeeded, ${failCount} failed`
+        );
     }
 
     const totalSuccess = results.filter((r) => r.success).length;
@@ -348,7 +417,9 @@ async function preloadDockerImages() {
         console.warn('   These images will be pulled on first use.');
     }
 
-    console.log(`✨ Preload completed in ${elapsed}s: ${totalSuccess} succeeded, ${totalFailed} failed`);
+    console.log(
+        `✨ Preload completed in ${elapsed}s: ${totalSuccess} succeeded, ${totalFailed} failed`
+    );
 }
 
 function runDockerCommand(image, command, tmpfsSize, timeout = 10000, allowNetwork = false) {
@@ -407,14 +478,14 @@ function getWarmupConfigs() {
         },
         {
             language: 'c',
-            image: 'gcc:latest',
+            image: 'gcc:14',
             command: 'gcc --version',
             tmpfsSize: '50m',
             timeout: 10000
         },
         {
             language: 'cpp',
-            image: 'gcc:latest',
+            image: 'gcc:14',
             command: 'g++ --version',
             tmpfsSize: '50m',
             timeout: 10000
@@ -428,28 +499,28 @@ function getWarmupConfigs() {
         },
         {
             language: 'rust',
-            image: 'rust:latest',
+            image: 'rust:1.81',
             command: 'rustc --version',
             tmpfsSize: '200m',
             timeout: 15000
         },
         {
             language: 'php',
-            image: 'php:alpine',
+            image: 'php:8.3-alpine',
             command: 'php -v',
             tmpfsSize: '50m',
             timeout: 5000
         },
         {
             language: 'r',
-            image: 'r-base:latest',
+            image: 'r-base:4.4.1',
             command: 'Rscript --version',
             tmpfsSize: '50m',
             timeout: 10000
         },
         {
             language: 'ruby',
-            image: 'ruby:alpine',
+            image: 'ruby:3.3-alpine',
             command: 'ruby -v',
             tmpfsSize: '50m',
             timeout: 5000
@@ -497,7 +568,12 @@ async function warmupContainer(config) {
             }
         }
 
-        return { success: false, language: config.language, error: errorMessage, fullError: errorInfo };
+        return {
+            success: false,
+            language: config.language,
+            error: errorMessage,
+            fullError: errorInfo
+        };
     }
 }
 
@@ -525,7 +601,9 @@ async function warmupAllContainers() {
         const failedLanguages = batchResults.filter((r) => !r.success).map((r) => r.language);
 
         if (successCount > 0 && failCount > 0) {
-            console.log(`🔥 Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${successCount}/${batch.length} succeeded`);
+            console.log(
+                `🔥 Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${successCount}/${batch.length} succeeded`
+            );
             console.log(`   ✅ ${succeededLanguages.join(', ')}`);
             console.log(`   ❌ ${failedLanguages.join(', ')}`);
         } else if (successCount > 0) {
@@ -546,24 +624,30 @@ async function warmupAllContainers() {
     if (totalFailed > 0) {
         const failedResults = results.filter((r) => !r.success);
         const failedLanguages = failedResults.map((r) => r.language);
-        console.warn(`⚠️  Warmup failed for ${totalFailed} languages: ${failedLanguages.join(', ')}`);
+        console.warn(
+            `⚠️  Warmup failed for ${totalFailed} languages: ${failedLanguages.join(', ')}`
+        );
 
         failedResults.forEach((result) => {
             const errorMsg = result.error || 'Unknown error';
             const maxLength = 200;
-            const displayMsg = errorMsg.length > maxLength ? errorMsg.substring(0, maxLength) + '...' : errorMsg;
+            const displayMsg =
+                errorMsg.length > maxLength ? errorMsg.substring(0, maxLength) + '...' : errorMsg;
             console.warn(`   ${result.language}: ${displayMsg}`);
         });
     }
 
     if (totalSuccess > 0) {
         const avgElapsed =
-            results.filter((r) => r.success).reduce((sum, r) => sum + (r.elapsed || 0), 0) / totalSuccess;
+            results.filter((r) => r.success).reduce((sum, r) => sum + (r.elapsed || 0), 0) /
+            totalSuccess;
         console.log(
             `✨ Warmup completed in ${elapsed}s: ${totalSuccess}/${configs.length} succeeded (avg: ${avgElapsed.toFixed(0)}ms)`
         );
     } else {
-        console.log(`✨ Warmup completed in ${elapsed}s: ${totalSuccess}/${configs.length} succeeded`);
+        console.log(
+            `✨ Warmup completed in ${elapsed}s: ${totalSuccess}/${configs.length} succeeded`
+        );
     }
 }
 
@@ -573,7 +657,9 @@ function warmupContainers() {
     });
 
     const frequentLanguages = ['python', 'javascript', 'java', 'cpp'];
-    const frequentConfigs = getWarmupConfigs().filter((config) => frequentLanguages.includes(config.language));
+    const frequentConfigs = getWarmupConfigs().filter((config) =>
+        frequentLanguages.includes(config.language)
+    );
 
     setInterval(async () => {
         if (!(await isDockerAvailable())) {
@@ -620,7 +706,11 @@ function filterDockerMessages(text) {
     if (!text || typeof text !== 'string') {
         return '';
     }
-    return text
+    // Strip ANSI escape sequences without using control chars in regex literal (to satisfy eslint)
+    const ESC = String.fromCharCode(27);
+    const ansiRegex = new RegExp(`${ESC}\\[[0-9;]*[A-Za-z]`, 'g');
+    const withoutAnsi = text.replace(ansiRegex, '');
+    return withoutAnsi
         .split('\n')
         .filter((line) => {
             const lower = line.toLowerCase();
@@ -688,7 +778,14 @@ function buildDockerArgs(language, hostCodePath, opts = {}) {
     const containerPath = getContainerCodePath(language, extension);
     const containerBuildDir = language === 'kotlin' ? '/opt/kbuild' : undefined;
     const command = config.command(containerPath, containerBuildDir);
-    const tmpfsSize = language === 'rust' || language === 'kotlin' ? '200m' : language === 'csharp' ? '100m' : '50m';
+    let tmpfsSize;
+    if (language === 'rust' || language === 'kotlin') {
+        tmpfsSize = '200m';
+    } else if (language === 'csharp') {
+        tmpfsSize = '100m';
+    } else {
+        tmpfsSize = '50m';
+    }
     const dockerHostPath = convertToDockerPath(hostCodePath);
 
     if (dockerHostPath.includes(' ') || containerPath.includes(' ')) {
@@ -705,12 +802,21 @@ function buildDockerArgs(language, hostCodePath, opts = {}) {
     }
     args.push(`--memory=${MAX_MEMORY}`);
     args.push(`--cpus=${language === 'kotlin' ? MAX_CPU_PERCENT_KOTLIN : MAX_CPU_PERCENT}`);
-    if (!(language === 'kotlin' && !kotlinCompilerExistsOnHost())) {
-        args.push('--network=none');
-    }
+    // Always disable network for user executions
+    args.push('--network=none');
     args.push('--read-only');
     args.push('--tmpfs');
     args.push(`/tmp:rw,exec,nosuid,size=${tmpfsSize},noatime`);
+
+    // Security hardening flags
+    args.push('--cap-drop=ALL');
+    args.push('--security-opt');
+    args.push('no-new-privileges');
+    args.push('--pids-limit=128');
+    args.push('--ulimit');
+    args.push('nofile=1024:1024');
+    args.push('--user');
+    args.push('1000:1000');
 
     args.push('-v');
     args.push(`${dockerHostPath}:${containerPath}:ro`);
@@ -829,6 +935,7 @@ async function findImageFiles(outputDir) {
 }
 
 async function handleExecutionResult(error, stdout, stderr, executionTime, res, outputDir = null) {
+    const filteredStdout = filterDockerMessages(stdout || '');
     const filteredStderr = filterDockerMessages(stderr || '');
     const hasStdout = stdout && stdout.trim().length > 0;
 
@@ -849,7 +956,7 @@ async function handleExecutionResult(error, stdout, stderr, executionTime, res, 
                 : sanitizeError(stderr || error.message);
 
         return res.json({
-            output: stdout || '',
+            output: filteredStdout || '',
             error: errorMsg,
             executionTime,
             images
@@ -857,7 +964,7 @@ async function handleExecutionResult(error, stdout, stderr, executionTime, res, 
     }
 
     res.json({
-        output: hasStdout ? stdout : '',
+        output: hasStdout ? filteredStdout : '',
         error: hasStdout ? '' : filteredStderr,
         executionTime,
         images
@@ -884,14 +991,23 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
     }
 
     if (code.length > MAX_CODE_LENGTH) {
-        return sendResponse(400, { error: `Code exceeds maximum length of ${MAX_CODE_LENGTH} characters` });
+        return sendResponse(400, {
+            error: `Code exceeds maximum length of ${MAX_CODE_LENGTH} characters`
+        });
     }
 
     if (!validateLanguage(language)) {
         return sendResponse(400, { error: 'Unsupported language' });
     }
 
-    const inputText = typeof input === 'string' ? input : input === null || input === undefined ? '' : String(input);
+    let inputText;
+    if (typeof input === 'string') {
+        inputText = input;
+    } else if (input === null || input === undefined) {
+        inputText = '';
+    } else {
+        inputText = String(input);
+    }
     if (inputText.length > MAX_INPUT_LENGTH) {
         return sendResponse(400, {
             error: `Input exceeds maximum length of ${MAX_INPUT_LENGTH} characters`
@@ -915,6 +1031,16 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
 
         let buildOptions = {};
         if (language === 'kotlin') {
+            // If Kotlin compiler not available on host, block user execution and trigger background warmup
+            if (!kotlinCompilerExistsOnHost()) {
+                // fire-and-forget warmup
+                warmupKotlinOnStart().catch(() => {});
+                await cleanupFile(fullCodePath);
+                await fs.rm(sessionOutputDir, { recursive: true, force: true }).catch(() => {});
+                return sendResponse(503, {
+                    error: 'Kotlin compiler is not available yet. Warming up; please retry shortly.'
+                });
+            }
             const codeHash = crypto.createHash('sha1').update(code).digest('hex');
             const hostBuildDir = path.join(kotlinBuildsDir, codeHash);
             await fs.mkdir(hostBuildDir, { recursive: true });
@@ -988,7 +1114,14 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
                     if (stderrTruncated) {
                         stderr += '\n[truncated]';
                     }
-                    await handleExecutionResult(error, stdout, stderr, executionTime, res, sessionOutputDir);
+                    await handleExecutionResult(
+                        error,
+                        stdout,
+                        stderr,
+                        executionTime,
+                        res,
+                        sessionOutputDir
+                    );
                     responseSent = true;
                 }
             });
@@ -1003,7 +1136,14 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
                     if (stderrTruncated) {
                         stderr += '\n[truncated]';
                     }
-                    await handleExecutionResult(error, stdout, stderr, executionTime, res, sessionOutputDir);
+                    await handleExecutionResult(
+                        error,
+                        stdout,
+                        stderr,
+                        executionTime,
+                        res,
+                        sessionOutputDir
+                    );
                     responseSent = true;
                 }
             });
@@ -1078,7 +1218,14 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
                     if (stderrTruncated) {
                         stderr += '\n[truncated]';
                     }
-                    await handleExecutionResult(error, stdout, stderr, executionTime, res, sessionOutputDir);
+                    await handleExecutionResult(
+                        error,
+                        stdout,
+                        stderr,
+                        executionTime,
+                        res,
+                        sessionOutputDir
+                    );
                     responseSent = true;
                 }
             });
@@ -1093,7 +1240,14 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
                     if (stderrTruncated) {
                         stderr += '\n[truncated]';
                     }
-                    await handleExecutionResult(error, stdout, stderr, executionTime, res, sessionOutputDir);
+                    await handleExecutionResult(
+                        error,
+                        stdout,
+                        stderr,
+                        executionTime,
+                        res,
+                        sessionOutputDir
+                    );
                     responseSent = true;
                 }
             });

@@ -11,7 +11,10 @@
             rel="stylesheet"
         />
         <link rel="stylesheet" href="styles.css" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.3.2/css/flag-icons.min.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.3.2/css/flag-icons.min.css"
+        />
     </head>
     <body>
         <header>
@@ -29,7 +32,9 @@
             <main class="container">
                 <div class="compiler-layout">
                     <div class="language-selector">
-                        <label for="language-select" data-i18n="programming-language">프로그래밍 언어:</label>
+                        <label for="language-select" data-i18n="programming-language"
+                            >프로그래밍 언어:</label
+                        >
                         <div class="custom-select-wrapper">
                             <button
                                 type="button"
@@ -113,20 +118,30 @@
                     </div>
 
                     <div class="action-buttons">
-                        <button type="button" id="run-btn" class="run-button" data-i18n="run">실행</button>
-                        <button type="button" id="clear-btn" class="secondary" data-i18n="clear">초기화</button>
+                        <button type="button" id="run-btn" class="run-button" data-i18n="run">
+                            실행
+                        </button>
+                        <button type="button" id="clear-btn" class="secondary" data-i18n="clear">
+                            초기화
+                        </button>
                     </div>
 
                     <div class="output-section">
                         <div class="output-header">
                             <span class="output-title" data-i18n="execution-result">실행 결과</span>
-                            <button id="clear-output-btn" class="clear-output-btn" title="Clear Output">
+                            <button
+                                id="clear-output-btn"
+                                class="clear-output-btn"
+                                title="Clear Output"
+                            >
                                 <span>🗑️</span> <span data-i18n="clear-output">지우기</span>
                             </button>
                         </div>
                         <div id="output" class="output-content">
                             <div class="console-output" id="console-output">
-                                <p class="text-muted" data-i18n="output-placeholder">실행 결과가 여기에 표시됩니다.</p>
+                                <p class="text-muted" data-i18n="output-placeholder">
+                                    실행 결과가 여기에 표시됩니다.
+                                </p>
                             </div>
                             <div class="console-input-wrapper">
                                 <span class="console-prompt">&gt;</span>
@@ -156,7 +171,9 @@
                         <div class="settings-section">
                             <h3 data-i18n="language-settings">언어 설정</h3>
                             <div class="settings-item">
-                                <label for="settings-lang-select-button" data-i18n="interface-language"
+                                <label
+                                    for="settings-lang-select-button"
+                                    data-i18n="interface-language"
                                     >인터페이스 언어:</label
                                 >
                                 <div class="lang-select-wrapper">
@@ -216,7 +233,9 @@
                         <div class="settings-section">
                             <h3 data-i18n="editor-settings">에디터 설정</h3>
                             <div class="settings-item">
-                                <label for="font-select-button" data-i18n="font-family">폰트:</label>
+                                <label for="font-select-button" data-i18n="font-family"
+                                    >폰트:</label
+                                >
                                 <div class="font-select-wrapper">
                                     <button
                                         type="button"
@@ -233,7 +252,12 @@
                                             data-value="'Consolas', 'Monaco', 'Courier New', monospace"
                                             data-name="Consolas"
                                         >
-                                            <span style="font-family: 'Consolas', 'Monaco', 'Courier New', monospace"
+                                            <span
+                                                style="
+                                                    font-family:
+                                                        'Consolas', 'Monaco', 'Courier New',
+                                                        monospace;
+                                                "
                                                 >Consolas</span
                                             >
                                         </div>
@@ -242,7 +266,10 @@
                                             data-value="'Courier New', Courier, monospace"
                                             data-name="Courier New"
                                         >
-                                            <span style="font-family: 'Courier New', Courier, monospace"
+                                            <span
+                                                style="
+                                                    font-family: 'Courier New', Courier, monospace;
+                                                "
                                                 >Courier New</span
                                             >
                                         </div>
@@ -251,14 +278,19 @@
                                             data-value="'Monaco', 'Menlo', monospace"
                                             data-name="Monaco"
                                         >
-                                            <span style="font-family: 'Monaco', 'Menlo', monospace">Monaco</span>
+                                            <span style="font-family: 'Monaco', 'Menlo', monospace"
+                                                >Monaco</span
+                                            >
                                         </div>
                                         <div
                                             class="font-option"
                                             data-value="'Fira Code', 'Consolas', monospace"
                                             data-name="Fira Code"
                                         >
-                                            <span style="font-family: 'Fira Code', 'Consolas', monospace"
+                                            <span
+                                                style="
+                                                    font-family: 'Fira Code', 'Consolas', monospace;
+                                                "
                                                 >Fira Code</span
                                             >
                                         </div>
@@ -267,7 +299,11 @@
                                             data-value="'JetBrains Mono', 'Consolas', monospace"
                                             data-name="JetBrains Mono"
                                         >
-                                            <span style="font-family: 'JetBrains Mono', 'Consolas', monospace"
+                                            <span
+                                                style="
+                                                    font-family:
+                                                        'JetBrains Mono', 'Consolas', monospace;
+                                                "
                                                 >JetBrains Mono</span
                                             >
                                         </div>
@@ -276,7 +312,11 @@
                                             data-value="'Source Code Pro', 'Consolas', monospace"
                                             data-name="Source Code Pro"
                                         >
-                                            <span style="font-family: 'Source Code Pro', 'Consolas', monospace"
+                                            <span
+                                                style="
+                                                    font-family:
+                                                        'Source Code Pro', 'Consolas', monospace;
+                                                "
                                                 >Source Code Pro</span
                                             >
                                         </div>
@@ -285,7 +325,11 @@
                                             data-value="'Roboto Mono', 'Consolas', monospace"
                                             data-name="Roboto Mono"
                                         >
-                                            <span style="font-family: 'Roboto Mono', 'Consolas', monospace"
+                                            <span
+                                                style="
+                                                    font-family:
+                                                        'Roboto Mono', 'Consolas', monospace;
+                                                "
                                                 >Roboto Mono</span
                                             >
                                         </div>
@@ -296,7 +340,9 @@
                                         >
                                             <span
                                                 style="
-                                                    font-family: D2Coding, 'D2Coding ligature', 'Consolas', monospace;
+                                                    font-family:
+                                                        D2Coding, 'D2Coding ligature', 'Consolas',
+                                                        monospace;
                                                 "
                                                 >D2Coding</span
                                             >
@@ -306,7 +352,11 @@
                                             data-value="'Inconsolata', 'Consolas', monospace"
                                             data-name="Inconsolata"
                                         >
-                                            <span style="font-family: 'Inconsolata', 'Consolas', monospace"
+                                            <span
+                                                style="
+                                                    font-family:
+                                                        'Inconsolata', 'Consolas', monospace;
+                                                "
                                                 >Inconsolata</span
                                             >
                                         </div>
@@ -315,7 +365,11 @@
                                             data-value="'Space Mono', 'Consolas', monospace"
                                             data-name="Space Mono"
                                         >
-                                            <span style="font-family: 'Space Mono', 'Consolas', monospace"
+                                            <span
+                                                style="
+                                                    font-family:
+                                                        'Space Mono', 'Consolas', monospace;
+                                                "
                                                 >Space Mono</span
                                             >
                                         </div>
@@ -324,7 +378,11 @@
                                             data-value="'IBM Plex Mono', 'Consolas', monospace"
                                             data-name="IBM Plex Mono"
                                         >
-                                            <span style="font-family: 'IBM Plex Mono', 'Consolas', monospace"
+                                            <span
+                                                style="
+                                                    font-family:
+                                                        'IBM Plex Mono', 'Consolas', monospace;
+                                                "
                                                 >IBM Plex Mono</span
                                             >
                                         </div>
@@ -333,7 +391,11 @@
                                             data-value="'Courier Prime', 'Courier New', monospace"
                                             data-name="Courier Prime"
                                         >
-                                            <span style="font-family: 'Courier Prime', 'Courier New', monospace"
+                                            <span
+                                                style="
+                                                    font-family:
+                                                        'Courier Prime', 'Courier New', monospace;
+                                                "
                                                 >Courier Prime</span
                                             >
                                         </div>
@@ -342,7 +404,11 @@
                                             data-value="'Red Hat Mono', 'Consolas', monospace"
                                             data-name="Red Hat Mono"
                                         >
-                                            <span style="font-family: 'Red Hat Mono', 'Consolas', monospace"
+                                            <span
+                                                style="
+                                                    font-family:
+                                                        'Red Hat Mono', 'Consolas', monospace;
+                                                "
                                                 >Red Hat Mono</span
                                             >
                                         </div>
@@ -351,31 +417,64 @@
                                             data-value="'PT Mono', 'Consolas', monospace"
                                             data-name="PT Mono"
                                         >
-                                            <span style="font-family: 'PT Mono', 'Consolas', monospace">PT Mono</span>
+                                            <span
+                                                style="
+                                                    font-family: 'PT Mono', 'Consolas', monospace;
+                                                "
+                                                >PT Mono</span
+                                            >
                                         </div>
                                     </div>
                                 </div>
                                 <select id="font-family-select" class="font-select-hidden">
-                                    <option value="'Consolas', 'Monaco', 'Courier New', monospace">Consolas</option>
-                                    <option value="'Courier New', Courier, monospace">Courier New</option>
+                                    <option value="'Consolas', 'Monaco', 'Courier New', monospace">
+                                        Consolas
+                                    </option>
+                                    <option value="'Courier New', Courier, monospace">
+                                        Courier New
+                                    </option>
                                     <option value="'Monaco', 'Menlo', monospace">Monaco</option>
-                                    <option value="'Fira Code', 'Consolas', monospace">Fira Code</option>
-                                    <option value="'JetBrains Mono', 'Consolas', monospace">JetBrains Mono</option>
-                                    <option value="'Source Code Pro', 'Consolas', monospace">Source Code Pro</option>
-                                    <option value="'Roboto Mono', 'Consolas', monospace">Roboto Mono</option>
-                                    <option value='D2Coding, "D2Coding ligature", "Consolas", monospace'>
+                                    <option value="'Fira Code', 'Consolas', monospace">
+                                        Fira Code
+                                    </option>
+                                    <option value="'JetBrains Mono', 'Consolas', monospace">
+                                        JetBrains Mono
+                                    </option>
+                                    <option value="'Source Code Pro', 'Consolas', monospace">
+                                        Source Code Pro
+                                    </option>
+                                    <option value="'Roboto Mono', 'Consolas', monospace">
+                                        Roboto Mono
+                                    </option>
+                                    <option
+                                        value='D2Coding, "D2Coding ligature", "Consolas", monospace'
+                                    >
                                         D2Coding
                                     </option>
-                                    <option value="'Inconsolata', 'Consolas', monospace">Inconsolata</option>
-                                    <option value="'Space Mono', 'Consolas', monospace">Space Mono</option>
-                                    <option value="'IBM Plex Mono', 'Consolas', monospace">IBM Plex Mono</option>
-                                    <option value="'Courier Prime', 'Courier New', monospace">Courier Prime</option>
-                                    <option value="'Red Hat Mono', 'Consolas', monospace">Red Hat Mono</option>
-                                    <option value="'PT Mono', 'Consolas', monospace">PT Mono</option>
+                                    <option value="'Inconsolata', 'Consolas', monospace">
+                                        Inconsolata
+                                    </option>
+                                    <option value="'Space Mono', 'Consolas', monospace">
+                                        Space Mono
+                                    </option>
+                                    <option value="'IBM Plex Mono', 'Consolas', monospace">
+                                        IBM Plex Mono
+                                    </option>
+                                    <option value="'Courier Prime', 'Courier New', monospace">
+                                        Courier Prime
+                                    </option>
+                                    <option value="'Red Hat Mono', 'Consolas', monospace">
+                                        Red Hat Mono
+                                    </option>
+                                    <option value="'PT Mono', 'Consolas', monospace">
+                                        PT Mono
+                                    </option>
                                 </select>
                             </div>
                             <div class="settings-item">
-                                <label for="font-size-slider" data-i18n="font-size">폰트 크기:</label>
+                                <label for="font-size-slider" data-i18n="font-size"
+                                    >폰트 크기:</label
+                                >
                                 <div class="font-size-control">
                                     <input
                                         type="range"
@@ -401,12 +500,16 @@
                     <h3 data-i18n="language-change-title">언어 변경 확인</h3>
                 </div>
                 <div class="modal-body">
-                    <p data-i18n="language-change-message">언어를 변경하면 현재 코드가 기본 템플릿으로 교체됩니다.</p>
+                    <p data-i18n="language-change-message">
+                        언어를 변경하면 현재 코드가 기본 템플릿으로 교체됩니다.
+                    </p>
                     <p class="text-muted" data-i18n="continue-question">계속하시겠습니까?</p>
                 </div>
                 <div class="modal-footer">
                     <button id="modal-cancel-btn" class="secondary" data-i18n="cancel">취소</button>
-                    <button id="modal-confirm-btn" class="run-button" data-i18n="confirm">확인</button>
+                    <button id="modal-confirm-btn" class="run-button" data-i18n="confirm">
+                        확인
+                    </button>
                 </div>
             </div>
         </div>
@@ -418,13 +521,18 @@
                 </div>
                 <div class="modal-body">
                     <p data-i18n="clear-confirm-message">
-                        코드를 초기화하면 현재 작성한 코드가 모두 삭제되고 기본 템플릿으로 교체됩니다.
+                        코드를 초기화하면 현재 작성한 코드가 모두 삭제되고 기본 템플릿으로
+                        교체됩니다.
                     </p>
                     <p class="text-muted" data-i18n="continue-question">계속하시겠습니까?</p>
                 </div>
                 <div class="modal-footer">
-                    <button id="clear-modal-cancel-btn" class="secondary" data-i18n="cancel">취소</button>
-                    <button id="clear-modal-confirm-btn" class="run-button" data-i18n="confirm">확인</button>
+                    <button id="clear-modal-cancel-btn" class="secondary" data-i18n="cancel">
+                        취소
+                    </button>
+                    <button id="clear-modal-confirm-btn" class="run-button" data-i18n="confirm">
+                        확인
+                    </button>
                 </div>
             </div>
         </div>

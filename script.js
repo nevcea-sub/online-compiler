@@ -19,7 +19,8 @@ const translations = {
         'language-change-title': '언어 변경 확인',
         'language-change-message': '언어를 변경하면 현재 코드가 기본 템플릿으로 교체됩니다.',
         'clear-confirm-title': '코드 초기화 확인',
-        'clear-confirm-message': '코드를 초기화하면 현재 작성한 코드가 모두 삭제되고 기본 템플릿으로 교체됩니다.',
+        'clear-confirm-message':
+            '코드를 초기화하면 현재 작성한 코드가 모두 삭제되고 기본 템플릿으로 교체됩니다.',
         'continue-question': '계속하시겠습니까?',
         cancel: '취소',
         confirm: '확인',
@@ -65,7 +66,8 @@ const translations = {
         run: 'Run',
         clear: 'Clear',
         'language-change-title': 'Language Change Confirmation',
-        'language-change-message': 'Changing the language will replace the current code with the default template.',
+        'language-change-message':
+            'Changing the language will replace the current code with the default template.',
         'clear-confirm-title': 'Clear Code Confirmation',
         'clear-confirm-message':
             'Clearing the code will delete all currently written code and replace it with the default template.',
@@ -351,7 +353,8 @@ function initEditor() {
 
         if (window.matchMedia) {
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-                const currentThemePreference = localStorage.getItem('theme') || CONFIG.DEFAULT_THEME;
+                const currentThemePreference =
+                    localStorage.getItem('theme') || CONFIG.DEFAULT_THEME;
                 if (currentThemePreference === 'system') {
                     applyTheme('system');
                 }
@@ -361,7 +364,9 @@ function initEditor() {
         updateLanguage(currentLang);
 
         const savedFontFamily = localStorage.getItem('fontFamily') || CONFIG.DEFAULT_FONT_FAMILY;
-        const savedFontSize = parseInt(localStorage.getItem('fontSize') || CONFIG.DEFAULT_FONT_SIZE);
+        const savedFontSize = parseInt(
+            localStorage.getItem('fontSize') || CONFIG.DEFAULT_FONT_SIZE
+        );
         const actualEditorTheme = savedTheme === 'system' ? getSystemTheme() : savedTheme;
         const monacoTheme = actualEditorTheme === 'dark' ? 'vs-dark' : 'vs';
 
@@ -561,7 +566,10 @@ function initEditor() {
             if (elements.runButton?.contains(e.target)) {
                 return;
             }
-            if (!elements.languageSelectButton?.contains(e.target) && !elements.languageDropdown?.contains(e.target)) {
+            if (
+                !elements.languageSelectButton?.contains(e.target) &&
+                !elements.languageDropdown?.contains(e.target)
+            ) {
                 dropdowns.language.close();
             }
         });
@@ -585,7 +593,11 @@ function initEditor() {
 
         if (elements.consoleInput) {
             elements.consoleInput.addEventListener('keydown', async (e) => {
-                if (e.key === 'Enter' && !elements.runButton.disabled && elements.consoleInput.value.trim()) {
+                if (
+                    e.key === 'Enter' &&
+                    !elements.runButton.disabled &&
+                    elements.consoleInput.value.trim()
+                ) {
                     e.preventDefault();
                     await executeCode();
                 }
@@ -713,8 +725,16 @@ function initEditor() {
                     });
                 }
 
-                if (!hasOutput && !hasError && !inputValue && (!data.images || data.images.length === 0)) {
-                    appendToConsole(translations[currentLang]['no-output'] || '출력이 없습니다.', 'info');
+                if (
+                    !hasOutput &&
+                    !hasError &&
+                    !inputValue &&
+                    (!data.images || data.images.length === 0)
+                ) {
+                    appendToConsole(
+                        translations[currentLang]['no-output'] || '출력이 없습니다.',
+                        'info'
+                    );
                 }
 
                 if (elements.consoleInput) {
@@ -731,7 +751,8 @@ function initEditor() {
                         'error'
                     );
                     appendToConsole(
-                        translations[currentLang]['check-backend'] || '백엔드 서버가 실행 중인지 확인해주세요.',
+                        translations[currentLang]['check-backend'] ||
+                            '백엔드 서버가 실행 중인지 확인해주세요.',
                         'info'
                     );
                 }
@@ -778,7 +799,10 @@ function initEditor() {
         });
 
         codeEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
-            if (getEditorValue().trim() && getEditorValue() !== LANGUAGE_CONFIG.templates[currentLanguage]) {
+            if (
+                getEditorValue().trim() &&
+                getEditorValue() !== LANGUAGE_CONFIG.templates[currentLanguage]
+            ) {
                 modals.clearConfirm.show();
             }
         });
@@ -995,7 +1019,19 @@ function initEditor() {
                     'delete',
                     'this'
                 ],
-                c: ['if', 'else', 'for', 'while', 'return', 'include', 'define', 'typedef', 'struct', 'enum', 'union'],
+                c: [
+                    'if',
+                    'else',
+                    'for',
+                    'while',
+                    'return',
+                    'include',
+                    'define',
+                    'typedef',
+                    'struct',
+                    'enum',
+                    'union'
+                ],
                 rust: [
                     'if',
                     'else',
@@ -1406,7 +1442,8 @@ function initSettings() {
     });
 
     if (elements.fontFamilySelect) {
-        elements.fontFamilySelect.value = localStorage.getItem('fontFamily') || CONFIG.DEFAULT_FONT_FAMILY;
+        elements.fontFamilySelect.value =
+            localStorage.getItem('fontFamily') || CONFIG.DEFAULT_FONT_FAMILY;
         updateFontSelectDisplay();
     }
 

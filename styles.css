@@ -38,8 +38,8 @@
 
 body {
     font-family:
-        -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
-        'Droid Sans', 'Helvetica Neue', sans-serif;
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+        'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     background-color: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
@@ -1248,7 +1248,11 @@ tr:hover {
     -ms-overflow-style: none !important;
 }
 
-.monaco-editor .suggest-widget .monaco-list .monaco-scrollable-element .monaco-list-rows::-webkit-scrollbar {
+.monaco-editor
+    .suggest-widget
+    .monaco-list
+    .monaco-scrollable-element
+    .monaco-list-rows::-webkit-scrollbar {
     display: none !important;
     width: 0 !important;
     height: 0 !important;
