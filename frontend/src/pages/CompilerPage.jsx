@@ -103,12 +103,14 @@ const CompilerPage = () => {
             <Header />
             <main className="container">
                 <div className="compiler-layout">
-                    <LanguageSelector
-                        onLanguageChange={handleLanguageChange}
-                        pendingChange={pendingLanguageChange}
-                        onConfirmChange={confirmLanguageChange}
-                        onCancelChange={() => setPendingLanguageChange(null)}
-                    />
+                    <div style={{ gridArea: 'language' }}>
+                        <LanguageSelector
+                            onLanguageChange={handleLanguageChange}
+                            pendingChange={pendingLanguageChange}
+                            onConfirmChange={confirmLanguageChange}
+                            onCancelChange={() => setPendingLanguageChange(null)}
+                        />
+                    </div>
                     <div className="editor-section">
                         <div className="editor-header">
                             <span className="editor-title">{t('code-editor')}</span>
