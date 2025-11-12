@@ -178,6 +178,20 @@ const DOCKER_PULL_MESSAGES = [
     'status: image is up to date'
 ];
 
+const INPUT_ERROR_PATTERNS = [
+    /EOF when reading a line/i,
+    /NoSuchElementException.*No line found/i,
+    /No line found/i
+];
+
+const ENTRYPOINT_ERROR_PATTERNS = [
+    /can't find '__main__' module/i,
+    /Main method not found in class/i,
+    /no main manifest attribute/i,
+    /undefined reference to `main'/i,
+    /Cannot find module/i
+];
+
 app.use(
     helmet({
         contentSecurityPolicy: false,
@@ -193,7 +207,6 @@ const isProduction = (process.env.NODE_ENV || '').toLowerCase() === 'production'
 const devLocalhostRegex = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 const corsOptions = {
     origin: (origin, callback) => {
-        // Allow requests with no origin (e.g., curl, same-origin)
         if (!origin) {
             return callback(null, true);
         }
@@ -731,6 +744,28 @@ function sanitizeError(error) {
     return filtered;
 }
 
+function augmentError(stderr, hasInput) {
+    if (hasInput) {
+        return stderr || '';
+    }
+    const s = stderr || '';
+    for (const rx of INPUT_ERROR_PATTERNS) {
+        if (rx.test(s)) {
+            const hint =
+                'Hint: The program tried to read from standard input, but no input was provided. Enter input in the box and run again.';
+            return s && s.trim().length > 0 ? `${s.trim()}\n${hint}` : hint;
+        }
+    }
+    for (const rx of ENTRYPOINT_ERROR_PATTERNS) {
+        if (rx.test(s)) {
+            const hint =
+                'Hint: Could not find a program entry point. For Python, run a .py script; for C/C++, define main(); for Java, use class Main with public static void main; for Node.js, ensure the module/file exists.';
+            return s && s.trim().length > 0 ? `${s.trim()}\n${hint}` : hint;
+        }
+    }
+    return s;
+}
+
 async function cleanupFile(filePath) {
     if (!filePath || !validatePath(filePath)) {
         return;
@@ -1114,6 +1149,7 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
                     if (stderrTruncated) {
                         stderr += '\n[truncated]';
                     }
+                    stderr = augmentError(stderr, buildOptions.hasInput);
                     await handleExecutionResult(
                         error,
                         stdout,
@@ -1136,6 +1172,7 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
                     if (stderrTruncated) {
                         stderr += '\n[truncated]';
                     }
+                    stderr = augmentError(stderr, buildOptions.hasInput);
                     await handleExecutionResult(
                         error,
                         stdout,
@@ -1218,6 +1255,7 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
                     if (stderrTruncated) {
                         stderr += '\n[truncated]';
                     }
+                    stderr = augmentError(stderr, buildOptions.hasInput);
                     await handleExecutionResult(
                         error,
                         stdout,
@@ -1240,6 +1278,7 @@ app.post('/api/execute', executeLimiter, async (req, res) => {
                     if (stderrTruncated) {
                         stderr += '\n[truncated]';
                     }
+                    stderr = augmentError(stderr, buildOptions.hasInput);
                     await handleExecutionResult(
                         error,
                         stdout,
