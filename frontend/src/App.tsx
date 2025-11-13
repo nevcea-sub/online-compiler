@@ -7,8 +7,8 @@ import Toast from './components/Toast';
 const AppContent = () => {
     const { currentPage, toast, hideToast } = useApp();
 
-  return (
-    <>
+    return (
+        <>
             {currentPage === 'compiler' && <CompilerPage />}
             {currentPage === 'settings' && <SettingsPage />}
             {toast && (
@@ -32,3 +32,4 @@ function App() {
 }
 
 export default App;
+

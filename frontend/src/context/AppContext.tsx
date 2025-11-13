@@ -1,10 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { CONFIG, LANGUAGE_CONFIG } from '../config/constants';
 import { getTranslation } from '../i18n/translations';
+import type { AppContextType, Language, ProgrammingLanguage, Theme, ToastType, Page, Output } from '../types';
 
-const AppContext = createContext();
+const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const useApp = () => {
+export const useApp = (): AppContextType => {
     const context = useContext(AppContext);
     if (!context) {
         throw new Error('useApp must be used within AppProvider');
@@ -12,33 +13,37 @@ export const useApp = () => {
     return context;
 };
 
-export const AppProvider = ({ children }) => {
-    const [currentLang, setCurrentLang] = useState(
-        () => localStorage.getItem('language') || 'ko'
+interface AppProviderProps {
+    children: ReactNode;
+}
+
+export const AppProvider = ({ children }: AppProviderProps) => {
+    const [currentLang, setCurrentLang] = useState<Language>(
+        () => (localStorage.getItem('language') as Language) || 'ko'
     );
-    const [currentLanguage, setCurrentLanguage] = useState(CONFIG.DEFAULT_LANGUAGE);
-    const [theme, setTheme] = useState(
-        () => localStorage.getItem('theme') || CONFIG.DEFAULT_THEME
+    const [currentLanguage, setCurrentLanguage] = useState<ProgrammingLanguage>(CONFIG.DEFAULT_LANGUAGE);
+    const [theme, setTheme] = useState<Theme>(
+        () => (localStorage.getItem('theme') as Theme) || CONFIG.DEFAULT_THEME
     );
-    const [fontFamily, setFontFamily] = useState(
+    const [fontFamily, setFontFamily] = useState<string>(
         () => localStorage.getItem('fontFamily') || CONFIG.DEFAULT_FONT_FAMILY
     );
-    const [fontSize, setFontSize] = useState(
-        () => parseInt(localStorage.getItem('fontSize') || CONFIG.DEFAULT_FONT_SIZE, 10)
+    const [fontSize, setFontSize] = useState<number>(
+        () => parseInt(localStorage.getItem('fontSize') || String(CONFIG.DEFAULT_FONT_SIZE), 10)
     );
-    const [code, setCode] = useState(() => {
+    const [code, setCode] = useState<string>(() => {
         const saved = localStorage.getItem(`code_${CONFIG.DEFAULT_LANGUAGE}`);
         return saved && saved.trim() ? saved : LANGUAGE_CONFIG.templates[CONFIG.DEFAULT_LANGUAGE];
     });
-    const [input, setInput] = useState('');
-    const [output, setOutput] = useState('');
-    const [error, setError] = useState('');
-    const [isRunning, setIsRunning] = useState(false);
-    const [currentPage, setCurrentPage] = useState('compiler');
-    const [toast, setToast] = useState(null);
-    const [executionTime, setExecutionTime] = useState(null);
+    const [input, setInput] = useState<string>('');
+    const [output, setOutput] = useState<Output>('');
+    const [error, setError] = useState<string>('');
+    const [isRunning, setIsRunning] = useState<boolean>(false);
+    const [currentPage, setCurrentPage] = useState<Page>('compiler');
+    const [toast, setToast] = useState<{ message: string; type: ToastType; duration: number } | null>(null);
+    const [executionTime, setExecutionTime] = useState<number | null>(null);
 
-    const getSystemTheme = () => {
+    const getSystemTheme = (): 'light' | 'dark' => {
         return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     };
 
@@ -68,13 +73,13 @@ export const AppProvider = ({ children }) => {
         }
     }, [code, currentLanguage]);
 
-    const changeLanguage = useCallback((lang) => {
+    const changeLanguage = useCallback((lang: Language) => {
         if (lang && ['ko', 'en'].includes(lang)) {
             setCurrentLang(lang);
         }
     }, []);
 
-    const changeProgrammingLanguage = useCallback((lang) => {
+    const changeProgrammingLanguage = useCallback((lang: ProgrammingLanguage) => {
         if (!lang || !LANGUAGE_CONFIG.templates[lang]) {
             return;
         }
@@ -87,9 +92,9 @@ export const AppProvider = ({ children }) => {
         setError('');
     }, []);
 
-    const t = useCallback((key) => getTranslation(key, currentLang), [currentLang]);
+    const t = useCallback((key: string) => getTranslation(key, currentLang), [currentLang]);
 
-    const showToast = useCallback((message, type = 'info', duration = 3000) => {
+    const showToast = useCallback((message: string, type: ToastType = 'info', duration: number = 3000) => {
         setToast({ message, type, duration });
     }, []);
 
@@ -97,7 +102,7 @@ export const AppProvider = ({ children }) => {
         setToast(null);
     }, []);
 
-    const value = {
+    const value: AppContextType = {
         currentLang,
         currentLanguage,
         theme,

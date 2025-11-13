@@ -2,11 +2,18 @@ import { useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import './Modal.css';
 
-const Modal = ({ title, message, onConfirm, onCancel }) => {
+interface ModalProps {
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+}
+
+const Modal = ({ title, message, onConfirm, onCancel }: ModalProps) => {
     const { t } = useApp();
 
     useEffect(() => {
-        const handleEscape = (e) => {
+        const handleEscape = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 onCancel();
             }

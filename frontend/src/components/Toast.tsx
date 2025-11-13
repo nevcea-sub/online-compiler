@@ -1,14 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
+import type { ToastType } from '../types';
 import './Toast.css';
 
-const Toast = ({ message, type = 'info', onClose, duration = 3000 }) => {
+interface ToastProps {
+    message: string;
+    type?: ToastType;
+    onClose: () => void;
+    duration?: number;
+}
+
+const Toast = ({ message, type = 'info', onClose, duration = 3000 }: ToastProps) => {
     const { t } = useApp();
     const [isClosing, setIsClosing] = useState(false);
 
     useEffect(() => {
         if (duration > 0) {
-            let closeTimer = null;
+            let closeTimer: ReturnType<typeof setTimeout> | null = null;
             const timer = setTimeout(() => {
                 setIsClosing(true);
                 closeTimer = setTimeout(() => {
@@ -50,7 +58,7 @@ const Toast = ({ message, type = 'info', onClose, duration = 3000 }) => {
                 <line x1="12" y1="16" x2="12" y2="12"></line>
                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
-        ),
+        )
     };
 
     return (

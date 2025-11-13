@@ -24,11 +24,15 @@ import 'ace-builds/src-noconflict/mode-sh';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/theme-github';
 
-const CodeEditor = memo(({ onRun }) => {
-    const { code, setCode, currentLanguage, theme, fontFamily, fontSize } = useApp();
-    const editorRef = useRef(null);
+interface CodeEditorProps {
+    onRun?: () => void;
+}
 
-    const getSystemTheme = () => {
+const CodeEditor = memo(({ onRun }: CodeEditorProps) => {
+    const { code, setCode, currentLanguage, theme, fontFamily, fontSize } = useApp();
+    const editorRef = useRef<AceEditor>(null);
+
+    const getSystemTheme = (): 'dark' | 'light' => {
         return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     };
 
@@ -68,11 +72,11 @@ const CodeEditor = memo(({ onRun }) => {
     }, [currentLanguage, code]);
 
     return (
-        <div 
+        <div
             className="w-full h-full min-h-[350px] relative"
-            style={{ 
-                width: '100%', 
-                height: '100%', 
+            style={{
+                width: '100%',
+                height: '100%',
                 minHeight: '350px',
                 position: 'relative',
                 zIndex: 1,
@@ -80,9 +84,9 @@ const CodeEditor = memo(({ onRun }) => {
             }}
         >
             {!code || !code.trim() ? (
-                <div 
+                <div
                     className="absolute inset-0 flex items-center justify-center z-[1]"
-                    style={{ 
+                    style={{
                         color: 'var(--text-muted)',
                         fontSize: '14px',
                         fontFamily: fontFamily,

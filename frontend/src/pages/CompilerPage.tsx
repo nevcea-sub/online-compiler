@@ -6,8 +6,9 @@ import Header from '../components/Header';
 import KeyboardShortcuts from '../components/KeyboardShortcuts';
 import Modal from '../components/Modal';
 import { executeCode as apiExecuteCode } from '../services/api';
-import { CONFIG, LANGUAGE_CONFIG } from '../config/constants';
+import { LANGUAGE_CONFIG } from '../config/constants';
 import { formatOutput, formatError } from '../utils/outputFormatter';
+import type { ProgrammingLanguage } from '../types';
 import './CompilerPage.css';
 
 const CompilerPage = () => {
@@ -28,12 +29,12 @@ const CompilerPage = () => {
         showToast,
         t
     } = useApp();
-    const [pendingLanguageChange, setPendingLanguageChange] = useState(null);
+    const [pendingLanguageChange, setPendingLanguageChange] = useState<ProgrammingLanguage | null>(null);
     const [pendingClearCode, setPendingClearCode] = useState(false);
     const [isEditorLanguageDropdownOpen, setIsEditorLanguageDropdownOpen] = useState(false);
     const [languageSearchQuery, setLanguageSearchQuery] = useState('');
-    const editorLanguageDropdownRef = useRef(null);
-    const editorLanguageButtonRef = useRef(null);
+    const editorLanguageDropdownRef = useRef<HTMLDivElement>(null);
+    const editorLanguageButtonRef = useRef<HTMLButtonElement>(null);
 
     const handleRun = useCallback(async () => {
         if (!code || !code.trim()) {
@@ -54,14 +55,14 @@ const CompilerPage = () => {
 
             const formattedOutput = formatOutput(result.output || '');
             const formattedError = formatError(result.error || '');
-            
+
             if (result.error && result.error.trim()) {
                 showToast(result.error, 'error', 5000);
                 setError('');
             } else {
                 setError(formattedError);
             }
-            
+
             if (result.images && result.images.length > 0) {
                 setOutput({
                     text: formattedOutput,
@@ -73,8 +74,8 @@ const CompilerPage = () => {
         } catch (err) {
             setExecutionTime(Date.now() - startTime);
             let userMessage = t('connection-error');
-            let errorType = 'error';
-            if (err.message) {
+            let errorType: 'error' | 'info' | 'success' | 'warning' = 'error';
+            if (err instanceof Error && err.message) {
                 const match = err.message.match(/HTTP \d+: (.+)/);
                 if (match && match[1]) {
                     userMessage = match[1];
@@ -102,10 +103,10 @@ const CompilerPage = () => {
     }, []);
 
     useEffect(() => {
-        const handleKeyDown = (e) => {
-            const target = e.target;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
             const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
-            
+
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !isRunning && !isInputFocused) {
                 e.preventDefault();
                 handleRun();
@@ -121,12 +122,12 @@ const CompilerPage = () => {
     }, [isRunning, handleRun, handleClear]);
 
     useEffect(() => {
-        const handleClickOutside = (event) => {
+        const handleClickOutside = (event: MouseEvent) => {
             if (
                 editorLanguageDropdownRef.current &&
-                !editorLanguageDropdownRef.current.contains(event.target) &&
+                !editorLanguageDropdownRef.current.contains(event.target as Node) &&
                 editorLanguageButtonRef.current &&
-                !editorLanguageButtonRef.current.contains(event.target)
+                !editorLanguageButtonRef.current.contains(event.target as Node)
             ) {
                 setIsEditorLanguageDropdownOpen(false);
                 setLanguageSearchQuery('');
@@ -157,7 +158,7 @@ const CompilerPage = () => {
         setPendingClearCode(false);
     };
 
-    const handleLanguageChange = (lang) => {
+    const handleLanguageChange = (lang: ProgrammingLanguage) => {
         if (lang === currentLanguage) {
             return;
         }
@@ -200,7 +201,7 @@ const CompilerPage = () => {
                                             <polyline points="6 9 12 15 18 9"></polyline>
                                         </svg>
                                     </button>
-                                    <div 
+                                    <div
                                         ref={editorLanguageDropdownRef}
                                         className={`editor-language-dropdown ${isEditorLanguageDropdownOpen ? 'show' : ''}`}
                                     >
@@ -234,9 +235,11 @@ const CompilerPage = () => {
                                             )}
                                         </div>
                                         <div className="editor-language-options">
-                                            {Object.keys(LANGUAGE_CONFIG.names)
+                                            {(Object.keys(LANGUAGE_CONFIG.names) as ProgrammingLanguage[])
                                                 .filter((lang) => {
-                                                    if (!languageSearchQuery) return true;
+                                                    if (!languageSearchQuery) {
+                                                        return true;
+                                                    }
                                                     const searchLower = languageSearchQuery.toLowerCase();
                                                     const langName = LANGUAGE_CONFIG.names[lang].toLowerCase();
                                                     return langName.includes(searchLower) || lang.toLowerCase().includes(searchLower);
@@ -291,8 +294,8 @@ const CompilerPage = () => {
                                     </>
                                 )}
                             </button>
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 className="secondary"
                                 onClick={handleClear}
                                 disabled={isRunning}

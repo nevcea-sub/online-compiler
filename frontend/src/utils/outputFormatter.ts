@@ -1,6 +1,6 @@
 import { CONFIG } from '../config/constants';
 
-export const formatOutput = (text) => {
+export const formatOutput = (text: string): string => {
     if (!text || typeof text !== 'string') {
         return '';
     }
@@ -20,10 +20,10 @@ export const formatOutput = (text) => {
 };
 
 export const formatError = (
-    errorText,
-    maxLines = CONFIG.MAX_ERROR_LINES,
-    maxLength = CONFIG.MAX_ERROR_LENGTH
-) => {
+    errorText: string,
+    maxLines: number = CONFIG.MAX_ERROR_LINES,
+    maxLength: number = CONFIG.MAX_ERROR_LENGTH
+): string => {
     if (!errorText || typeof errorText !== 'string') {
         return '';
     }
@@ -47,3 +47,4 @@ export const formatError = (
 
     return collapsed;
 };
+

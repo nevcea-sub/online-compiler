@@ -1,22 +1,30 @@
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { LANGUAGE_CONFIG } from '../config/constants';
+import type { ProgrammingLanguage } from '../types';
 import Modal from './Modal';
 import './LanguageSelector.css';
 
-const LanguageSelector = ({ onLanguageChange, pendingChange, onConfirmChange, onCancelChange }) => {
+interface LanguageSelectorProps {
+    onLanguageChange: (lang: ProgrammingLanguage) => void;
+    pendingChange: ProgrammingLanguage | null;
+    onConfirmChange: () => void;
+    onCancelChange: () => void;
+}
+
+const LanguageSelector = ({ onLanguageChange, pendingChange, onConfirmChange, onCancelChange }: LanguageSelectorProps) => {
     const { currentLanguage, t } = useApp();
     const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef(null);
-    const buttonRef = useRef(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
-        const handleClickOutside = (event) => {
+        const handleClickOutside = (event: MouseEvent) => {
             if (
                 dropdownRef.current &&
-                !dropdownRef.current.contains(event.target) &&
+                !dropdownRef.current.contains(event.target as Node) &&
                 buttonRef.current &&
-                !buttonRef.current.contains(event.target)
+                !buttonRef.current.contains(event.target as Node)
             ) {
                 setIsOpen(false);
             }
@@ -26,7 +34,7 @@ const LanguageSelector = ({ onLanguageChange, pendingChange, onConfirmChange, on
         return () => document.removeEventListener('click', handleClickOutside);
     }, []);
 
-    const languages = Object.keys(LANGUAGE_CONFIG.names);
+    const languages = Object.keys(LANGUAGE_CONFIG.names) as ProgrammingLanguage[];
 
     return (
         <>

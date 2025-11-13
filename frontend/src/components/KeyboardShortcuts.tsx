@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import Modal from './Modal';
 
 const KeyboardShortcuts = () => {
     const { t } = useApp();
     const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
-        const handleKeyDown = (e) => {
+        const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === '/') {
                 e.preventDefault();
                 setShowModal(true);
@@ -22,10 +21,12 @@ const KeyboardShortcuts = () => {
         { keys: ['Ctrl', 'Enter'], description: t('shortcut-run-code') || 'Run code' },
         { keys: ['Ctrl', 'Shift', '/'], description: t('shortcut-show-help') || 'Show keyboard shortcuts' },
         { keys: ['Ctrl', 'K'], description: t('shortcut-clear') || 'Clear editor' },
-        { keys: ['Esc'], description: t('shortcut-close-modal') || 'Close modal/dropdown' },
+        { keys: ['Esc'], description: t('shortcut-close-modal') || 'Close modal/dropdown' }
     ];
 
-    if (!showModal) return null;
+    if (!showModal) {
+        return null;
+    }
 
     return (
         <div className="fixed z-[2000] left-0 top-0 w-full h-full bg-[rgba(0,0,0,0.8)] backdrop-blur-xl animate-[fadeIn_0.2s_ease] flex items-center justify-center p-4">

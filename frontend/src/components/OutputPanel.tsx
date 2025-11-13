@@ -1,10 +1,17 @@
 import { memo, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { CONFIG } from '../config/constants';
+import type { Output } from '../types';
 import Modal from './Modal';
 import './OutputPanel.css';
 
-const OutputPanel = memo(({ input, setInput, output, error }) => {
+interface OutputPanelProps {
+    input: string;
+    setInput: (input: string) => void;
+    output: Output;
+    error: string;
+}
+
+const OutputPanel = memo(({ input, setInput, output, error }: OutputPanelProps) => {
     const { t, setOutput, executionTime, isRunning } = useApp();
     const [pendingClearOutput, setPendingClearOutput] = useState(false);
 
@@ -21,8 +28,8 @@ const OutputPanel = memo(({ input, setInput, output, error }) => {
         setPendingClearOutput(false);
     };
 
-    const outputText = typeof output === 'object' && output.text ? output.text : output;
-    const images = typeof output === 'object' && output.images ? output.images : [];
+    const outputText = typeof output === 'object' && 'text' in output ? output.text : output;
+    const images = typeof output === 'object' && 'images' in output ? output.images : [];
     const hasContent = outputText || error || images.length > 0;
 
     return (
@@ -39,9 +46,9 @@ const OutputPanel = memo(({ input, setInput, output, error }) => {
                     </div>
                 </div>
                 {hasContent && (
-                    <button 
+                    <button
                         className="clear-output-btn"
-                        onClick={handleClear} 
+                        onClick={handleClear}
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>

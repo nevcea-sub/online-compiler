@@ -1,6 +1,11 @@
 import { CONFIG } from '../config/constants';
+import type { ProgrammingLanguage, ExecuteResponse } from '../types';
 
-export const executeCode = async (code, language, input) => {
+export const executeCode = async (
+    code: string,
+    language: ProgrammingLanguage,
+    input: string
+): Promise<ExecuteResponse> => {
     const response = await fetch(`${CONFIG.API_URL}/api/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -22,3 +27,4 @@ export const executeCode = async (code, language, input) => {
 
     return await response.json();
 };
+

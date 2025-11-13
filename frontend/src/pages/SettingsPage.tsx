@@ -19,40 +19,40 @@ const SettingsPage = () => {
     } = useApp();
     const [isFontDropdownOpen, setIsFontDropdownOpen] = useState(false);
     const [fontSearchQuery, setFontSearchQuery] = useState('');
-    const fontDropdownRef = useRef(null);
-    const fontButtonRef = useRef(null);
+    const fontDropdownRef = useRef<HTMLDivElement>(null);
+    const fontButtonRef = useRef<HTMLButtonElement>(null);
     const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
-    const themeDropdownRef = useRef(null);
-    const themeButtonRef = useRef(null);
+    const themeDropdownRef = useRef<HTMLDivElement>(null);
+    const themeButtonRef = useRef<HTMLButtonElement>(null);
     const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
-    const languageDropdownRef = useRef(null);
-    const languageButtonRef = useRef(null);
+    const languageDropdownRef = useRef<HTMLDivElement>(null);
+    const languageButtonRef = useRef<HTMLButtonElement>(null);
     const [fontSizeInput, setFontSizeInput] = useState(fontSize.toString());
 
     useEffect(() => {
-        const handleClickOutside = (event) => {
+        const handleClickOutside = (event: MouseEvent) => {
             if (
                 fontDropdownRef.current &&
-                !fontDropdownRef.current.contains(event.target) &&
+                !fontDropdownRef.current.contains(event.target as Node) &&
                 fontButtonRef.current &&
-                !fontButtonRef.current.contains(event.target)
+                !fontButtonRef.current.contains(event.target as Node)
             ) {
                 setIsFontDropdownOpen(false);
                 setFontSearchQuery('');
             }
             if (
                 themeDropdownRef.current &&
-                !themeDropdownRef.current.contains(event.target) &&
+                !themeDropdownRef.current.contains(event.target as Node) &&
                 themeButtonRef.current &&
-                !themeButtonRef.current.contains(event.target)
+                !themeButtonRef.current.contains(event.target as Node)
             ) {
                 setIsThemeDropdownOpen(false);
             }
             if (
                 languageDropdownRef.current &&
-                !languageDropdownRef.current.contains(event.target) &&
+                !languageDropdownRef.current.contains(event.target as Node) &&
                 languageButtonRef.current &&
-                !languageButtonRef.current.contains(event.target)
+                !languageButtonRef.current.contains(event.target as Node)
             ) {
                 setIsLanguageDropdownOpen(false);
             }
@@ -278,7 +278,7 @@ const SettingsPage = () => {
                                                 <line x1="12" y1="4" x2="12" y2="20"></line>
                                             </svg>
                                         </div>
-                                        <span>{FONT_CONFIG.families[fontFamily] || fontFamily}</span>
+                                        <span>{FONT_CONFIG.families[fontFamily as keyof typeof FONT_CONFIG.families] || fontFamily}</span>
                                         <svg className="select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                             <polyline points="6 9 12 15 18 9"></polyline>
                                         </svg>
@@ -316,7 +316,9 @@ const SettingsPage = () => {
                                         <div className="font-select-options">
                                             {Object.entries(FONT_CONFIG.families)
                                                 .filter(([value, name]) => {
-                                                    if (!fontSearchQuery) return true;
+                                                    if (!fontSearchQuery) {
+                                                        return true;
+                                                    }
                                                     const searchLower = fontSearchQuery.toLowerCase();
                                                     const fontName = name.toLowerCase();
                                                     return fontName.includes(searchLower) || value.toLowerCase().includes(searchLower);
@@ -377,7 +379,7 @@ const SettingsPage = () => {
                                                 } else if (value > 48) {
                                                     setFontSize(48);
                                                 }
-                                                e.target.blur();
+                                                e.currentTarget.blur();
                                             } else if (e.key === 'ArrowUp') {
                                                 e.preventDefault();
                                                 const currentValue = parseInt(fontSizeInput, 10) || fontSize;

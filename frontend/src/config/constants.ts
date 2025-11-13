@@ -1,7 +1,7 @@
 export const CONFIG = {
     API_URL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
-    DEFAULT_LANGUAGE: 'python',
-    DEFAULT_THEME: 'system',
+    DEFAULT_LANGUAGE: 'python' as const,
+    DEFAULT_THEME: 'system' as const,
     DEFAULT_FONT_FAMILY: "'Consolas', 'Monaco', 'Courier New', monospace",
     DEFAULT_FONT_SIZE: 14,
     WARMUP_INTERVAL: 30000,
@@ -23,7 +23,7 @@ export const CONFIG = {
         /^File copy successful.*/i,
         /^Checking input file:.*/i
     ]
-};
+} as const;
 
 export const LANGUAGE_CONFIG = {
     modes: {
@@ -102,7 +102,7 @@ export const LANGUAGE_CONFIG = {
         haskell: 'Haskell',
         bash: 'Bash'
     }
-};
+} as const;
 
 export const FONT_CONFIG = {
     families: {
@@ -135,4 +135,5 @@ export const FONT_CONFIG = {
         "'Liberation Mono', 'Courier New', monospace": 'Liberation Mono',
         "'DejaVu Sans Mono', 'Consolas', monospace": 'DejaVu Sans Mono'
     }
-};
+} as const;
+

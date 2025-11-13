@@ -1,4 +1,6 @@
-export const translations = {
+import type { Language } from '../types';
+
+export const translations: Record<Language, Record<string, string>> = {
     ko: {
         title: '온라인 컴파일러',
         'programming-language': '프로그래밍 언어:',
@@ -146,6 +148,7 @@ export const translations = {
     }
 };
 
-export const getTranslation = (key, lang = 'ko') => {
+export const getTranslation = (key: string, lang: Language = 'ko'): string => {
     return translations[lang]?.[key] || translations.en[key] || '';
 };
+
