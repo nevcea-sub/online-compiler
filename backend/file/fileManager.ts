@@ -2,7 +2,6 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { validatePath } from '../utils/validation';
-import { CONTAINER_CODE_PATHS, LANGUAGE_EXTENSIONS } from '../config';
 import { getContainerCodePath } from '../utils/pathUtils';
 import { ImageFile } from '../types';
 
@@ -19,7 +18,8 @@ export async function cleanupFile(filePath: string | null): Promise<void> {
 
 export async function writeInputFile(inputPath: string, inputText: string): Promise<string> {
     if (!validatePath(inputPath)) {
-        throw new Error('Invalid input path');
+        console.error('[ERROR] Invalid input path:', inputPath);
+        throw new Error('입력 파일 경로가 올바르지 않습니다.');
     }
     const resolvedInputPath = path.resolve(inputPath);
     await fs.writeFile(resolvedInputPath, inputText, 'utf8');
@@ -34,7 +34,8 @@ export async function writeCodeFile(
     languageExtensions: Record<string, string>
 ): Promise<string> {
     if (!validatePath(codePath)) {
-        throw new Error('Invalid code path');
+        console.error('[ERROR] Invalid code path:', codePath);
+        throw new Error('코드 경로가 올바르지 않습니다.');
     }
     const resolvedCodePath = path.resolve(codePath);
     await fs.writeFile(resolvedCodePath, code, 'utf8');
@@ -47,7 +48,8 @@ export async function writeCodeFile(
         if (classMatch) {
             const className = classMatch[1];
             if (expectedFileName !== `${className}.java`) {
-                throw new Error(`Class name ${className} must match file name ${expectedFileName}`);
+                console.error('[ERROR] Class name mismatch:', className, expectedFileName);
+                throw new Error(`클래스 이름 ${className}은 파일 이름 ${expectedFileName}과 일치해야 합니다.`);
             }
         }
     }

@@ -8,7 +8,7 @@ export const executeCode = async (code, language, input) => {
     });
 
     if (!response.ok) {
-        let errorMessage = 'Request error';
+        let errorMessage = '요청 오류가 발생했습니다.';
         try {
             const errorData = await response.json();
             if (errorData.error) {

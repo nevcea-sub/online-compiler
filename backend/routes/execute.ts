@@ -39,24 +39,24 @@ export function createExecuteRoute(
         };
 
         if (!code || !language) {
-            sendResponse(400, { error: 'Code and language are required' });
+            sendResponse(400, { error: '코드와 언어는 필수입니다.' });
             return;
         }
 
         if (typeof code !== 'string' || typeof language !== 'string') {
-            sendResponse(400, { error: 'Invalid input format' });
+            sendResponse(400, { error: '잘못된 입력 형식입니다.' });
             return;
         }
 
         if (code.length > CONFIG.MAX_CODE_LENGTH) {
             sendResponse(400, {
-                error: `Code exceeds maximum length of ${CONFIG.MAX_CODE_LENGTH} characters`
+                error: `코드 길이가 최대 ${CONFIG.MAX_CODE_LENGTH}자를 초과했습니다.`
             });
             return;
         }
 
         if (!validateLanguage(language)) {
-            sendResponse(400, { error: 'Unsupported language' });
+            sendResponse(400, { error: '지원하지 않는 언어입니다.' });
             return;
         }
 
@@ -70,7 +70,7 @@ export function createExecuteRoute(
         }
         if (inputText.length > CONFIG.MAX_INPUT_LENGTH) {
             sendResponse(400, {
-                error: `Input exceeds maximum length of ${CONFIG.MAX_INPUT_LENGTH} characters`
+                error: `입력 길이가 최대 ${CONFIG.MAX_INPUT_LENGTH}자를 초과했습니다.`
             });
             return;
         }
@@ -122,13 +122,15 @@ export function createExecuteRoute(
             fullCodePath = writtenPath;
 
             if (!fullCodePath || !validateCodePath(fullCodePath, codeDir)) {
-                throw new Error('Invalid file path generated');
+                console.error('[ERROR] Invalid file path generated:', fullCodePath);
+                throw new Error('파일 경로 생성에 실패했습니다.');
             }
 
             try {
                 const stats = await fs.stat(fullCodePath);
                 if (!stats.isFile()) {
-                    throw new Error(`Path exists but is not a file: ${fullCodePath}`);
+                    console.error('[ERROR] Path exists but is not a file:', fullCodePath);
+                    throw new Error('파일 경로가 올바르지 않습니다.');
                 }
                 if (CONFIG.DEBUG_MODE) {
                     console.log(
@@ -138,7 +140,7 @@ export function createExecuteRoute(
             } catch (error) {
                 console.error(`[ERROR] File verification failed: ${fullCodePath}`, error);
                 const err = error as Error;
-                throw new Error(`Failed to create or verify code file: ${err.message}`);
+                throw new Error('코드 파일 생성 또는 검증에 실패했습니다.');
             }
 
             let buildOptions: BuildOptions = {};
@@ -148,7 +150,7 @@ export function createExecuteRoute(
                     await cleanupFile(fullCodePath);
                     await fs.rm(sessionOutputDir, { recursive: true, force: true }).catch(() => {});
                     sendResponse(503, {
-                        error: 'Kotlin compiler is not available yet. Warming up; please retry shortly.'
+                        error: 'Kotlin 컴파일러가 아직 준비되지 않았습니다. 준비 중입니다. 잠시 후 다시 시도해주세요.'
                     });
                     return;
                 }
@@ -159,7 +161,8 @@ export function createExecuteRoute(
             if (buildOptions.hasInput) {
                 const inputPath = path.join(codeDir, `${sessionId}_input`);
                 if (!inputPath) {
-                    throw new Error('Invalid input path');
+                    console.error('[ERROR] Invalid input path');
+                    throw new Error('입력 파일 경로가 올바르지 않습니다.');
                 }
                 fullInputPath = await writeInputFile(inputPath, inputText);
                 buildOptions.inputPath = fullInputPath;
@@ -175,7 +178,8 @@ export function createExecuteRoute(
             let executionResponseSent = false;
 
             if (!fullCodePath) {
-                throw new Error('Code path is null');
+                console.error('[ERROR] Code path is null');
+                throw new Error('코드 경로가 없습니다.');
             }
 
             await executeDockerProcess(

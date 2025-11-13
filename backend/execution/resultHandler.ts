@@ -33,7 +33,7 @@ export async function handleExecutionResult(
     if (error) {
         let errorMsg: string;
         if ('killed' in error && error.killed || 'signal' in error && error.signal === 'SIGTERM') {
-            errorMsg = 'Execution timeout exceeded.';
+            errorMsg = '실행 시간이 초과되었습니다.';
         } else {
             let errorSource: string;
             if ('message' in error && error.message && error.message !== 'Docker error') {

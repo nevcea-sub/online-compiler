@@ -14,33 +14,33 @@ export function validateImage(image: unknown): image is string {
 
 export function sanitizeCode(code: unknown): void {
     if (typeof code !== 'string') {
-        throw new Error('Code must be a string');
+        throw new Error('코드는 문자열이어야 합니다.');
     }
     if (code.length > 100000) {
-        throw new Error('Code is too long');
+        throw new Error('코드가 너무 깁니다.');
     }
     if (code.trim().length === 0) {
-        throw new Error('Code cannot be empty');
+        throw new Error('코드는 비어있을 수 없습니다.');
     }
     for (const pattern of DANGEROUS_PATTERNS) {
         if (pattern.test(code)) {
-            throw new Error('Code contains dangerous patterns');
+            throw new Error('코드에 위험한 패턴이 포함되어 있습니다.');
         }
     }
 }
 
 export function validateJavaClass(code: string): void {
     if (typeof code !== 'string') {
-        throw new Error('Invalid code format');
+        throw new Error('잘못된 코드 형식입니다.');
     }
     const classMatch = code.match(/public\s+class\s+(\w+)/);
     if (!classMatch) {
-        throw new Error('Java code must contain a public class');
+        throw new Error('Java 코드는 public class를 포함해야 합니다.');
     }
     const className = classMatch[1];
     const fileNameMatch = code.match(/\/\/\s*File:\s*(\w+\.java)/);
     if (fileNameMatch && fileNameMatch[1] !== `${className}.java`) {
-        throw new Error('Class name must match file name');
+        throw new Error('클래스 이름은 파일 이름과 일치해야 합니다.');
     }
 }
 
