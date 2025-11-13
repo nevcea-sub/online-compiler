@@ -107,29 +107,6 @@ const CodeEditor = memo(({ onRun }: CodeEditorProps) => {
                 value={code}
                 onChange={setCode}
                 fontSize={fontSize}
-                fontFamily={fontFamily}
-                showPrintMargin={false}
-                displayIndentGuides={true}
-                showFoldWidgets={false}
-                highlightActiveLine={true}
-                showInvisibles={false}
-                behavioursEnabled={true}
-                wrapBehavioursEnabled={true}
-                autoScrollEditorIntoView={true}
-                animatedScroll={false}
-                vScrollBarAlwaysVisible={false}
-                hScrollBarAlwaysVisible={false}
-                highlightSelectedWord={true}
-                selectionStyle="text"
-                fadeFoldWidgets={true}
-                useWorker={false}
-                showLineNumbers={true}
-                tabSize={4}
-                useSoftTabs={true}
-                wrap={true}
-                indentedSoftWrap={false}
-                foldStyle="markbegin"
-                readOnly={false}
                 width="100%"
                 height="100%"
                 style={{
@@ -137,14 +114,34 @@ const CodeEditor = memo(({ onRun }: CodeEditorProps) => {
                     zIndex: 2,
                     minHeight: '350px',
                     width: '100%',
-                    height: '100%'
+                    height: '100%',
+                    fontFamily: fontFamily
                 }}
                 className="ace-editor-wrapper"
                 setOptions={{
                     showLineNumbers: true,
                     tabSize: 4,
                     useSoftTabs: true,
-                    wrap: true
+                    wrap: true,
+                    fontFamily: fontFamily,
+                    showPrintMargin: false,
+                    displayIndentGuides: true,
+                    showFoldWidgets: false,
+                    highlightActiveLine: true,
+                    showInvisibles: false,
+                    behavioursEnabled: true,
+                    wrapBehavioursEnabled: true,
+                    autoScrollEditorIntoView: true,
+                    animatedScroll: false,
+                    vScrollBarAlwaysVisible: false,
+                    hScrollBarAlwaysVisible: false,
+                    highlightSelectedWord: true,
+                    selectionStyle: 'text',
+                    fadeFoldWidgets: true,
+                    useWorker: false,
+                    indentedSoftWrap: false,
+                    foldStyle: 'markbegin',
+                    readOnly: false
                 }}
                 editorProps={{
                     $blockScrolling: Infinity
