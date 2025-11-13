@@ -5,8 +5,7 @@
     gap: 1.5rem;
     min-height: calc(100vh - 180px);
     height: auto;
-    grid-template-areas:
-        'editor output';
+    grid-template-areas: 'editor output';
     align-items: start;
 }
 
@@ -430,4 +429,3 @@
 .action-buttons button.secondary span {
     color: var(--text-primary);
 }
-

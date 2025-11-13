@@ -69,7 +69,7 @@ export const translations = {
         'to-run': '실행',
         'search-language': '언어 검색...',
         'search-font': '폰트 검색...',
-        'seconds': '초'
+        seconds: '초'
     },
     en: {
         title: 'Online Compiler',
@@ -142,11 +142,10 @@ export const translations = {
         'to-run': 'to run',
         'search-language': 'Search language...',
         'search-font': 'Search font...',
-        'seconds': 's'
+        seconds: 's'
     }
 };
 
 export const getTranslation = (key, lang = 'ko') => {
     return translations[lang]?.[key] || translations.en[key] || '';
 };
-

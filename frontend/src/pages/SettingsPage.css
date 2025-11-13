@@ -244,7 +244,9 @@
 .language-select-button .select-arrow {
     width: 12px;
     height: 12px;
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
     color: var(--text-secondary);
 }
@@ -266,7 +268,9 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3);
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.5),
+        0 4px 10px rgba(0, 0, 0, 0.3);
     z-index: 10002;
     display: none;
     max-height: calc(100vh - 200px);
@@ -274,11 +278,15 @@
     overflow-x: hidden;
     opacity: 0;
     transform: translateY(-8px) scale(0.98);
-    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme='light'] .language-select-dropdown {
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.15),
+        0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .language-select-dropdown.show {
@@ -461,7 +469,9 @@
 .font-select-button .select-arrow {
     width: 12px;
     height: 12px;
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
     color: var(--text-secondary);
 }
@@ -483,14 +493,18 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3);
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.5),
+        0 4px 10px rgba(0, 0, 0, 0.3);
     z-index: 10002;
     display: none;
     max-height: calc(100vh - 200px);
     overflow: hidden;
     opacity: 0;
     transform: translateY(-8px) scale(0.98);
-    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     flex-direction: column;
 }
 
@@ -561,7 +575,9 @@
 }
 
 [data-theme='light'] .font-select-dropdown {
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.15),
+        0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .font-select-dropdown.show {
@@ -737,7 +753,9 @@
 .theme-select-button .select-arrow {
     width: 12px;
     height: 12px;
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
     color: var(--text-secondary);
 }
@@ -759,7 +777,9 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3);
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.5),
+        0 4px 10px rgba(0, 0, 0, 0.3);
     z-index: 10002;
     display: none;
     max-height: calc(100vh - 200px);
@@ -767,11 +787,15 @@
     overflow-x: hidden;
     opacity: 0;
     transform: translateY(-8px) scale(0.98);
-    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme='light'] .theme-select-dropdown {
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.15),
+        0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .theme-select-dropdown.show {
@@ -967,4 +991,3 @@
         font-size: 0.875rem;
     }
 }
-

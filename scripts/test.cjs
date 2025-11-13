@@ -14,31 +14,77 @@ function quoteArg(arg) {
 	return arg;
 }
 
+function runCommand(command, cwd, description) {
+	try {
+		console.log(`\n${description}...`);
+		execSync(command, { stdio: 'inherit', cwd });
+		console.log(`  ${description} passed\n`);
+		return true;
+	} catch (error) {
+		console.error(`  ${description} failed\n`);
+		return false;
+	}
+}
+
 try {
-    if (isWindows) {
-        const scriptPath = path.join(__dirname, 'test.ps1');
+	if (isWindows) {
+		const scriptPath = path.join(__dirname, 'test.ps1');
 		const forwarded = args.map(quoteArg).join(' ');
 		execSync(`powershell -ExecutionPolicy Bypass -File "${scriptPath}" ${forwarded}`, {
-            stdio: 'inherit',
-            cwd: rootDir
-        });
-    } else {
-        console.log('Running tests...');
-
-        console.log('Checking code formatting...');
-        execSync('npm run format', { stdio: 'inherit', cwd: rootDir });
-        execSync('npm run format:check', { stdio: 'inherit', cwd: rootDir });
-
-        console.log('Running ESLint...');
-        execSync('npm run lint', { stdio: 'inherit', cwd: rootDir });
-
-        console.log('Running backend ESLint...');
-        // use root eslint config explicitly
-        execSync('npx eslint server.js -c ../eslint.config.js', { stdio: 'inherit', cwd: path.join(rootDir, 'backend') });
-
-        console.log('[OK] All checks passed!');
-    }
+			stdio: 'inherit',
+			cwd: rootDir
+		});
+	} else {
+		console.log('Running tests and checks...\n');
+		
+		let allPassed = true;
+		const startTime = Date.now();
+		
+		if (!runCommand('npm run format', rootDir, 'Formatting code')) {
+			allPassed = false;
+		}
+		
+		if (!runCommand('npm run format:check', rootDir, 'Checking code formatting')) {
+			allPassed = false;
+		}
+		
+		if (!runCommand('npm run lint', rootDir, 'Running root ESLint')) {
+			allPassed = false;
+		}
+		
+		if (!runCommand('npx eslint server.js -c ../eslint.config.js', 
+		                path.join(rootDir, 'backend'), 
+		                'Running backend ESLint')) {
+			allPassed = false;
+		}
+		
+		if (!runCommand('npm run lint', 
+		                path.join(rootDir, 'frontend'), 
+		                'Running frontend ESLint')) {
+			allPassed = false;
+		}
+		
+		const frontendPackageJson = require(path.join(rootDir, 'frontend', 'package.json'));
+		if (frontendPackageJson.devDependencies?.typescript) {
+			if (!runCommand('npx tsc --noEmit', 
+			                path.join(rootDir, 'frontend'), 
+			                'Running TypeScript type check')) {
+				allPassed = false;
+			}
+		}
+		
+		const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+		
+		console.log('='.repeat(50));
+		if (allPassed) {
+			console.log(`\nAll checks passed! (${duration}s)\n`);
+			process.exit(0);
+		} else {
+			console.log(`\nSome checks failed. Please fix the errors above. (${duration}s)\n`);
+			process.exit(1);
+		}
+	}
 } catch (error) {
-    console.error(`[ERROR] Error running script: ${error.message}`);
-    process.exit(1);
+	console.error(`\n[ERROR] ${error.message}`);
+	process.exit(1);
 }

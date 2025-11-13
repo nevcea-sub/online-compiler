@@ -22,4 +22,3 @@ export const executeCode = async (code, language, input) => {
 
     return await response.json();
 };
-

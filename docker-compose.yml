@@ -3,17 +3,46 @@ services:
         build:
             context: ./backend
             dockerfile: Dockerfile
+        container_name: online-compiler-backend
         ports:
-            - '3000:3000'
+            - '${BACKEND_PORT:-3000}:3000'
         volumes:
             - ./backend/code:/app/code
             - ./backend/output:/app/output
             - /var/run/docker.sock:/var/run/docker.sock
         environment:
-            - PORT=3000
+            - PORT=${PORT:-3000}
+            - NODE_ENV=${NODE_ENV:-production}
+            - MAX_OUTPUT_BYTES=${MAX_OUTPUT_BYTES:-1048576}
+            - MAX_INPUT_LENGTH=${MAX_INPUT_LENGTH:-1000000}
+            - ENABLE_PRELOAD=${ENABLE_PRELOAD:-true}
+            - ENABLE_WARMUP=${ENABLE_WARMUP:-true}
+            - TRUST_PROXY=${TRUST_PROXY:-false}
+            - DEBUG=${DEBUG:-false}
+        env_file:
+            - .env
         restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "3"
         networks:
             - compiler-network
+        deploy:
+            resources:
+                limits:
+                    cpus: '2.0'
+                    memory: 2G
+                reservations:
+                    cpus: '0.5'
+                    memory: 512M
 
 networks:
     compiler-network:

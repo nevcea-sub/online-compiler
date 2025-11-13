@@ -136,4 +136,3 @@ export const FONT_CONFIG = {
         "'DejaVu Sans Mono', 'Consolas', monospace": 'DejaVu Sans Mono'
     }
 };
-

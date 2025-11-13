@@ -19,7 +19,11 @@ export const formatOutput = (text) => {
     return collapsed;
 };
 
-export const formatError = (errorText, maxLines = CONFIG.MAX_ERROR_LINES, maxLength = CONFIG.MAX_ERROR_LENGTH) => {
+export const formatError = (
+    errorText,
+    maxLines = CONFIG.MAX_ERROR_LINES,
+    maxLength = CONFIG.MAX_ERROR_LENGTH
+) => {
     if (!errorText || typeof errorText !== 'string') {
         return '';
     }
@@ -43,4 +47,3 @@ export const formatError = (errorText, maxLines = CONFIG.MAX_ERROR_LINES, maxLen
 
     return collapsed;
 };
-
