@@ -11,70 +11,70 @@ export function getWarmupConfigs(kotlinCacheDir: string): Omit<WarmupConfig, 'al
             image: 'python:3.11-slim',
             command: 'python -V',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 5000
+            timeout: 4000
         },
         {
             language: 'javascript',
             image: 'node:20-slim',
             command: 'node -v',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 5000
+            timeout: 4000
         },
         {
             language: 'c',
             image: 'gcc:14',
             command: 'gcc --version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 5000
+            timeout: 4000
         },
         {
             language: 'cpp',
             image: 'gcc:14',
             command: 'g++ --version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 5000
+            timeout: 4000
         },
         {
             language: 'java',
             image: 'eclipse-temurin:17-jdk-alpine',
             command: 'java -version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 5000
+            timeout: 4000
         },
         {
             language: 'rust',
             image: 'rust:1.81',
             command: 'rustc --version',
             tmpfsSize: TMPFS_SIZES.rust,
-            timeout: 5000
+            timeout: 4000
         },
         {
             language: 'php',
             image: 'php:8.3-alpine',
             command: 'php -v',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 10000
+            timeout: 8000
         },
         {
             language: 'r',
             image: 'r-base:4.4.1',
             command: 'Rscript --version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 5000
+            timeout: 4000
         },
         {
             language: 'ruby',
             image: 'ruby:3.3-alpine',
             command: 'ruby -v',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 5000
+            timeout: 4000
         },
         {
             language: 'csharp',
             image: 'mcr.microsoft.com/dotnet/sdk:8.0',
             command: 'dotnet --version',
             tmpfsSize: TMPFS_SIZES.csharp,
-            timeout: 10000
+            timeout: 8000
         },
         {
             language: 'kotlin',
@@ -83,49 +83,49 @@ export function getWarmupConfigs(kotlinCacheDir: string): Omit<WarmupConfig, 'al
                 ? 'java -jar /opt/kotlin/kotlinc/lib/kotlin-compiler.jar -version'
                 : `if ${KOTLIN_COMPILER_CHECK}; then ${KOTLIN_DOWNLOAD_CMD}; fi; java -jar /opt/kotlin/kotlinc/lib/kotlin-compiler.jar -version`,
             tmpfsSize: TMPFS_SIZES.kotlin,
-            timeout: 15000
+            timeout: 12000
         },
         {
             language: 'go',
             image: 'golang:1.23-alpine',
             command: 'go version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 5000
+            timeout: 4000
         },
         {
             language: 'typescript',
             image: 'node:20-slim',
             command: 'node -v',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 10000
+            timeout: 8000
         },
         {
             language: 'swift',
             image: 'swift:5.10',
             command: 'swift --version',
             tmpfsSize: TMPFS_SIZES.swift,
-            timeout: 15000
+            timeout: 12000
         },
         {
             language: 'perl',
             image: 'perl:5.40-slim',
             command: 'perl -v',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 10000
+            timeout: 8000
         },
         {
             language: 'haskell',
             image: 'haskell:9.6',
             command: 'ghc --version',
             tmpfsSize: TMPFS_SIZES.haskell,
-            timeout: 15000
+            timeout: 12000
         },
         {
             language: 'bash',
             image: 'alpine:3.19',
             command: 'echo "Alpine Linux ready for bash"',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 10000
+            timeout: 8000
         }
     ];
 }

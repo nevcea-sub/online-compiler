@@ -137,9 +137,6 @@ const CodeEditor = memo(({ onRun }) => {
                 }}
                 className="ace-editor-wrapper"
                 setOptions={{
-                    enableBasicAutocompletion: false,
-                    enableLiveAutocompletion: false,
-                    enableSnippets: false,
                     showLineNumbers: true,
                     tabSize: 4,
                     useSoftTabs: true,
