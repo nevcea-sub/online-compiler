@@ -58,6 +58,12 @@ try {
 			allPassed = false;
 		}
 
+		if (!runCommand('npm install',
+		                path.join(rootDir, 'frontend'),
+		                'Installing frontend dependencies')) {
+			allPassed = false;
+		}
+
 		if (!runCommand('npm run lint',
 		                path.join(rootDir, 'frontend'),
 		                'Running frontend ESLint')) {

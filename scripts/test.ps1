@@ -53,6 +53,10 @@ if (-not (Run-Command -Command "npx eslint server.js -c ../eslint.config.js" -Cw
     $allPassed = $false
 }
 
+if (-not (Run-Command -Command "npm install" -Cwd (Join-Path $PSScriptRoot "..\frontend") -Description "Installing frontend dependencies")) {
+    $allPassed = $false
+}
+
 if (-not (Run-Command -Command "npm run lint" -Cwd (Join-Path $PSScriptRoot "..\frontend") -Description "Running frontend ESLint")) {
     $allPassed = $false
 }
