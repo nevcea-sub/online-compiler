@@ -1,6 +1,0 @@
-node_modules/
-code/
-output/
-*.log
-.env
-tool_cache/

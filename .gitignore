@@ -12,6 +12,7 @@ pnpm-lock.yaml
 dist/
 build/
 frontend/dist/
+frontend/dist-ssr/
 *.min.js
 *.min.css
 
@@ -21,6 +22,7 @@ frontend/dist/
 .env.*.local
 .env.production
 .env.development
+*.local
 
 # Logs
 logs/
@@ -41,14 +43,13 @@ pids/
 coverage/
 *.lcov
 .nyc_output/
+.coverage/
 
 # Temporary files
 tmp/
 temp/
 *.tmp
 *.temp
-.DS_Store
-Thumbs.db
 
 # IDE and editor files
 .vscode/
@@ -69,12 +70,14 @@ Thumbs.db
 .Spotlight-V100
 .Trashes
 ehthumbs.db
+Thumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
 # Code execution temporary files
 backend/code/*
 backend/output/*
+backend/tool_cache/
 !backend/code/.gitkeep
 !backend/output/.gitkeep
 
@@ -83,8 +86,6 @@ backend/output/*
 docker-compose.override.yml
 
 # Testing
-.coverage/
-.nyc_output/
 test-results/
 playwright-report/
 
