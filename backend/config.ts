@@ -246,9 +246,9 @@ export const LANGUAGE_CONFIGS: Record<string, LanguageConfig> = {
         command: (path, inputPath) => {
             if (inputPath) {
                 const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && rm -rf Program 2>/dev/null && dotnet new console -n Program --force >/dev/null 2>&1 && cp ${path} Program/Program.cs && cp "${inputPath}" "${tmpInputPath}" && cd Program && dotnet build -c Release --no-restore -nologo -v q >/dev/null 2>&1 && dotnet exec bin/Release/net*/Program.dll < "${tmpInputPath}" 2>&1`;
+                return `cd /tmp && rm -rf Program 2>/dev/null && dotnet new console -n Program --force && cp ${path} Program/Program.cs && cp "${inputPath}" "${tmpInputPath}" && cd Program && dotnet build -c Release --no-restore -nologo -v q && dotnet exec bin/Release/net*/Program.dll < "${tmpInputPath}" 2>&1`;
             } else {
-                return `cd /tmp && rm -rf Program 2>/dev/null && dotnet new console -n Program --force >/dev/null 2>&1 && cp ${path} Program/Program.cs && cd Program && dotnet build -c Release --no-restore -nologo -v q >/dev/null 2>&1 && dotnet exec bin/Release/net*/Program.dll 2>&1`;
+                return `cd /tmp && rm -rf Program 2>/dev/null && dotnet new console -n Program --force && cp ${path} Program/Program.cs && cd Program && dotnet build -c Release --no-restore -nologo -v q && dotnet exec bin/Release/net*/Program.dll 2>&1`;
             }
         },
         timeout: MAX_EXECUTION_TIME * 2

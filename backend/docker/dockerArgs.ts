@@ -119,6 +119,10 @@ export function buildDockerArgs(
     
     args.push(...volumeMounts);
 
+    if (language === 'csharp') {
+        args.push('-e', 'DOTNET_CLI_HOME=/tmp', '-e', 'NUGET_PACKAGES=/tmp/.nuget', '-w', '/tmp');
+    }
+
     if (opts.inputPath) {
         const inputBasename = path.basename(opts.inputPath);
         
