@@ -52,7 +52,7 @@ export async function runDockerCommand(
         });
         clearTimeout(timeoutId);
         const elapsed = Date.now() - startTime;
-        return { stdout, stderr, elapsed };
+        return { stdout, stderr, elapsed, cmd: dockerCmd };
     } catch (error) {
         clearTimeout(timeoutId);
         const elapsed = Date.now() - startTime;
@@ -65,6 +65,8 @@ export async function runDockerCommand(
             stderr: err.stderr || '',
             stdout: err.stdout || ''
         };
+        // Attach the command string for richer debugging
+        (errorInfo as any).cmd = dockerCmd;
         throw { error: errorInfo, elapsed } as DockerCommandError;
     }
 }

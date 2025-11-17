@@ -13,6 +13,7 @@ export interface DockerCommandResult {
     stdout: string;
     stderr: string;
     elapsed: number;
+    cmd?: string;
 }
 
 export interface DockerCommandError {
@@ -23,6 +24,7 @@ export interface DockerCommandError {
         killed?: boolean;
         stderr: string;
         stdout: string;
+        cmd?: string;
     };
     elapsed: number;
 }

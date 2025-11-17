@@ -57,6 +57,41 @@ export const CONFIG: Config = {
     ERROR_MESSAGE_MAX_LENGTH: 200
 };
 
+const DEFAULT_WARMUP_TIMEOUTS: Record<string, number> = {
+    python: 10000,
+    javascript: 10000,
+    c: 10000,
+    cpp: 10000,
+    java: 10000,
+    rust: 10000,
+    php: 8000,
+    r: 10000,
+    ruby: 8000,
+    csharp: 8000,
+    kotlin: 12000,
+    go: 4000,
+    typescript: 8000,
+    swift: 12000,
+    perl: 8000,
+    haskell: 12000,
+    bash: 8000
+};
+
+export const WARMUP_TIMEOUTS: Record<string, number> = (() => {
+    const env = process.env.WARMUP_TIMEOUTS;
+    if (!env) return DEFAULT_WARMUP_TIMEOUTS;
+    try {
+        const parsed = JSON.parse(env);
+        if (typeof parsed === 'object' && parsed !== null) {
+            return { ...DEFAULT_WARMUP_TIMEOUTS, ...parsed };
+        }
+        return DEFAULT_WARMUP_TIMEOUTS;
+    } catch (e) {
+        console.warn('Invalid WARMUP_TIMEOUTS env var, using defaults');
+        return DEFAULT_WARMUP_TIMEOUTS;
+    }
+})();
+
 export const TMPFS_SIZES: Record<string, string> = {
     rust: '200m',
     kotlin: '200m',

@@ -6,7 +6,7 @@ import { CONFIG } from './config';
 import { ensureDirectories } from './file/fileManager';
 import { preloadDockerImages } from './docker/dockerImage';
 import { warmupKotlinOnStart, warmupContainers } from './docker/dockerWarmup';
-import { corsOptions, corsOptionsHandler } from './middleware/cors';
+import { corsOptions, corsOptionsHandler, corsDenyHandler } from './middleware/cors';
 import { executeLimiter, healthLimiter } from './middleware/rateLimit';
 import { createExecuteRoute } from './routes/execute';
 import { healthRoute } from './routes/health';
@@ -33,6 +33,7 @@ app.use(
 
 app.use(cors(corsOptions));
 app.use(corsOptionsHandler);
+app.use(corsDenyHandler);
 
 app.use(express.json({ limit: '10mb' }));
 

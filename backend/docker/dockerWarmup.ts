@@ -1,4 +1,4 @@
-import { CONFIG, TMPFS_SIZES, KOTLIN_DOWNLOAD_CMD, KOTLIN_COMPILER_CHECK } from '../config';
+import { CONFIG, TMPFS_SIZES, KOTLIN_DOWNLOAD_CMD, KOTLIN_COMPILER_CHECK, WARMUP_TIMEOUTS } from '../config';
 import { WarmupConfig, WarmupResult, DockerCommandError } from '../types';
 import { runDockerCommand } from './dockerClient';
 import { checkImageExists } from './dockerImage';
@@ -11,70 +11,70 @@ export function getWarmupConfigs(kotlinCacheDir: string): Omit<WarmupConfig, 'al
             image: 'python:3.11-slim',
             command: 'python -V',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 4000
+            timeout: WARMUP_TIMEOUTS.python || 10000
         },
         {
             language: 'javascript',
             image: 'node:20-slim',
             command: 'node -v',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 4000
+            timeout: WARMUP_TIMEOUTS.javascript || 10000
         },
         {
             language: 'c',
             image: 'gcc:14',
             command: 'gcc --version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 4000
+            timeout: WARMUP_TIMEOUTS.c || 10000
         },
         {
             language: 'cpp',
             image: 'gcc:14',
             command: 'g++ --version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 4000
+            timeout: WARMUP_TIMEOUTS.cpp || 10000
         },
         {
             language: 'java',
             image: 'eclipse-temurin:17-jdk-alpine',
             command: 'java -version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 4000
+            timeout: WARMUP_TIMEOUTS.java || 10000
         },
         {
             language: 'rust',
             image: 'rust:1.81',
             command: 'rustc --version',
             tmpfsSize: TMPFS_SIZES.rust,
-            timeout: 4000
+            timeout: WARMUP_TIMEOUTS.rust || 10000
         },
         {
             language: 'php',
             image: 'php:8.3-alpine',
             command: 'php -v',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 8000
+            timeout: WARMUP_TIMEOUTS.php || 8000
         },
         {
             language: 'r',
             image: 'r-base:4.4.1',
             command: 'Rscript --version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 4000
+            timeout: WARMUP_TIMEOUTS.r || 10000
         },
         {
             language: 'ruby',
             image: 'ruby:3.3-alpine',
             command: 'ruby -v',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 4000
+            timeout: WARMUP_TIMEOUTS.ruby || 8000
         },
         {
             language: 'csharp',
             image: 'mcr.microsoft.com/dotnet/sdk:8.0',
             command: 'dotnet --version',
             tmpfsSize: TMPFS_SIZES.csharp,
-            timeout: 8000
+            timeout: WARMUP_TIMEOUTS.csharp || 8000
         },
         {
             language: 'kotlin',
@@ -83,49 +83,49 @@ export function getWarmupConfigs(kotlinCacheDir: string): Omit<WarmupConfig, 'al
                 ? 'java -jar /opt/kotlin/kotlinc/lib/kotlin-compiler.jar -version'
                 : `if ${KOTLIN_COMPILER_CHECK}; then ${KOTLIN_DOWNLOAD_CMD}; fi; java -jar /opt/kotlin/kotlinc/lib/kotlin-compiler.jar -version`,
             tmpfsSize: TMPFS_SIZES.kotlin,
-            timeout: 12000
+            timeout: WARMUP_TIMEOUTS.kotlin || 12000
         },
         {
             language: 'go',
             image: 'golang:1.23-alpine',
             command: 'go version',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 4000
+            timeout: WARMUP_TIMEOUTS.go || 4000
         },
         {
             language: 'typescript',
             image: 'node:20-slim',
             command: 'node -v',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 8000
+            timeout: WARMUP_TIMEOUTS.typescript || 8000
         },
         {
             language: 'swift',
             image: 'swift:5.10',
             command: 'swift --version',
             tmpfsSize: TMPFS_SIZES.swift,
-            timeout: 12000
+            timeout: WARMUP_TIMEOUTS.swift || 12000
         },
         {
             language: 'perl',
             image: 'perl:5.40-slim',
             command: 'perl -v',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 8000
+            timeout: WARMUP_TIMEOUTS.perl || 8000
         },
         {
             language: 'haskell',
             image: 'haskell:9.6',
             command: 'ghc --version',
             tmpfsSize: TMPFS_SIZES.haskell,
-            timeout: 12000
+            timeout: WARMUP_TIMEOUTS.haskell || 12000
         },
         {
             language: 'bash',
             image: 'alpine:3.19',
             command: 'echo "Alpine Linux ready for bash"',
             tmpfsSize: TMPFS_SIZES.default,
-            timeout: 8000
+            timeout: WARMUP_TIMEOUTS.bash || 8000
         }
     ];
 }
@@ -203,6 +203,20 @@ export async function warmupContainer(
                 errorMessage = lastLine;
             } else if (stderrLines.length > 0) {
                 errorMessage = stderrLines[0].substring(0, 150);
+            }
+        }
+
+        // Detailed debug logging (only to server console) for developers
+        if (CONFIG.DEBUG_MODE) {
+            console.debug(`[WARMUP][DEBUG] Failed warmup for ${config.language}`);
+            if ((errorInfo as any).cmd) {
+                console.debug('[WARMUP][DEBUG] Docker command:', (errorInfo as any).cmd);
+            }
+            if (errorInfo.stdout && errorInfo.stdout.trim()) {
+                console.debug('[WARMUP][DEBUG] Stdout:\n', errorInfo.stdout);
+            }
+            if (errorInfo.stderr && errorInfo.stderr.trim()) {
+                console.debug('[WARMUP][DEBUG] Stderr:\n', errorInfo.stderr);
             }
         }
 

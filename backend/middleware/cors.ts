@@ -21,18 +21,46 @@ export const corsOptions: cors.CorsOptions = {
             if (allowedOrigins.includes(origin) || allowInDev) {
                 return callback(null, true);
             }
-            return callback(new Error('Not allowed by CORS'), false);
+            return callback(null, false);
         }
 
         if (allowInDev) {
             return callback(null, true);
         }
-
-        return callback(new Error('Not allowed by CORS'), false);
+        return callback(null, false);
     },
     credentials: true,
     optionsSuccessStatus: 200
 };
+
+export function corsDenyHandler(req: Request, res: Response, next: NextFunction): void {
+    if (req.method === 'OPTIONS') {
+        return next();
+    }
+
+    const origin = (req.headers.origin || '') as string;
+    if (!origin) {
+        return next();
+    }
+
+    const isNullOrigin = origin === 'null';
+    const isLocalhost = devLocalhostRegex.test(origin);
+    const allowInDev = !isProduction && (isLocalhost || isNullOrigin);
+
+    let allowed = false;
+    if (allowedOrigins.length > 0) {
+        allowed = allowedOrigins.includes(origin) || allowInDev;
+    } else if (allowInDev) {
+        allowed = true;
+    }
+
+    if (!allowed) {
+        res.status(403).send('Not allowed by CORS');
+        return;
+    }
+
+    next();
+}
 
 export function corsOptionsHandler(req: Request, res: Response, next: NextFunction): void {
     if (req.method === 'OPTIONS') {
