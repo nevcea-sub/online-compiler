@@ -9,13 +9,6 @@ const rootDir = path.join(__dirname, '..');
 const scriptPath = path.join(__dirname, 'dev.ps1');
 const args = process.argv.slice(2);
 
-function _quoteArg(arg) {
-	if (/[\s\"]/g.test(arg)) {
-		return `"${arg.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-	}
-	return arg;
-}
-
 function resolveDockerComposeCommand() {
 	try {
 		execSync('docker compose version', { stdio: 'ignore' });

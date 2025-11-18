@@ -21,7 +21,7 @@ RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi && npm cache 
 
 # Copy source files
 COPY server.ts ./
-COPY config.ts ./
+COPY config/ ./config/
 COPY docker/ ./docker/
 COPY execution/ ./execution/
 COPY file/ ./file/
