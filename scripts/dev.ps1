@@ -147,17 +147,21 @@ $upArgs = $compose.Args + @('up','-d')
 Assert-LastExitCode "docker compose up -d"
 
 Write-Host "`nWaiting for backend to be ready..." -ForegroundColor Blue
+
+$backendPort = if ($env:BACKEND_PORT) { $env:BACKEND_PORT } elseif ($env:PORT) { $env:PORT } else { 3000 }
 try {
-    Wait-ForService -Url "http://localhost:3000/health" -Timeout 30000
+    Wait-ForService -Url "http://localhost:$backendPort/health" -Timeout 30000
     Write-Host "  Backend is ready" -ForegroundColor Green
 } catch {
     Write-Host "  Backend health check failed, but continuing..." -ForegroundColor Yellow
 }
 
 Write-Host "`nDevelopment environment is ready!`n" -ForegroundColor Green
+
+$frontendPort = if ($env:FRONTEND_PORT) { $env:FRONTEND_PORT } else { 5173 }
 Write-Host "Service URLs:" -ForegroundColor Cyan
-Write-Host "   Frontend: http://localhost:5173" -ForegroundColor White
-Write-Host "   Backend API: http://localhost:3000" -ForegroundColor White
+Write-Host "   Frontend: http://localhost:$frontendPort" -ForegroundColor White
+Write-Host "   Backend API: http://localhost:$backendPort" -ForegroundColor White
 Write-Host "`nUseful commands:" -ForegroundColor Yellow
 Write-Host "   Stop services: docker compose down" -ForegroundColor White
 Write-Host "   View logs: docker compose logs -f" -ForegroundColor White

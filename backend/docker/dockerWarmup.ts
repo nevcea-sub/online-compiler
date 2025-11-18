@@ -89,8 +89,8 @@ export function getWarmupConfigs(kotlinCacheDir: string): Omit<WarmupConfig, 'al
             language: 'go',
             image: 'golang:1.23-alpine',
             command: 'go version',
-            tmpfsSize: TMPFS_SIZES.default,
-            timeout: WARMUP_TIMEOUTS.go || 4000
+            tmpfsSize: TMPFS_SIZES.go || TMPFS_SIZES.default,
+            timeout: WARMUP_TIMEOUTS.go || 10000
         },
         {
             language: 'typescript',

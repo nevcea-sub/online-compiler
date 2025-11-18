@@ -1,5 +1,7 @@
 export const CONFIG = {
-    API_URL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+    // Vite dev 서버 프록시(`/api` → 백엔드 4000번 포트)를 사용하므로
+    // 개발 환경에서는 API_URL을 비워 두고 상대 경로(`/api/...`)로만 호출합니다.
+    API_URL: import.meta.env.VITE_API_URL || '',
     DEFAULT_LANGUAGE: 'python' as const,
     DEFAULT_THEME: 'system' as const,
     DEFAULT_FONT_FAMILY: "'Consolas', 'Monaco', 'Courier New', monospace",

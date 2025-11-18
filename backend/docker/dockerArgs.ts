@@ -1,5 +1,12 @@
 import path from 'path';
-import { CONFIG, TMPFS_SIZES, CONTAINER_CODE_PATHS, LANGUAGE_EXTENSIONS, LANGUAGE_CONFIGS } from '../config';
+import {
+    CONFIG,
+    TMPFS_SIZES,
+    CONTAINER_CODE_PATHS,
+    LANGUAGE_EXTENSIONS,
+    LANGUAGE_CONFIGS,
+    CPU_LIMITS
+} from '../config';
 import { BuildOptions } from '../types';
 import { validateLanguage, validateImage } from '../utils/validation';
 import { convertToDockerPath, getContainerCodePath } from '../utils/pathUtils';
@@ -51,7 +58,12 @@ export function buildDockerArgs(
     
     args.push('run', '--rm');
     args.push(`--memory=${CONFIG.MAX_MEMORY}`);
-    args.push(`--cpus=${language === 'kotlin' ? CONFIG.MAX_CPU_PERCENT_KOTLIN : CONFIG.MAX_CPU_PERCENT}`);
+
+    const cpuLimit =
+        language === 'kotlin'
+            ? CONFIG.MAX_CPU_PERCENT_KOTLIN
+            : CPU_LIMITS[language] || CONFIG.MAX_CPU_PERCENT;
+    args.push(`--cpus=${cpuLimit}`);
     
     if (language !== 'typescript' && language !== 'bash') {
         args.push('--network=none');

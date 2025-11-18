@@ -144,8 +144,10 @@ try {
 			execFileSync('docker-compose', ['up', '-d'], { stdio: 'inherit', cwd: rootDir });
 		}
 
+		const backendPort = process.env.BACKEND_PORT || process.env.PORT || 3000;
+
 		console.log('\nWaiting for backend to be ready...');
-		waitForService('http://localhost:3000/health', 30000)
+		waitForService(`http://localhost:${backendPort}/health`, 30000)
 			.then(() => {
 				console.log('  Backend is ready');
 			})
@@ -153,10 +155,12 @@ try {
 				console.warn('  Backend health check failed, but continuing...');
 			});
 
+		const frontendPort = process.env.FRONTEND_PORT || 5173;
+
 		console.log('\nDevelopment environment is ready!\n');
 		console.log('Service URLs:');
-		console.log('   Frontend: http://localhost:5173');
-		console.log('   Backend API: http://localhost:3000');
+		console.log(`   Frontend: http://localhost:${frontendPort}`);
+		console.log(`   Backend API: http://localhost:${backendPort}`);
 		console.log('\nUseful commands:');
 		console.log('   Stop services: docker compose down');
 		console.log('   View logs: docker compose logs -f');

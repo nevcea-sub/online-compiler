@@ -21,11 +21,16 @@ export async function executeDockerProcess(
     kotlinCacheDir?: string
 ): Promise<void> {
     const dockerArgs = buildDockerArgs(language, fullCodePath, buildOptions, kotlinCacheDir);
-    
+
     if (CONFIG.DEBUG_MODE) {
+        console.log('[EXECUTE] Starting Docker execution', {
+            language,
+            timeout: config.timeout,
+            hasInput: !!fullInputPath
+        });
         console.log('[DEBUG] Docker command:', 'docker', dockerArgs.join(' '));
     }
-    
+
     const controller = new AbortController();
     const abortTimeoutId = setTimeout(
         () => controller.abort(),
@@ -67,7 +72,15 @@ export async function executeDockerProcess(
             await cleanupResources(fullCodePath, fullInputPath);
 
             const { stdout, stderr } = outputCollector.getFinalOutput();
-            
+
+            if (CONFIG.DEBUG_MODE) {
+                console.log('[EXECUTE] Process closed', {
+                    language,
+                    code,
+                    executionTime
+                });
+            }
+
             let error: ExecutionError | null = null;
             if (code !== 0) {
                 error = { code, killed: false, signal: null };
@@ -124,7 +137,15 @@ export async function executeDockerProcess(
             await cleanupResources(fullCodePath, fullInputPath);
 
             const { stdout, stderr } = outputCollector.getFinalOutput();
-            
+
+            if (CONFIG.DEBUG_MODE) {
+                console.error('[EXECUTE] Process error', {
+                    language,
+                    executionTime,
+                    errorMessage: error.message
+                });
+            }
+
             const errorMessage = error.message || '';
             const combinedStderr = stderr || errorMessage;
             
@@ -185,6 +206,14 @@ export async function executeDockerProcess(
         }
 
         try {
+            if (CONFIG.DEBUG_MODE) {
+                console.warn('[EXECUTE] Execution timeout reached', {
+                    language,
+                    timeout: config.timeout,
+                    timeoutBufferMs: CONFIG.TIMEOUT_BUFFER_MS
+                });
+            }
+
             controller.abort();
             dockerProcess.kill('SIGTERM');
 
