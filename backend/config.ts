@@ -1,3 +1,22 @@
+import {
+    buildPythonCommand,
+    buildJavascriptCommand,
+    buildJavaCommand,
+    buildCppCommand,
+    buildCCommand,
+    buildRustCommand,
+    buildPhpCommand,
+    buildRCommand,
+    buildRubyCommand,
+    buildCsharpCommand,
+    buildGoCommand,
+    buildTypescriptCommand,
+    buildSwiftCommand,
+    buildPerlCommand,
+    buildHaskellCommand,
+    buildBashCommand
+} from './languageCommands';
+
 const MAX_EXECUTION_TIME = 10000;
 
 const KOTLIN_COMPILER_VERSION = '2.0.21';
@@ -217,199 +236,91 @@ export interface LanguageConfig {
     timeout: number;
 }
 
+function buildKotlinCommand(path: string, inputPath?: string, buildDir?: string): string {
+    const jvmOpts =
+        '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Xms32m -Xmx128m -XX:ReservedCodeCacheSize=16m -XX:InitialCodeCacheSize=8m -XX:+OptimizeStringConcat -XX:+UseCompressedOops -XX:+UseCompressedClassPointers';
+    const kotlinOpts =
+        '-Xjvm-default=all -Xno-param-assertions -Xno-call-assertions -Xno-receiver-assertions -Xskip-prerelease-check';
+    const kotlinSetup = `if ${KOTLIN_COMPILER_CHECK}; then ${KOTLIN_DOWNLOAD_CMD}; fi`;
+    const outDir = buildDir || '/tmp/kbuild';
+    const compileCmd = `mkdir -p ${outDir}/out && java ${jvmOpts} -jar /opt/kotlin/kotlinc/lib/kotlin-compiler.jar ${kotlinOpts} -d ${outDir}/out "${path}" 2>&1`;
+
+    if (inputPath) {
+        const tmpInputPath = '/tmp/input.txt';
+        return `cd /tmp && ${kotlinSetup} && ${compileCmd} && cp "${inputPath}" "${tmpInputPath}" && java ${jvmOpts} -cp "${outDir}/out:/opt/kotlin/kotlinc/lib/*" CodeKt < "${tmpInputPath}" 2>&1`;
+    } else {
+        return `cd /tmp && ${kotlinSetup} && ${compileCmd} && java ${jvmOpts} -cp "${outDir}/out:/opt/kotlin/kotlinc/lib/*" CodeKt 2>&1`;
+    }
+}
+
 const BASE_LANGUAGE_CONFIGS: Record<string, Omit<LanguageConfig, 'timeout'>> = {
     python: {
         image: 'python:3.11-slim',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && cp "${inputPath}" "${tmpInputPath}" && export PYTHONPATH=/tmp PYTHONUNBUFFERED=1 && python3 -u -c "import runpy,sys; sys.path.insert(0,'/tmp'); runpy.run_path('${path}', run_name='__main__')" < "${tmpInputPath}" 2>&1 || python -u -c "import runpy,sys; sys.path.insert(0,'/tmp'); runpy.run_path('${path}', run_name='__main__')" < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && export PYTHONPATH=/tmp PYTHONUNBUFFERED=1 && (python3 -u -c "import runpy,sys; sys.path.insert(0,'/tmp'); runpy.run_path('${path}', run_name='__main__')" 2>&1 || python -u -c "import runpy,sys; sys.path.insert(0,'/tmp'); runpy.run_path('${path}', run_name='__main__')" 2>&1)`;
-            }
-        }
+        command: buildPythonCommand
     },
     javascript: {
         image: 'node:20-slim',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && cp "${inputPath}" "${tmpInputPath}" && node "${path}" < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && node "${path}" 2>&1`;
-            }
-        }
+        command: buildJavascriptCommand
     },
     java: {
         image: 'eclipse-temurin:17-jdk-alpine',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && javac -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 "${path}" 2>&1 && cp "${inputPath}" "${tmpInputPath}" && java -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -cp /tmp Main < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && javac -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 "${path}" 2>&1 && java -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -cp /tmp Main 2>&1`;
-            }
-        }
+        command: buildJavaCommand
     },
     cpp: {
         image: 'gcc:14',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && g++ -O1 -pipe -o /tmp/a.out "${path}" 2>&1 && cp "${inputPath}" "${tmpInputPath}" && /tmp/a.out < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && g++ -O1 -pipe -o /tmp/a.out "${path}" 2>&1 && /tmp/a.out 2>&1`;
-            }
-        }
+        command: buildCppCommand
     },
     c: {
         image: 'gcc:14',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && gcc -O1 -pipe -o /tmp/a.out "${path}" 2>&1 && cp "${inputPath}" "${tmpInputPath}" && /tmp/a.out < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && gcc -O1 -pipe -o /tmp/a.out "${path}" 2>&1 && /tmp/a.out 2>&1`;
-            }
-        }
+        command: buildCCommand
     },
     rust: {
         image: 'rust:1.81',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && rustc -C opt-level=1 "${path}" -o /tmp/a.out 2>&1 && cp "${inputPath}" "${tmpInputPath}" && /tmp/a.out < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && rustc -C opt-level=1 "${path}" -o /tmp/a.out 2>&1 && /tmp/a.out 2>&1`;
-            }
-        }
+        command: buildRustCommand
     },
     php: {
         image: 'php:8.3-alpine',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && cp "${inputPath}" "${tmpInputPath}" && php "${path}" < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && php "${path}" 2>&1`;
-            }
-        }
+        command: buildPhpCommand
     },
     r: {
         image: 'r-base:4.4.1',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && cp "${inputPath}" "${tmpInputPath}" && Rscript "${path}" < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && Rscript "${path}" 2>&1`;
-            }
-        }
+        command: buildRCommand
     },
     ruby: {
         image: 'ruby:3.3-alpine',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && cp "${inputPath}" "${tmpInputPath}" && ruby "${path}" < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && ruby "${path}" 2>&1`;
-            }
-        }
+        command: buildRubyCommand
     },
     csharp: {
         image: 'mcr.microsoft.com/dotnet/sdk:8.0',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && rm -rf Program 2>/dev/null && dotnet new console -n Program --force && cp ${path} Program/Program.cs && cp "${inputPath}" "${tmpInputPath}" && cd Program && dotnet build -c Release --no-restore -nologo -v q && dotnet exec bin/Release/net*/Program.dll < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && rm -rf Program 2>/dev/null && dotnet new console -n Program --force && cp ${path} Program/Program.cs && cd Program && dotnet build -c Release --no-restore -nologo -v q && dotnet exec bin/Release/net*/Program.dll 2>&1`;
-            }
-        }
+        command: buildCsharpCommand
     },
     kotlin: {
         image: 'eclipse-temurin:17-jdk-alpine',
-        command: (path, inputPath, buildDir) => {
-            const jvmOpts =
-                '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Xms32m -Xmx128m -XX:ReservedCodeCacheSize=16m -XX:InitialCodeCacheSize=8m -XX:+OptimizeStringConcat -XX:+UseCompressedOops -XX:+UseCompressedClassPointers';
-            const kotlinOpts =
-                '-Xjvm-default=all -Xno-param-assertions -Xno-call-assertions -Xno-receiver-assertions -Xskip-prerelease-check';
-            const kotlinSetup = `if ${KOTLIN_COMPILER_CHECK}; then ${KOTLIN_DOWNLOAD_CMD}; fi`;
-            const compileCmd = `mkdir -p ${buildDir}/out && java ${jvmOpts} -jar /opt/kotlin/kotlinc/lib/kotlin-compiler.jar ${kotlinOpts} -d ${buildDir}/out "${path}" 2>&1`;
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && ${kotlinSetup} && ${compileCmd} && cp "${inputPath}" "${tmpInputPath}" && java ${jvmOpts} -cp "${buildDir}/out:/opt/kotlin/kotlinc/lib/*" CodeKt < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && ${kotlinSetup} && ${compileCmd} && java ${jvmOpts} -cp "${buildDir}/out:/opt/kotlin/kotlinc/lib/*" CodeKt 2>&1`;
-            }
-        }
+        command: (path, inputPath, buildDir) => buildKotlinCommand(path, inputPath, buildDir)
     },
     go: {
         image: 'golang:1.23-alpine',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && export GOCACHE=/tmp/.cache/go-build && export HOME=/tmp && cp "${inputPath}" "${tmpInputPath}" && go run "${path}" < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && export GOCACHE=/tmp/.cache/go-build && export HOME=/tmp && go run "${path}" 2>&1`;
-            }
-        }
+        command: buildGoCommand
     },
     typescript: {
         image: 'node:20-slim',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && export HOME=/tmp && export npm_config_cache=/tmp/.npm && cp "${inputPath}" "${tmpInputPath}" && npx -y tsx "${path}" < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && export HOME=/tmp && export npm_config_cache=/tmp/.npm && npx -y tsx "${path}" 2>&1`;
-            }
-        }
+        command: buildTypescriptCommand
     },
     swift: {
         image: 'swift:5.10',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && export HOME=/tmp && cp "${inputPath}" "${tmpInputPath}" && swift "${path}" < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && export HOME=/tmp && swift "${path}" 2>&1`;
-            }
-        }
+        command: buildSwiftCommand
     },
     perl: {
         image: 'perl:5.40-slim',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && cp "${inputPath}" "${tmpInputPath}" && perl "${path}" < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && perl "${path}" 2>&1`;
-            }
-        }
+        command: buildPerlCommand
     },
     haskell: {
         image: 'haskell:9.6',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && ghc -o /tmp/a.out "${path}" 2>&1 && cp "${inputPath}" "${tmpInputPath}" && /tmp/a.out < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && ghc -o /tmp/a.out "${path}" 2>&1 && /tmp/a.out 2>&1`;
-            }
-        }
+        command: buildHaskellCommand
     },
     bash: {
-        image: 'alpine:3.19',
-        command: (path, inputPath) => {
-            if (inputPath) {
-                const tmpInputPath = '/tmp/input.txt';
-                return `cd /tmp && apk add --no-cache --cache-dir /tmp/apk-cache bash >/dev/null 2>&1 && cp "${inputPath}" "${tmpInputPath}" && bash "${path}" < "${tmpInputPath}" 2>&1`;
-            } else {
-                return `cd /tmp && apk add --no-cache --cache-dir /tmp/apk-cache bash >/dev/null 2>&1 && bash "${path}" 2>&1`;
-            }
-        }
+        image: 'bash:5.2',
+        command: buildBashCommand
     }
 };
 

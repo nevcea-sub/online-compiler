@@ -122,8 +122,8 @@ export function getWarmupConfigs(kotlinCacheDir: string): Omit<WarmupConfig, 'al
         },
         {
             language: 'bash',
-            image: 'alpine:3.19',
-            command: 'echo "Alpine Linux ready for bash"',
+            image: 'bash:5.2',
+            command: 'bash --version',
             tmpfsSize: TMPFS_SIZES.default,
             timeout: WARMUP_TIMEOUTS.bash || 8000
         }
