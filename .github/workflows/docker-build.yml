@@ -17,6 +17,8 @@ on:
 jobs:
     docker-build:
         name: Docker Build and Test
+        permissions:
+            contents: read
         runs-on: ubuntu-latest
 
         steps:

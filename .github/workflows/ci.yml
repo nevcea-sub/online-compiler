@@ -1,4 +1,6 @@
 name: CI
+permissions:
+    contents: read
 
 on:
     push:
@@ -6,6 +8,8 @@ on:
     pull_request:
         branches: [main, master, develop]
 
+permissions:
+  contents: read
 jobs:
     lint-and-format:
         name: Lint and Format Check

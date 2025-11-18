@@ -9,6 +9,8 @@ jobs:
     format:
         name: Auto Format Code
         runs-on: ubuntu-latest
+        permissions:
+            contents: write
 
         steps:
             - name: Checkout code
