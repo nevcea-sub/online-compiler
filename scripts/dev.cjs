@@ -3,36 +3,10 @@
 const { execSync, spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { isWindows, rootDir, runPs1, checkCommand, resolveDockerComposeCommand, loadEnvFile } = require('./shared.cjs');
 
-const isWindows = process.platform === 'win32';
-const rootDir = path.join(__dirname, '..');
 const scriptPath = path.join(__dirname, 'dev.ps1');
 const args = process.argv.slice(2);
-
-function resolveDockerComposeCommand() {
-	try {
-		execSync('docker compose version', { stdio: 'ignore' });
-		return 'docker compose';
-	} catch {
-		void 0;
-	}
-	try {
-		execSync('docker-compose --version', { stdio: 'ignore' });
-		return 'docker-compose';
-	} catch {
-		throw new Error('Docker Compose is not installed. Please install Docker Desktop or docker-compose.');
-	}
-}
-
-function checkCommand(command, name) {
-	try {
-		execSync(`${command} --version`, { stdio: 'ignore' });
-		return true;
-	} catch {
-		console.error(`[ERROR] ${name} is not installed. Please install ${name} first.`);
-		return false;
-	}
-}
 
 function waitForService(url, timeout = 30000, interval = 1000) {
 	return new Promise((resolve, reject) => {
@@ -58,35 +32,9 @@ function waitForService(url, timeout = 30000, interval = 1000) {
 	});
 }
 
-function loadEnvFile(envPath) {
-	if (!fs.existsSync(envPath)) {
-		return {};
-	}
-
-	const env = {};
-	const content = fs.readFileSync(envPath, 'utf-8');
-	const lines = content.split('\n');
-
-	for (const line of lines) {
-		const trimmed = line.trim();
-		if (trimmed && !trimmed.startsWith('#')) {
-			const [key, ...valueParts] = trimmed.split('=');
-			if (key && valueParts.length > 0) {
-				env[key.trim()] = valueParts.join('=').trim().replace(/^["']|["']$/g, '');
-			}
-		}
-	}
-
-	return env;
-}
-
 try {
 	if (isWindows) {
-		const { execFileSync } = require('child_process');
-		execFileSync('powershell', ['-ExecutionPolicy', 'Bypass', '-File', scriptPath, ...args], {
-			stdio: 'inherit',
-			cwd: rootDir
-		});
+		runPs1('dev.ps1', args);
 	} else {
 		console.log('Starting development environment...\n');
 
