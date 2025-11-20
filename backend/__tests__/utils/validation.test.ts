@@ -56,8 +56,6 @@ describe('Validation Utilities', () => {
 
     describe('validateImage', () => {
         it('should accept valid Docker images that are configured', () => {
-            // These would need to match actual images in LANGUAGE_CONFIGS
-            // For now, test the function works with the image validation logic
             expect(validateImage('python:3.12-alpine')).toBeDefined();
             expect(validateImage('invalid-image')).toBe(false);
         });
@@ -107,7 +105,6 @@ describe('Validation Utilities', () => {
             expect(() => sanitizeCode('\t\t')).toThrow('코드는 비어있을 수 없습니다.');
         });
 
-        // Security: Dangerous pattern detection tests
         describe('Security - Dangerous Pattern Detection', () => {
             it('should reject destructive file system commands', () => {
                 expect(() => sanitizeCode('rm -rf /')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
@@ -246,7 +243,6 @@ class Main {
 
         it('should validate class name matches file name comment', () => {
             const mismatchedCode = `
-// File: Wrong.java
 public class Main {
     public static void main(String[] args) {}
 }`;
@@ -255,7 +251,6 @@ public class Main {
 
         it('should accept matching class and file names', () => {
             const matchedCode = `
-// File: Main.java
 public class Main {
     public static void main(String[] args) {}
 }`;

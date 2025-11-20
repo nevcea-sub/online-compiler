@@ -42,7 +42,7 @@ describe('Error Handling Utilities', () => {
         it('should truncate long messages to 500 characters', () => {
             const longMessage = 'a'.repeat(1000);
             const result = filterDockerMessages(longMessage);
-            expect(result.length).toBeLessThanOrEqual(503); // 500 + '...'
+            expect(result.length).toBeLessThanOrEqual(503);
             expect(result).toContain('...');
         });
 
@@ -196,7 +196,7 @@ describe('Error Handling Utilities', () => {
         it('should limit error length to 300 characters', () => {
             const longError = 'Error: ' + 'a'.repeat(500);
             const result = sanitizeErrorForUser(longError);
-            expect(result.length).toBeLessThanOrEqual(303); // 300 + '...'
+            expect(result.length).toBeLessThanOrEqual(303);
         });
 
         it('should return default message for empty sanitized errors', () => {
@@ -222,7 +222,6 @@ describe('Error Handling Utilities', () => {
         it('should remove stack traces', () => {
             const errorWithStack = 'Error: Something failed\n    at function1\n    at function2\n    at function3';
             const result = sanitizeErrorForUser(errorWithStack);
-            // Stack traces should be removed or reduced
             expect(result).not.toContain('    at function1');
         });
 

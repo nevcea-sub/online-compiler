@@ -72,7 +72,7 @@ describe('Health Route', () => {
     it('should return JSON response synchronously', () => {
         const result = healthRoute(mockRequest as Request, mockResponse as Response);
 
-        expect(result).toBeUndefined(); // void return type
+        expect(result).toBeUndefined();
         expect(jsonMock).toHaveBeenCalled();
     });
 });

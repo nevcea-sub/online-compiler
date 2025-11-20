@@ -16,7 +16,7 @@ describe('Security - Input Validation and Edge Cases', () => {
 
         it('should detect dangerous patterns with Unicode characters', () => {
             const hiddenCommands = [
-                'test\u202Emr -rf /',  // Contains rm -rf reversed visually
+                'test\u202Emr -rf /',
             ];
             hiddenCommands.forEach(code => {
                 if (code.includes('rm') && code.includes('-rf')) {
@@ -40,7 +40,6 @@ describe('Security - Input Validation and Edge Cases', () => {
         });
 
         it('should handle large but acceptable code', () => {
-            // Test with 50KB of code
             const largeCode = 'function test() { return 42; }\n'.repeat(2000);
             expect(() => sanitizeCode(largeCode)).not.toThrow();
         });
@@ -154,7 +153,6 @@ describe('Security - Input Validation and Edge Cases', () => {
             const objectWithToString = {
                 toString: () => 'rm -rf /'
             };
-            // Should reject non-string type, not call toString
             expect(() => sanitizeCode(objectWithToString as any)).toThrow('코드는 문자열이어야 합니다.');
         });
     });
@@ -173,8 +171,8 @@ describe('Security - Input Validation and Edge Cases', () => {
 
         it('should detect patterns with quotes', () => {
             const quotedPatterns = [
-                'do"cker run',  // docker with quotes
-                'su"do bash'   // sudo with quotes
+                'do"cker run',
+                'su"do bash'
             ];
             quotedPatterns.forEach(code => {
                 if (code.toLowerCase().includes('docker') || code.toLowerCase().includes('sudo')) {

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
 const path = require('path');
 
 const isWindows = process.platform === 'win32';
@@ -8,15 +7,14 @@ const rootDir = path.join(__dirname, '..');
 const args = process.argv.slice(2);
 
 function _quoteArg(arg) {
-	if (/[\s\"]/g.test(arg)) {
+	if (/[\s"]/g.test(arg)) {
 		return `"${arg.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 	}
 	return arg;
 }
 
 function splitCommand(cmd) {
-	// split respecting quoted strings
-	const parts = cmd.match(/(?:[^\s\"]+|"[^"]*")+/g) || [];
+	const parts = cmd.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
 	return parts.map((p) => p.replace(/^"|"$/g, ''));
 }
 
@@ -30,7 +28,8 @@ function runCommand(command, cwd, description) {
 		execFileSync(cmd, args, { stdio: 'inherit', cwd });
 		console.log(`  ${description} passed\n`);
 		return true;
-	} catch (e) {
+	// eslint-disable-next-line no-unused-vars
+	} catch (_) {
 		console.error(`  ${description} failed\n`);
 		return false;
 	}

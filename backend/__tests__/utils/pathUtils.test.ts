@@ -8,7 +8,6 @@ import {
 import * as fs from 'fs';
 import path from 'path';
 
-// Mock fs for kotlinCompilerExistsOnHost tests
 jest.mock('fs');
 
 describe('Path Utilities', () => {
@@ -92,11 +91,9 @@ describe('Path Utilities', () => {
         it('should handle relative paths correctly', () => {
             const relativePath = './relative/path.txt';
             const result = validatePath(relativePath);
-            // validatePath checks if the path is safe, may return false for relative paths
             expect(typeof result).toBe('boolean');
         });
 
-        // Security: Path traversal and injection tests
         describe('Security - Path Traversal Prevention', () => {
             it('should detect path traversal attempts with ..', () => {
                 const traversalPaths = [
@@ -107,7 +104,6 @@ describe('Path Utilities', () => {
                 ];
                 traversalPaths.forEach(filePath => {
                     const result = validatePath(filePath);
-                    // These should be handled safely by validatePath
                     expect(typeof result).toBe('boolean');
                 });
             });
@@ -158,7 +154,6 @@ describe('Path Utilities', () => {
                 ];
                 suspiciousPaths.forEach(filePath => {
                     const result = validatePath(filePath);
-                    // Should return boolean, security check is in place
                     expect(typeof result).toBe('boolean');
                 });
             });
@@ -202,7 +197,6 @@ describe('Path Utilities', () => {
             expect(result).toBeTruthy();
         });
 
-        // Platform-specific tests
         if (process.platform === 'win32') {
             it('should convert Windows paths to Docker format on Windows', () => {
                 const windowsPath = 'C:\\Users\\test\\code.py';
@@ -258,8 +252,6 @@ describe('Path Utilities', () => {
     });
 
     describe('kotlinCompilerExistsOnHost', () => {
-        // Note: This function uses caching, so tests may be affected by cache state
-        // Skip these tests as they require complex cache management
         it.skip('should return true when Kotlin compiler exists', () => {
             (fs.existsSync as jest.Mock).mockReturnValue(true);
             const result = kotlinCompilerExistsOnHost('/tmp/kotlin_cache');
@@ -275,13 +267,11 @@ describe('Path Utilities', () => {
         it.skip('should cache results for performance', () => {
             (fs.existsSync as jest.Mock).mockReturnValue(true);
             
-            // First call
             kotlinCompilerExistsOnHost('/tmp/kotlin_cache');
             expect(fs.existsSync).toHaveBeenCalledTimes(1);
             
-            // Second call within cache TTL should use cached value
             kotlinCompilerExistsOnHost('/tmp/kotlin_cache');
-            expect(fs.existsSync).toHaveBeenCalledTimes(1); // Still 1, used cache
+            expect(fs.existsSync).toHaveBeenCalledTimes(1);
         });
 
         it.skip('should handle errors gracefully', () => {
