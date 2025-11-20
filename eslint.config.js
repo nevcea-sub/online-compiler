@@ -90,6 +90,28 @@ export default [
         }
     },
     {
+        files: ['backend/**/*.ts', '**/backend/**/*.ts', 'server.ts'],
+        languageOptions: {
+            parser: tsparser,
+            parserOptions: {
+                ecmaVersion: 'latest',
+                sourceType: 'module'
+            },
+            globals: {
+                ...globals.node
+            }
+        },
+        plugins: {
+            '@typescript-eslint': tseslint
+        },
+        rules: {
+            'no-console': 'off',
+            'no-undef': 'off',
+            'no-unused-vars': 'off',
+            '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }]
+        }
+    },
+    {
         files: ['frontend/**/*.{js,jsx,ts,tsx}'],
         languageOptions: {
             globals: globals.browser,

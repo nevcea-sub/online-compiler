@@ -30,7 +30,9 @@ function setupBasicSettings(app: express.Application): void {
 }
 
 function setupRequestLogging(app: express.Application): void {
-    if (!CONFIG.DEBUG_MODE) return;
+    if (!CONFIG.DEBUG_MODE) {
+        return;
+    }
 
     app.use((req: Request, _res: Response, next: NextFunction) => {
         console.log(`[REQ] ${req.method} ${req.path} Origin=${req.headers.origin || 'n/a'}`);
@@ -71,7 +73,9 @@ function createCorsOptions(isProduction: boolean): CorsOptions {
 
     return {
         origin: (origin, callback) => {
-            if (!origin) return callback(null, true);
+            if (!origin) {
+                return callback(null, true);
+            }
             if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) {
                 return callback(null, true);
             }
