@@ -10,6 +10,7 @@ import { cleanupFile, writeInputFile, writeCodeFile, generateSessionId } from '.
 import { executeDockerProcess } from '../execution/executor';
 import { warmupKotlinOnStart } from '../docker/dockerWarmup';
 import { kotlinCompilerExistsOnHost } from '../utils/pathUtils';
+import { executionQueue } from '../execution/executionQueue';
 
 function validateCodePath(filePath: unknown, codeDir: string): boolean {
     const normalized = normalizePath(filePath);
@@ -177,20 +178,28 @@ export function createExecuteRoute(
                 throw new Error('코드 경로가 없습니다.');
             }
 
-            await executeDockerProcess(
+            const executionId = `${sessionId}_${language}_${Date.now()}`;
+            await executionQueue.enqueue(
+                executionId,
                 language,
-                fullCodePath,
-                buildOptions,
-                config,
-                startTime,
-                res,
-                sessionOutputDir,
-                fullInputPath,
-                () => executionResponseSent,
-                (value) => {
-                    executionResponseSent = value;
+                async () => {
+                    await executeDockerProcess(
+                        language,
+                        fullCodePath!,
+                        buildOptions,
+                        config,
+                        startTime,
+                        res,
+                        sessionOutputDir,
+                        fullInputPath,
+                        () => executionResponseSent,
+                        (value) => {
+                            executionResponseSent = value;
+                        },
+                        kotlinCacheDir
+                    );
                 },
-                kotlinCacheDir
+                0
             );
         } catch (error) {
             await cleanupFile(fullCodePath);

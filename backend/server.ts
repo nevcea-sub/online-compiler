@@ -6,7 +6,7 @@ import { CONFIG } from './config';
 import { ensureDirectories } from './file/fileManager';
 import { preloadDockerImages } from './docker/dockerImage';
 import { warmupKotlinOnStart, warmupContainers } from './docker/dockerWarmup';
-import { executeLimiter, healthLimiter } from './middleware/rateLimit';
+import { executeLimiter, executeHourlyLimiter, healthLimiter } from './middleware/rateLimit';
 import { createExecuteRoute } from './routes/execute';
 import { healthRoute } from './routes/health';
 
@@ -98,7 +98,7 @@ function setupMiddlewares(app: express.Application, isProduction: boolean): void
 }
 
 function setupRoutes(app: express.Application): void {
-    app.post('/api/execute', executeLimiter, createExecuteRoute(codeDir, outputDir, kotlinCacheDir));
+    app.post('/api/execute', executeLimiter, executeHourlyLimiter, createExecuteRoute(codeDir, outputDir, kotlinCacheDir));
     app.get('/api/health', healthLimiter, healthRoute);
 }
 

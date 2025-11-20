@@ -1,11 +1,10 @@
 import { createExecuteRoute } from '../../routes/execute';
 import { Request, Response } from 'express';
+import { createMockRequest, createMockResponse } from '../helpers/testHelpers';
 
 describe('Execute Route Validation', () => {
-    let mockRequest: Partial<Request>;
-    let mockResponse: Partial<Response>;
-    let jsonMock: jest.Mock;
-    let statusMock: jest.Mock;
+    let mockRequest: ReturnType<typeof createMockRequest>;
+    let mockResponse: ReturnType<typeof createMockResponse>;
     let executeRoute: ReturnType<typeof createExecuteRoute>;
 
     const testCodeDir = '/tmp/test-code';
@@ -13,149 +12,138 @@ describe('Execute Route Validation', () => {
     const testKotlinCacheDir = '/tmp/test-kotlin';
 
     beforeEach(() => {
-        jsonMock = jest.fn();
-        statusMock = jest.fn().mockReturnThis();
-
-        mockResponse = {
-            json: jsonMock,
-            status: statusMock
-        };
-
+        mockResponse = createMockResponse();
         executeRoute = createExecuteRoute(testCodeDir, testOutputDir, testKotlinCacheDir);
-    });
-
-    afterEach(() => {
-        jest.clearAllMocks();
     });
 
     describe('Request Validation', () => {
         it('should reject request without code', async () => {
-            mockRequest = {
+            mockRequest = createMockRequest({
                 body: {
                     language: 'python'
                 }
-            };
+            });
 
             await executeRoute(mockRequest as Request, mockResponse as Response);
 
-            expect(statusMock).toHaveBeenCalledWith(400);
-            expect(jsonMock).toHaveBeenCalledWith({ error: '코드와 언어는 필수입니다.' });
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
+            expect(mockResponse.json).toHaveBeenCalledWith({ error: '코드와 언어는 필수입니다.' });
         });
 
         it('should reject request without language', async () => {
-            mockRequest = {
+            mockRequest = createMockRequest({
                 body: {
                     code: 'print("hello")'
                 }
-            };
+            });
 
             await executeRoute(mockRequest as Request, mockResponse as Response);
 
-            expect(statusMock).toHaveBeenCalledWith(400);
-            expect(jsonMock).toHaveBeenCalledWith({ error: '코드와 언어는 필수입니다.' });
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
+            expect(mockResponse.json).toHaveBeenCalledWith({ error: '코드와 언어는 필수입니다.' });
         });
 
         it('should reject request with non-string code', async () => {
-            mockRequest = {
+            mockRequest = createMockRequest({
                 body: {
                     code: 123,
                     language: 'python'
                 }
-            };
+            });
 
             await executeRoute(mockRequest as Request, mockResponse as Response);
 
-            expect(statusMock).toHaveBeenCalledWith(400);
-            expect(jsonMock).toHaveBeenCalledWith({ error: '잘못된 입력 형식입니다.' });
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
+            expect(mockResponse.json).toHaveBeenCalledWith({ error: '잘못된 입력 형식입니다.' });
         });
 
         it('should reject request with non-string language', async () => {
-            mockRequest = {
+            mockRequest = createMockRequest({
                 body: {
                     code: 'print("hello")',
                     language: 123
                 }
-            };
+            });
 
             await executeRoute(mockRequest as Request, mockResponse as Response);
 
-            expect(statusMock).toHaveBeenCalledWith(400);
-            expect(jsonMock).toHaveBeenCalledWith({ error: '잘못된 입력 형식입니다.' });
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
+            expect(mockResponse.json).toHaveBeenCalledWith({ error: '잘못된 입력 형식입니다.' });
         });
 
         it('should reject code exceeding max length', async () => {
             const longCode = 'a'.repeat(100001);
-            mockRequest = {
+            mockRequest = createMockRequest({
                 body: {
                     code: longCode,
                     language: 'python'
                 }
-            };
+            });
 
             await executeRoute(mockRequest as Request, mockResponse as Response);
 
-            expect(statusMock).toHaveBeenCalledWith(400);
-            expect(jsonMock).toHaveBeenCalledWith({
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
+            expect(mockResponse.json).toHaveBeenCalledWith({
                 error: '코드 길이가 최대 100000자를 초과했습니다.'
             });
         });
 
         it('should reject unsupported language', async () => {
-            mockRequest = {
+            mockRequest = createMockRequest({
                 body: {
                     code: 'print("hello")',
                     language: 'unsupported-lang'
                 }
-            };
+            });
 
             await executeRoute(mockRequest as Request, mockResponse as Response);
 
-            expect(statusMock).toHaveBeenCalledWith(400);
-            expect(jsonMock).toHaveBeenCalledWith({ error: '지원하지 않는 언어입니다.' });
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
+            expect(mockResponse.json).toHaveBeenCalledWith({ error: '지원하지 않는 언어입니다.' });
         });
 
         it('should reject input exceeding max length', async () => {
             const longInput = 'a'.repeat(1000001);
-            mockRequest = {
+            mockRequest = createMockRequest({
                 body: {
                     code: 'print("hello")',
                     language: 'python',
                     input: longInput
                 }
-            };
+            });
 
             await executeRoute(mockRequest as Request, mockResponse as Response);
 
-            expect(statusMock).toHaveBeenCalledWith(400);
-            expect(jsonMock).toHaveBeenCalledWith({
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
+            expect(mockResponse.json).toHaveBeenCalledWith({
                 error: '입력 길이가 최대 1000000자를 초과했습니다.'
             });
         });
 
         it('should reject empty code', async () => {
-            mockRequest = {
+            mockRequest = createMockRequest({
                 body: {
                     code: '',
                     language: 'python'
                 }
-            };
+            });
 
             await executeRoute(mockRequest as Request, mockResponse as Response);
 
-            expect(statusMock).toHaveBeenCalledWith(400);
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
         });
 
         it('should reject whitespace-only code', async () => {
-            mockRequest = {
+            mockRequest = createMockRequest({
                 body: {
                     code: '   ',
                     language: 'python'
                 }
-            };
+            });
 
             await executeRoute(mockRequest as Request, mockResponse as Response);
 
-            expect(statusMock).toHaveBeenCalledWith(400);
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
         });
 
         it('should reject code with dangerous patterns', async () => {
@@ -167,16 +155,16 @@ describe('Execute Route Validation', () => {
 
             for (const code of dangerousCodes) {
                 jest.clearAllMocks();
-                mockRequest = {
+                mockRequest = createMockRequest({
                     body: {
                         code,
                         language: 'bash'
                     }
-                };
+                });
 
                 await executeRoute(mockRequest as Request, mockResponse as Response);
 
-                expect(statusMock).toHaveBeenCalledWith(400);
+                expect(mockResponse.status).toHaveBeenCalledWith(400);
             }
         });
     });

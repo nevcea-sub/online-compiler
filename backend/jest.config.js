@@ -9,9 +9,12 @@ module.exports = {
         'utils/**/*.ts',
         'routes/**/*.ts',
         'config/**/*.ts',
+        'execution/**/*.ts',
+        'middleware/**/*.ts',
         '!**/*.d.ts',
         '!**/node_modules/**',
-        '!**/dist/**'
+        '!**/dist/**',
+        '!**/__tests__/**'
     ],
     coverageDirectory: 'coverage',
     coverageReporters: ['text', 'lcov', 'html'],
