@@ -242,7 +242,7 @@ class Main {
         });
 
         it('should validate class name matches file name comment', () => {
-            const mismatchedCode = `
+            const mismatchedCode = `// File: Test.java
 public class Main {
     public static void main(String[] args) {}
 }`;
