@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { execSync, execFileSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const {
@@ -12,7 +12,6 @@ const {
 	loadEnvFile
 } = require('./shared.cjs');
 
-const scriptPath = path.join(__dirname, 'build.ps1');
 const args = process.argv.slice(2);
 
 try {

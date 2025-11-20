@@ -65,34 +65,13 @@ function loadEnvFile(envPath) {
 	return env;
 }
 
-function splitCommand(cmd) {
-	const parts = cmd.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
-	return parts.map((p) => p.replace(/^"|"$/g, ''));
-}
-
-function runCommand(command, cwd, description) {
-	try {
-		console.log(`\n${description}...`);
-		const parts = Array.isArray(command) ? command : splitCommand(command);
-		const cmd = parts[0];
-		const args = parts.slice(1);
-		execFileSync(cmd, args, { stdio: 'inherit', cwd });
-		console.log(`  ${description} passed\n`);
-		return true;
-	} catch (e) {
-		console.error(`  ${description} failed\n`);
-		return false;
-	}
-}
-
 module.exports = {
 	isWindows,
 	rootDir,
 	runPs1,
 	checkCommand,
 	resolveDockerComposeCommand,
-	loadEnvFile,
-	runCommand
+	loadEnvFile
 };
 
 

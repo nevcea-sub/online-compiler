@@ -1,16 +1,6 @@
 import path from 'path';
 import * as fss from 'fs';
 
-let cachedCodeDirNormalized: string | null = null;
-
-export function getCodeDirNormalized(codeDir: string): string {
-    if (cachedCodeDirNormalized === null) {
-        const resolved = path.resolve(codeDir);
-        cachedCodeDirNormalized = process.platform === 'win32' ? resolved.replace(/\\/g, '/') : resolved;
-    }
-    return cachedCodeDirNormalized;
-}
-
 export function normalizePath(filePath: unknown): string | null {
     if (typeof filePath !== 'string' || !filePath.trim()) {
         return null;

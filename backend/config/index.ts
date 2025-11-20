@@ -105,7 +105,7 @@ export const WARMUP_TIMEOUTS: Record<string, number> = (() => {
             return { ...DEFAULT_WARMUP_TIMEOUTS, ...parsed };
         }
         return DEFAULT_WARMUP_TIMEOUTS;
-    } catch (e) {
+    } catch {
         console.warn('Invalid WARMUP_TIMEOUTS env var, using defaults');
         return DEFAULT_WARMUP_TIMEOUTS;
     }
@@ -130,7 +130,7 @@ export const TMPFS_SIZES: Record<string, string> = (() => {
             return { ...DEFAULT_TMPFS_SIZES, ...parsed };
         }
         return DEFAULT_TMPFS_SIZES;
-    } catch (e) {
+    } catch {
         console.warn('Invalid TMPFS_SIZES env var, using defaults');
         return DEFAULT_TMPFS_SIZES;
     }
@@ -164,7 +164,7 @@ export const CPU_LIMITS: Record<string, string> = (() => {
             return { ...DEFAULT_CPU_LIMITS, ...parsed };
         }
         return DEFAULT_CPU_LIMITS;
-    } catch (e) {
+    } catch {
         console.warn('Invalid CPU_LIMITS env var, using defaults');
         return DEFAULT_CPU_LIMITS;
     }
@@ -199,7 +199,7 @@ export const EXECUTION_TIMEOUTS: Record<string, number> = (() => {
             return { ...DEFAULT_EXECUTION_TIMEOUTS, ...parsed };
         }
         return DEFAULT_EXECUTION_TIMEOUTS;
-    } catch (e) {
+    } catch {
         console.warn('Invalid EXECUTION_TIMEOUTS env var, using defaults');
         return DEFAULT_EXECUTION_TIMEOUTS;
     }

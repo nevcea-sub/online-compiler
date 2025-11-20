@@ -54,8 +54,6 @@ export function buildDockerArgs(
     }
 
     const args: string[] = [];
-    args.length = 0;
-    
     args.push('run', '--rm');
     args.push(`--memory=${CONFIG.MAX_MEMORY}`);
 
@@ -97,7 +95,6 @@ export function buildDockerArgs(
     if (opts.inputPath) {
         const hostInputDir = path.dirname(opts.inputPath);
         const dockerInputDir = convertToDockerPath(hostInputDir);
-        const inputBasename = path.basename(opts.inputPath);
         
         if (!dockerInputDir || dockerInputDir.trim() === '' || !dockerInputDir.startsWith('/')) {
             console.error(`[ERROR] Invalid dockerInputDir: "${dockerInputDir}" from hostInputDir: "${hostInputDir}"`);

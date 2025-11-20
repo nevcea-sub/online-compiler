@@ -5,7 +5,6 @@ const path = require('path');
 const fs = require('fs');
 const { isWindows, rootDir, runPs1, checkCommand, resolveDockerComposeCommand, loadEnvFile } = require('./shared.cjs');
 
-const scriptPath = path.join(__dirname, 'dev.ps1');
 const args = process.argv.slice(2);
 
 function waitForService(url, timeout = 30000, interval = 1000) {

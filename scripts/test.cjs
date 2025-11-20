@@ -6,13 +6,6 @@ const isWindows = process.platform === 'win32';
 const rootDir = path.join(__dirname, '..');
 const args = process.argv.slice(2);
 
-function _quoteArg(arg) {
-	if (/[\s"]/g.test(arg)) {
-		return `"${arg.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-	}
-	return arg;
-}
-
 function splitCommand(cmd) {
 	const parts = cmd.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
 	return parts.map((p) => p.replace(/^"|"$/g, ''));

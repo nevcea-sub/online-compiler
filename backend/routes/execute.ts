@@ -160,10 +160,6 @@ export function createExecuteRoute(
 
             if (buildOptions.hasInput) {
                 const inputPath = path.join(codeDir, `${sessionId}_input`);
-                if (!inputPath) {
-                    console.error('[ERROR] Invalid input path');
-                    throw new Error('입력 파일 경로가 올바르지 않습니다.');
-                }
                 fullInputPath = await writeInputFile(inputPath, inputText);
                 buildOptions.inputPath = fullInputPath;
                 if (CONFIG.DEBUG_MODE) {
