@@ -8,6 +8,7 @@ import Modal from '../components/Modal';
 import { executeCode as apiExecuteCode } from '../services/api';
 import { LANGUAGE_CONFIG } from '../config/constants';
 import { formatOutput, formatError } from '../utils/outputFormatter';
+import { mapServerErrorMessage } from '../i18n/translations';
 import type { ProgrammingLanguage } from '../types';
 import './CompilerPage.css';
 
@@ -35,6 +36,7 @@ const CompilerPage = () => {
     const [languageSearchQuery, setLanguageSearchQuery] = useState('');
     const editorLanguageDropdownRef = useRef<HTMLDivElement>(null);
     const editorLanguageButtonRef = useRef<HTMLButtonElement>(null);
+    const languageSearchInputRef = useRef<HTMLInputElement>(null);
 
     const handleRun = useCallback(async () => {
         if (!code || !code.trim()) {
@@ -57,7 +59,9 @@ const CompilerPage = () => {
             const formattedError = formatError(result.error || '');
 
             if (result.error && result.error.trim()) {
-                showToast(result.error, 'error', 5000);
+                const translationKey = mapServerErrorMessage(result.error);
+                const errorMessage = translationKey ? t(translationKey) : result.error;
+                showToast(errorMessage, 'error', 5000);
                 setError('');
             } else {
                 setError(formattedError);
@@ -141,6 +145,10 @@ const CompilerPage = () => {
     useEffect(() => {
         if (!isEditorLanguageDropdownOpen) {
             setLanguageSearchQuery('');
+        } else {
+            setTimeout(() => {
+                languageSearchInputRef.current?.focus();
+            }, 0);
         }
     }, [isEditorLanguageDropdownOpen]);
 
@@ -211,6 +219,7 @@ const CompilerPage = () => {
                                                 <path d="m21 21-4.35-4.35"></path>
                                             </svg>
                                             <input
+                                                ref={languageSearchInputRef}
                                                 type="text"
                                                 className="editor-language-search-input"
                                                 placeholder={t('search-language') || '언어 검색...'}

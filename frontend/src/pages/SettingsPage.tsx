@@ -21,6 +21,7 @@ const SettingsPage = () => {
     const [fontSearchQuery, setFontSearchQuery] = useState('');
     const fontDropdownRef = useRef<HTMLDivElement>(null);
     const fontButtonRef = useRef<HTMLButtonElement>(null);
+    const fontSearchInputRef = useRef<HTMLInputElement>(null);
     const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
     const themeDropdownRef = useRef<HTMLDivElement>(null);
     const themeButtonRef = useRef<HTMLButtonElement>(null);
@@ -65,6 +66,10 @@ const SettingsPage = () => {
     useEffect(() => {
         if (!isFontDropdownOpen) {
             setFontSearchQuery('');
+        } else {
+            setTimeout(() => {
+                fontSearchInputRef.current?.focus();
+            }, 0);
         }
     }, [isFontDropdownOpen]);
 
@@ -290,6 +295,7 @@ const SettingsPage = () => {
                                                 <path d="m21 21-4.35-4.35"></path>
                                             </svg>
                                             <input
+                                                ref={fontSearchInputRef}
                                                 type="text"
                                                 className="font-select-search-input"
                                                 placeholder={t('search-font') || '폰트 검색...'}

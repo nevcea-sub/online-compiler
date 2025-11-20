@@ -71,7 +71,14 @@ export const translations: Record<Language, Record<string, string>> = {
         'to-run': '실행',
         'search-language': '언어 검색...',
         'search-font': '폰트 검색...',
-        seconds: '초'
+        seconds: '초',
+        'docker-not-running': 'Docker가 실행되지 않았습니다. Docker Desktop을 시작한 후 다시 시도해주세요.',
+        'docker-not-installed': 'Docker가 설치되지 않았습니다. Docker를 설치한 후 다시 시도해주세요.',
+        'docker-image-not-found': 'Docker 이미지를 찾을 수 없습니다. 필요한 이미지를 다운로드 중입니다. 잠시 후 다시 시도해주세요.',
+        'docker-permission-error': 'Docker 권한 오류가 발생했습니다. Docker 권한을 확인해주세요.',
+        'docker-invalid-format': 'Docker 명령어 형식 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        'execution-timeout': '실행 시간이 초과되었습니다.',
+        'execution-error': '실행 중 오류가 발생했습니다.'
     },
     en: {
         title: 'Online Compiler',
@@ -144,11 +151,73 @@ export const translations: Record<Language, Record<string, string>> = {
         'to-run': 'to run',
         'search-language': 'Search language...',
         'search-font': 'Search font...',
-        seconds: 's'
+        seconds: 's',
+        'docker-not-running': 'Docker is not running. Please start Docker Desktop and try again.',
+        'docker-not-installed': 'Docker is not installed. Please install Docker and try again.',
+        'docker-image-not-found': 'Docker image not found. Downloading required image. Please try again in a moment.',
+        'docker-permission-error': 'Docker permission error occurred. Please check Docker permissions.',
+        'docker-invalid-format': 'Docker command format error occurred. Please try again in a moment.',
+        'execution-timeout': 'Execution timeout exceeded.',
+        'execution-error': 'An error occurred during execution.'
     }
 };
 
 export const getTranslation = (key: string, lang: Language = 'ko'): string => {
     return translations[lang]?.[key] || translations.en[key] || '';
+};
+
+export const mapServerErrorMessage = (errorMessage: string): string | null => {
+    const errorLower = errorMessage.toLowerCase();
+    
+    if (errorMessage.includes('Docker가 실행되지 않았습니다') || 
+        errorMessage.includes('Docker Desktop을 시작한 후')) {
+        return 'docker-not-running';
+    }
+    if (errorMessage.includes('Docker가 설치되지 않았습니다') || 
+        errorMessage.includes('Docker를 설치한 후')) {
+        return 'docker-not-installed';
+    }
+    if (errorMessage.includes('Docker 이미지를 찾을 수 없습니다') || 
+        errorMessage.includes('이미지를 다운로드 중입니다')) {
+        return 'docker-image-not-found';
+    }
+    if (errorMessage.includes('Docker 권한 오류가 발생했습니다')) {
+        return 'docker-permission-error';
+    }
+    if (errorMessage.includes('Docker 명령어 형식 오류가 발생했습니다')) {
+        return 'docker-invalid-format';
+    }
+    if (errorMessage.includes('실행 시간이 초과되었습니다')) {
+        return 'execution-timeout';
+    }
+    if (errorMessage.includes('실행 중 오류가 발생했습니다')) {
+        return 'execution-error';
+    }
+    
+    if (errorLower.includes('docker is not running') || 
+        errorLower.includes('docker daemon') && errorLower.includes('not running')) {
+        return 'docker-not-running';
+    }
+    if (errorLower.includes('docker is not installed') || 
+        errorLower.includes('docker: command not found')) {
+        return 'docker-not-installed';
+    }
+    if (errorLower.includes('docker image not found') || 
+        errorLower.includes('no such image')) {
+        return 'docker-image-not-found';
+    }
+    if (errorLower.includes('docker permission') || 
+        errorLower.includes('permission denied') && errorLower.includes('docker')) {
+        return 'docker-permission-error';
+    }
+    if (errorLower.includes('execution timeout') || 
+        errorLower.includes('timeout exceeded')) {
+        return 'execution-timeout';
+    }
+    if (errorLower.includes('error occurred during execution')) {
+        return 'execution-error';
+    }
+    
+    return null;
 };
 

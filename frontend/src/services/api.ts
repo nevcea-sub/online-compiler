@@ -13,7 +13,7 @@ export const executeCode = async (
     });
 
     if (!response.ok) {
-        let errorMessage = '요청 오류가 발생했습니다.';
+        let errorMessage = '';
         try {
             const errorData = await response.json();
             if (errorData.error) {
@@ -21,6 +21,9 @@ export const executeCode = async (
             }
         } catch (e) {
             console.debug('Failed to parse error response:', e);
+        }
+        if (!errorMessage) {
+            errorMessage = `HTTP ${response.status} error`;
         }
         throw new Error(`HTTP ${response.status}: ${errorMessage}`);
     }
