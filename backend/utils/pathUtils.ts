@@ -6,7 +6,11 @@ export function normalizePath(filePath: unknown): string | null {
         return null;
     }
     try {
-        return path.normalize(filePath.trim());
+        const trimmed = filePath.trim();
+        if (trimmed.startsWith('/')) {
+            return trimmed.replace(/\/+/g, '/');
+        }
+        return path.normalize(trimmed);
     } catch {
         return null;
     }
@@ -18,6 +22,12 @@ export function validatePath(filePath: unknown): boolean {
         return false;
     }
     try {
+        if (normalized.startsWith('/')) {
+            if (normalized.includes('..') || normalized.includes('\0')) {
+                return false;
+            }
+            return true;
+        }
         const resolved = path.resolve(normalized);
         return resolved === normalized || resolved.startsWith(normalized);
     } catch {
@@ -35,7 +45,7 @@ export function convertToDockerPath(filePath: string): string {
         const rest = normalized.substring(2).replace(/\\/g, '/');
         return `/${drive}${rest}`;
     }
-    return normalized;
+    return normalized.replace(/\\/g, '/');
 }
 
 export function getContainerCodePath(language: string, extension: string, containerCodePaths: Record<string, string>): string {
