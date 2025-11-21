@@ -45,7 +45,7 @@ const OutputPanel = memo(({ input, setInput, output, error }: OutputPanelProps) 
             }, 100);
             return () => clearTimeout(timer);
         }
-    }, [isRunning, hasContent, outputText, error, images.length]);
+    }, [isRunning, hasContent]);
 
     return (
         <div className="output-section">

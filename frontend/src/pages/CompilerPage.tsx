@@ -51,7 +51,7 @@ const CompilerPage = () => {
 
         try {
             const result = await apiExecuteCode(code, currentLanguage, input);
-            setExecutionTime(result.executionTime ?? null);
+            setExecutionTime(result.executionTime != null ? result.executionTime : null);
 
             const formattedOutput = formatOutput(result.output || '');
             const formattedError = formatError(result.error || '');
