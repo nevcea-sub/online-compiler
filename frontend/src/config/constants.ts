@@ -53,7 +53,7 @@ export const LANGUAGE_CONFIG = {
         c: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}',
         rust: 'fn main() {\n    println!("Hello, World!");\n}',
         php: '<?php\n\necho "Hello, World!\\n";\n?>',
-        r: 'print("Hello, World!\n")',
+        r: 'cat("Hello, World!\n")',
         ruby: 'puts "Hello, World!"',
         csharp: 'using System;\n\nclass Program\n{\n    static void Main(string[] args)\n    {\n        Console.WriteLine("Hello, World!");\n    }\n}',
         kotlin: 'fun main() {\n    println("Hello, World!")\n}',

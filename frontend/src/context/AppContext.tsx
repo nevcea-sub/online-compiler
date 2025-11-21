@@ -33,7 +33,8 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     );
     const [code, setCode] = useState<string>(() => {
         const saved = localStorage.getItem(`code_${CONFIG.DEFAULT_LANGUAGE}`);
-        return saved && saved.trim() ? saved : LANGUAGE_CONFIG.templates[CONFIG.DEFAULT_LANGUAGE];
+        const template = LANGUAGE_CONFIG.templates[CONFIG.DEFAULT_LANGUAGE] || '';
+        return (saved && saved.trim().length > 0) ? saved : template;
     });
     const [input, setInput] = useState<string>('');
     const [output, setOutput] = useState<Output>('');
@@ -85,7 +86,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
         }
         const savedCode = localStorage.getItem(`code_${lang}`);
         const template = LANGUAGE_CONFIG.templates[lang];
-        const newCode = savedCode && savedCode.trim() ? savedCode : template;
+        const newCode = (savedCode && savedCode.trim().length > 0) ? savedCode : template;
         setCode(newCode);
         setCurrentLanguage(lang);
         setOutput('');

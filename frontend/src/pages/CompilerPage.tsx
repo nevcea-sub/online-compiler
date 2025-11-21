@@ -136,9 +136,13 @@ const CompilerPage = () => {
     }, [isEditorLanguageDropdownOpen]);
 
     const confirmClear = () => {
-        const template = LANGUAGE_CONFIG.templates[currentLanguage] || '';
-        setCode(template);
-        localStorage.removeItem(`code_${currentLanguage}`);
+        const template = LANGUAGE_CONFIG.templates[currentLanguage];
+        if (template) {
+            setCode(template);
+            localStorage.removeItem(`code_${currentLanguage}`);
+        } else {
+            setCode('');
+        }
         setOutput('');
         setError('');
         setExecutionTime(null);
