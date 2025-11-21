@@ -1,3 +1,4 @@
+/* @refresh reset */
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { CONFIG, LANGUAGE_CONFIG } from '../config/constants';
 import { getTranslation } from '../i18n/translations';
@@ -5,13 +6,13 @@ import type { AppContextType, Language, ProgrammingLanguage, Theme, ToastType, P
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const useApp = (): AppContextType => {
+export function useApp(): AppContextType {
     const context = useContext(AppContext);
     if (!context) {
         throw new Error('useApp must be used within AppProvider');
     }
     return context;
-};
+}
 
 interface AppProviderProps {
     children: ReactNode;
@@ -91,6 +92,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
         setCurrentLanguage(lang);
         setOutput('');
         setError('');
+        setExecutionTime(null);
     }, []);
 
     const t = useCallback((key: string) => getTranslation(key, currentLang), [currentLang]);
