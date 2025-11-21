@@ -11,6 +11,21 @@ import { safeSendErrorResponse } from '../middleware/errorHandler';
 
 const execAsync = promisify(exec);
 
+function validateContainerName(name: string): boolean {
+    return /^[a-zA-Z0-9_-]+$/.test(name) && name.length <= 128;
+}
+
+async function cleanupContainer(containerName: string): Promise<void> {
+    if (!validateContainerName(containerName)) {
+        console.error('[ERROR] Invalid container name:', containerName);
+        return;
+    }
+    try {
+        await execAsync(`docker rm -f ${containerName} 2>/dev/null || true`);
+    } catch {
+    }
+}
+
 function isDockerError(stderr: string): boolean {
     const stderrLower = stderr.toLowerCase();
     const dockerErrorPatterns = [
@@ -94,11 +109,7 @@ export async function executeDockerProcess(
         try {
             const executionTime = Date.now() - startTime;
 
-            try {
-                await execAsync(`docker rm -f ${containerName} 2>/dev/null || true`);
-            } catch {
-            }
-
+            await cleanupContainer(containerName);
             await cleanupResources(fullCodePath, fullInputPath);
 
             const { stdout, stderr } = outputCollector.getFinalOutput();
@@ -130,10 +141,7 @@ export async function executeDockerProcess(
             );
         } catch (err) {
             console.error('[ERROR] Error in handleClose:', err);
-            try {
-                await execAsync(`docker rm -f ${containerName} 2>/dev/null || true`);
-            } catch {
-            }
+            await cleanupContainer(containerName);
             if (!res.headersSent) {
                 safeSendErrorResponse(res, 500, '실행 결과 처리 중 오류가 발생했습니다.');
             }
@@ -148,11 +156,7 @@ export async function executeDockerProcess(
         try {
             const executionTime = Date.now() - startTime;
 
-            try {
-                await execAsync(`docker rm -f ${containerName} 2>/dev/null || true`);
-            } catch {
-            }
-
+            await cleanupContainer(containerName);
             await cleanupResources(fullCodePath, fullInputPath);
 
             const { stdout, stderr } = outputCollector.getFinalOutput();
@@ -196,10 +200,7 @@ export async function executeDockerProcess(
             );
         } catch (err) {
             console.error('[ERROR] Error in handleError:', err);
-            try {
-                await execAsync(`docker rm -f ${containerName} 2>/dev/null || true`);
-            } catch {
-            }
+            await cleanupContainer(containerName);
             if (!res.headersSent) {
                 safeSendErrorResponse(res, 500, '실행 에러 처리 중 오류가 발생했습니다.');
             }
@@ -237,10 +238,7 @@ export async function executeDockerProcess(
                         console.error('[ERROR] Failed to kill Docker process:', killError);
                     }
                 }
-                try {
-                    await execAsync(`docker rm -f ${containerName} 2>/dev/null || true`);
-                } catch {
-                }
+                await cleanupContainer(containerName);
             }, CONFIG.SIGKILL_DELAY_MS);
 
             dockerProcess.once('close', () => {

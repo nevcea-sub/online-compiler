@@ -48,13 +48,10 @@ const CompilerPage = () => {
         setOutput('');
         setError('');
         setExecutionTime(null);
-        const startTime = Date.now();
 
         try {
             const result = await apiExecuteCode(code, currentLanguage, input);
-            const endTime = Date.now();
-            const executionTimeMs = endTime - startTime;
-            setExecutionTime(executionTimeMs);
+            setExecutionTime(result.executionTime ?? null);
 
             const formattedOutput = formatOutput(result.output || '');
             const formattedError = formatError(result.error || '');
@@ -77,7 +74,6 @@ const CompilerPage = () => {
                 setOutput(formattedOutput);
             }
         } catch (err) {
-            setExecutionTime(Date.now() - startTime);
             const userMessage = extractErrorMessage(err, t);
             showToast(userMessage, 'error', 5000);
         } finally {

@@ -41,6 +41,7 @@ export type Output = string | OutputWithImages;
 export interface ExecuteResponse {
     output?: string;
     error?: string;
+    executionTime?: number;
     images?: Array<{
         name: string;
         data: string;
