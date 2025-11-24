@@ -5,17 +5,17 @@ import { createMockRequest, createMockResponse } from '../helpers/testHelpers';
 describe('Error Handler Middleware', () => {
     let mockRequest: ReturnType<typeof createMockRequest>;
     let mockResponse: ReturnType<typeof createMockResponse>;
-    let mockNext: jest.Mock<NextFunction>;
+    let mockNext: jest.Mock<void, [Error?]>;
 
     beforeEach(() => {
         mockRequest = createMockRequest();
         mockResponse = createMockResponse();
-        mockNext = jest.fn();
+        mockNext = jest.fn<void, [Error?]>();
     });
 
     describe('safeSendErrorResponse', () => {
         it('should send error response when headers not sent', () => {
-            const result = safeSendErrorResponse(mockResponse as Response, 400, 'Test error');
+            const result = safeSendErrorResponse(mockResponse as unknown as Response, 400, 'Test error');
 
             expect(result).toBe(true);
             expect(mockResponse.status).toHaveBeenCalledWith(400);
@@ -26,7 +26,7 @@ describe('Error Handler Middleware', () => {
             mockResponse.headersSent = true;
             const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-            const result = safeSendErrorResponse(mockResponse as Response, 400, 'Test error');
+            const result = safeSendErrorResponse(mockResponse as unknown as Response, 400, 'Test error');
 
             expect(result).toBe(false);
             expect(mockResponse.status).not.toHaveBeenCalled();
@@ -41,7 +41,7 @@ describe('Error Handler Middleware', () => {
             });
             const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-            const result = safeSendErrorResponse(mockResponse as Response, 400, 'Test error');
+            const result = safeSendErrorResponse(mockResponse as unknown as Response, 400, 'Test error');
 
             expect(result).toBe(false);
             expect(consoleErrorSpy).toHaveBeenCalled();
@@ -54,7 +54,7 @@ describe('Error Handler Middleware', () => {
             const error = new Error('Internal server error');
             const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-            errorHandler(error, mockRequest as Request, mockResponse as Response, mockNext);
+            errorHandler(error, mockRequest as Request, mockResponse as unknown as Response, mockNext as unknown as NextFunction);
 
             expect(mockResponse.status).toHaveBeenCalledWith(500);
             expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Internal server error' });
@@ -66,7 +66,7 @@ describe('Error Handler Middleware', () => {
             const error: AppError = new Error('Invalid input') as AppError;
             error.statusCode = 400;
 
-            errorHandler(error, mockRequest as Request, mockResponse as Response, mockNext);
+            errorHandler(error, mockRequest as Request, mockResponse as unknown as Response, mockNext as unknown as NextFunction);
 
             expect(mockResponse.status).toHaveBeenCalledWith(400);
             expect(mockResponse.json).toHaveBeenCalled();
@@ -78,7 +78,7 @@ describe('Error Handler Middleware', () => {
             const error: AppError = new Error('Not found') as AppError;
             error.statusCode = 404;
 
-            errorHandler(error, mockRequest as Request, mockResponse as Response, mockNext);
+            errorHandler(error, mockRequest as Request, mockResponse as unknown as Response, mockNext as unknown as NextFunction);
 
             expect(mockResponse.status).toHaveBeenCalledWith(404);
         });
@@ -86,7 +86,7 @@ describe('Error Handler Middleware', () => {
         it('should default to 500 when no statusCode provided', () => {
             const error = new Error('Unknown error');
 
-            errorHandler(error, mockRequest as Request, mockResponse as Response, mockNext);
+            errorHandler(error, mockRequest as Request, mockResponse as unknown as Response, mockNext as unknown as NextFunction);
 
             expect(mockResponse.status).toHaveBeenCalledWith(500);
         });
@@ -96,7 +96,7 @@ describe('Error Handler Middleware', () => {
             const error = new Error('Test error');
             const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-            errorHandler(error, mockRequest as Request, mockResponse as Response, mockNext);
+            errorHandler(error, mockRequest as Request, mockResponse as unknown as Response, mockNext as unknown as NextFunction);
 
             expect(mockResponse.status).not.toHaveBeenCalled();
             expect(mockResponse.json).not.toHaveBeenCalled();
@@ -109,7 +109,7 @@ describe('Error Handler Middleware', () => {
             const error = new Error('Database connection failed');
             const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-            errorHandler(error, mockRequest as Request, mockResponse as Response, mockNext);
+            errorHandler(error, mockRequest as Request, mockResponse as unknown as Response, mockNext as unknown as NextFunction);
 
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 '[ERROR] Internal server error:',
@@ -125,7 +125,7 @@ describe('Error Handler Middleware', () => {
 
     describe('notFoundHandler', () => {
         it('should send 404 response', () => {
-            notFoundHandler(mockRequest as Request, mockResponse as Response, mockNext);
+            notFoundHandler(mockRequest as Request, mockResponse as unknown as Response, mockNext as unknown as NextFunction);
 
             expect(mockResponse.status).toHaveBeenCalledWith(404);
             expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Endpoint not found' });
@@ -134,7 +134,7 @@ describe('Error Handler Middleware', () => {
         it('should not send response if headers already sent', () => {
             mockResponse.headersSent = true;
 
-            notFoundHandler(mockRequest as Request, mockResponse as Response, mockNext);
+            notFoundHandler(mockRequest as Request, mockResponse as unknown as Response, mockNext as unknown as NextFunction);
 
             expect(mockResponse.status).not.toHaveBeenCalled();
             expect(mockResponse.json).not.toHaveBeenCalled();

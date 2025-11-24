@@ -117,8 +117,17 @@ export class ExecutionQueue {
     }
 }
 
+import { parseIntegerEnv } from '../utils/envValidation';
+
+const DEFAULT_MAX_CONCURRENT = 5;
+const DEFAULT_MAX_QUEUE_SIZE = 50;
+const MAX_CONCURRENT_MIN = 1;
+const MAX_CONCURRENT_MAX = 50;
+const MAX_QUEUE_SIZE_MIN = 10;
+const MAX_QUEUE_SIZE_MAX = 500;
+
 export const executionQueue = new ExecutionQueue(
-    parseInt(process.env.MAX_CONCURRENT_EXECUTIONS || '5', 10),
-    parseInt(process.env.MAX_QUEUE_SIZE || '50', 10)
+    parseIntegerEnv(process.env.MAX_CONCURRENT_EXECUTIONS, DEFAULT_MAX_CONCURRENT, MAX_CONCURRENT_MIN, MAX_CONCURRENT_MAX),
+    parseIntegerEnv(process.env.MAX_QUEUE_SIZE, DEFAULT_MAX_QUEUE_SIZE, MAX_QUEUE_SIZE_MIN, MAX_QUEUE_SIZE_MAX)
 );
 

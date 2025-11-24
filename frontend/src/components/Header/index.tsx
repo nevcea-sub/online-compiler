@@ -1,17 +1,22 @@
-import { useApp } from '../context/AppContext';
-import './Header.css';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useApp } from '../../context/useApp';
+import './styles.css';
 
 const Header = () => {
-    const { setCurrentPage, t } = useApp();
+    const { t } = useApp();
+    const navigate = useNavigate();
 
     return (
         <header>
             <div className="container header-content">
-                <h1>{t('title')}</h1>
+                <h1 className="header-title-link" onClick={() => navigate('/')}>
+                    {t('title')}
+                </h1>
                 <div className="header-actions">
                     <button
                         className="settings-toggle"
-                        onClick={() => setCurrentPage('settings')}
+                        onClick={() => navigate('/settings')}
                         aria-label={t('settings')}
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -8,6 +8,7 @@ describe('ExecutionQueue', () => {
     });
 
     afterEach(() => {
+        jest.clearAllMocks();
         queue.clear();
     });
 

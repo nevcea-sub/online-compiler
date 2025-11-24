@@ -36,6 +36,7 @@ export interface Config {
     MAX_INPUT_LENGTH: number;
     ENABLE_PRELOAD: boolean;
     ENABLE_WARMUP: boolean;
+    ENABLE_CONTAINER_POOL: boolean;
     TRUST_PROXY: boolean;
     DEBUG_MODE: boolean;
     TIMEOUT_BUFFER_MS: number;
@@ -77,6 +78,7 @@ export const CONFIG: Config = {
     MAX_INPUT_LENGTH: parseIntegerEnv(process.env.MAX_INPUT_LENGTH, 1000000, 1, 10 * 1000000),
     ENABLE_PRELOAD: parseBooleanEnv(process.env.ENABLE_PRELOAD, true),
     ENABLE_WARMUP: parseBooleanEnv(process.env.ENABLE_WARMUP, true),
+    ENABLE_CONTAINER_POOL: parseBooleanEnv(process.env.ENABLE_CONTAINER_POOL, false),
     TRUST_PROXY: parseBooleanEnv(process.env.TRUST_PROXY, false),
     DEBUG_MODE: process.env.DEBUG
         ? parseBooleanEnv(process.env.DEBUG, false)
@@ -305,11 +307,11 @@ function buildKotlinCommand(path: string, inputPath?: string, buildDir?: string)
 
 const BASE_LANGUAGE_CONFIGS: Record<string, Omit<LanguageConfig, 'timeout'>> = {
     python: {
-        image: 'python:3.11-slim',
+        image: 'python:3.11-alpine',
         command: buildPythonCommand
     },
     javascript: {
-        image: 'node:20-slim',
+        image: 'node:20-alpine',
         command: buildJavascriptCommand
     },
     java: {
@@ -325,7 +327,7 @@ const BASE_LANGUAGE_CONFIGS: Record<string, Omit<LanguageConfig, 'timeout'>> = {
         command: buildCCommand
     },
     rust: {
-        image: 'rust:1.81',
+        image: 'rust:alpine',
         command: buildRustCommand
     },
     php: {
@@ -341,7 +343,7 @@ const BASE_LANGUAGE_CONFIGS: Record<string, Omit<LanguageConfig, 'timeout'>> = {
         command: buildRubyCommand
     },
     csharp: {
-        image: 'mcr.microsoft.com/dotnet/sdk:8.0',
+        image: 'mcr.microsoft.com/dotnet/sdk:8.0-alpine3.19',
         command: buildCsharpCommand
     },
     kotlin: {
@@ -353,7 +355,7 @@ const BASE_LANGUAGE_CONFIGS: Record<string, Omit<LanguageConfig, 'timeout'>> = {
         command: buildGoCommand
     },
     typescript: {
-        image: 'node:20-slim',
+        image: 'node:20-alpine',
         command: buildTypescriptCommand
     },
     swift: {

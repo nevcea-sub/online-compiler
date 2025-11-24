@@ -18,6 +18,14 @@ import {
 } from '../../config/languageCommands';
 
 describe('Language Commands', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     describe('buildPythonCommand', () => {
         it('should build Python command without input', () => {
             const cmd = buildPythonCommand('/tmp/code.py');

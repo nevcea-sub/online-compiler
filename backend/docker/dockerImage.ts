@@ -6,7 +6,8 @@ import { validateImage } from '../utils/validation';
 import { createTimeoutController } from '../utils/timeout';
 
 const imageExistenceCache = new Map<string, ImageCacheEntry>();
-const IMAGE_CACHE_TTL = 5 * 60 * 1000;
+const IMAGE_CACHE_TTL = 10 * 60 * 1000;
+const imageCheckPromises = new Map<string, Promise<boolean>>();
 
 export async function checkImageExists(image: string): Promise<boolean> {
     if (!validateImage(image)) {
@@ -19,40 +20,55 @@ export async function checkImageExists(image: string): Promise<boolean> {
         return cached.exists;
     }
 
-    const { controller, clear } = createTimeoutController(5000);
-    try {
-        const { stdout } = await promisify(exec)(`docker images -q ${image}`, {
-            signal: controller.signal
-        });
-        clear();
-        const exists = stdout.trim().length > 0;
-        imageExistenceCache.set(image, { exists, timestamp: now });
-        return exists;
-    } catch {
-        clear();
-        imageExistenceCache.set(image, { exists: false, timestamp: now });
-        return false;
+    const existingPromise = imageCheckPromises.get(image);
+    if (existingPromise) {
+        return existingPromise;
     }
+
+    const checkPromise = (async () => {
+        const { controller, clear } = createTimeoutController(3000);
+        try {
+            const { stdout } = await promisify(exec)(`docker images -q ${image}`, {
+                signal: controller.signal
+            });
+            clear();
+            const exists = stdout.trim().length > 0;
+            imageExistenceCache.set(image, { exists, timestamp: Date.now() });
+            imageCheckPromises.delete(image);
+            return exists;
+        } catch {
+            clear();
+            imageExistenceCache.set(image, { exists: false, timestamp: Date.now() });
+            imageCheckPromises.delete(image);
+            return false;
+        }
+    })();
+
+    imageCheckPromises.set(image, checkPromise);
+    return checkPromise;
 }
 
-export async function pullDockerImage(image: string, retries: number = CONFIG.DOCKER_PULL_RETRIES): Promise<PullResult> {
+export async function pullDockerImage(image: string, retries: number = CONFIG.DOCKER_PULL_RETRIES, silent: boolean = false): Promise<PullResult> {
     if (!validateImage(image)) {
         return { success: false, image, error: 'Invalid image' };
     }
 
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
-            const { controller, clear } = createTimeoutController(CONFIG.DOCKER_PULL_TIMEOUT);
+            const timeout = attempt === 0 ? CONFIG.DOCKER_PULL_TIMEOUT : CONFIG.DOCKER_PULL_TIMEOUT * 2;
+            const { controller, clear } = createTimeoutController(timeout);
 
             const pullProcess = exec(`docker pull ${image}`, { signal: controller.signal });
 
-            pullProcess.stdout?.on('data', (data: Buffer | string) => {
-                process.stdout.write(`[${image}] ${data.toString().trim()}\n`);
-            });
+            if (!silent) {
+                pullProcess.stdout?.on('data', (data: Buffer | string) => {
+                    process.stdout.write(`[${image}] ${data.toString().trim()}\n`);
+                });
 
-            pullProcess.stderr?.on('data', (data: Buffer | string) => {
-                process.stderr.write(`[${image}] ${data.toString().trim()}\n`);
-            });
+                pullProcess.stderr?.on('data', (data: Buffer | string) => {
+                    process.stderr.write(`[${image}] ${data.toString().trim()}\n`);
+                });
+            }
 
             await new Promise<void>((resolve, reject) => {
                 pullProcess.on('close', (code: number | null) => {
@@ -66,11 +82,14 @@ export async function pullDockerImage(image: string, retries: number = CONFIG.DO
             });
 
             clear();
+            imageExistenceCache.set(image, { exists: true, timestamp: Date.now() });
             return { success: true, image };
         } catch (error) {
             if (attempt < retries) {
                 const delay = CONFIG.DOCKER_PULL_RETRY_DELAY_BASE * (attempt + 1);
-                console.log(`[${image}] Pull failed, retrying... (${attempt + 1}/${retries})`);
+                if (!silent) {
+                    console.log(`[${image}] Pull failed, retrying... (${attempt + 1}/${retries})`);
+                }
                 await new Promise((resolve) => setTimeout(resolve, delay));
             } else {
                 const err = error as Error;

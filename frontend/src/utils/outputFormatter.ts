@@ -48,3 +48,19 @@ export const formatError = (
     return collapsed;
 };
 
+export const formatExecutionTime = (timeMs: number | null): string | null => {
+    if (timeMs === null || timeMs < 0) {
+        return null;
+    }
+    if (timeMs < 1000) {
+        return `${timeMs.toFixed(0)}ms`;
+    }
+    const seconds = timeMs / 1000;
+    if (seconds < 60) {
+        return `${seconds.toFixed(3)}s`;
+    }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = (seconds % 60).toFixed(1);
+    return `${minutes}m ${remainingSeconds}s`;
+};
+

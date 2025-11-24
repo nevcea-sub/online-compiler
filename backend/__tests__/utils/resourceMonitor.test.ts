@@ -1,6 +1,14 @@
 import { getResourceStats, formatBytes, formatUptime } from '../../utils/resourceMonitor';
 
 describe('Resource Monitor', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     describe('getResourceStats', () => {
         it('should return resource statistics', async () => {
             const stats = await getResourceStats();

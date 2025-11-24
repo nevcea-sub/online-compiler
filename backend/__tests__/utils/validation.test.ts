@@ -6,6 +6,14 @@ import {
 } from '../../utils/validation';
 
 describe('Validation Utilities', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     describe('validateLanguage', () => {
         it('should accept valid lowercase languages', () => {
             const validLanguages = ['python', 'javascript', 'java', 'cpp', 'c', 'rust', 'go'];

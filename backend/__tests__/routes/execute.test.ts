@@ -12,8 +12,13 @@ describe('Execute Route Validation', () => {
     const testKotlinCacheDir = '/tmp/test-kotlin';
 
     beforeEach(() => {
+        jest.clearAllMocks();
         mockResponse = createMockResponse();
         executeRoute = createExecuteRoute(testCodeDir, testOutputDir, testKotlinCacheDir);
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
     });
 
     describe('Request Validation', () => {
@@ -24,7 +29,7 @@ describe('Execute Route Validation', () => {
                 }
             });
 
-            await executeRoute(mockRequest as Request, mockResponse as Response);
+            await executeRoute(mockRequest as Request, mockResponse as unknown as Response);
 
             expect(mockResponse.status).toHaveBeenCalledWith(400);
             expect(mockResponse.json).toHaveBeenCalledWith({ error: '코드와 언어는 필수입니다.' });
@@ -37,7 +42,7 @@ describe('Execute Route Validation', () => {
                 }
             });
 
-            await executeRoute(mockRequest as Request, mockResponse as Response);
+            await executeRoute(mockRequest as Request, mockResponse as unknown as Response);
 
             expect(mockResponse.status).toHaveBeenCalledWith(400);
             expect(mockResponse.json).toHaveBeenCalledWith({ error: '코드와 언어는 필수입니다.' });
@@ -51,7 +56,7 @@ describe('Execute Route Validation', () => {
                 }
             });
 
-            await executeRoute(mockRequest as Request, mockResponse as Response);
+            await executeRoute(mockRequest as Request, mockResponse as unknown as Response);
 
             expect(mockResponse.status).toHaveBeenCalledWith(400);
             expect(mockResponse.json).toHaveBeenCalledWith({ error: '잘못된 입력 형식입니다.' });
@@ -65,7 +70,7 @@ describe('Execute Route Validation', () => {
                 }
             });
 
-            await executeRoute(mockRequest as Request, mockResponse as Response);
+            await executeRoute(mockRequest as Request, mockResponse as unknown as Response);
 
             expect(mockResponse.status).toHaveBeenCalledWith(400);
             expect(mockResponse.json).toHaveBeenCalledWith({ error: '잘못된 입력 형식입니다.' });
@@ -80,7 +85,7 @@ describe('Execute Route Validation', () => {
                 }
             });
 
-            await executeRoute(mockRequest as Request, mockResponse as Response);
+            await executeRoute(mockRequest as Request, mockResponse as unknown as Response);
 
             expect(mockResponse.status).toHaveBeenCalledWith(400);
             expect(mockResponse.json).toHaveBeenCalledWith({
@@ -96,7 +101,7 @@ describe('Execute Route Validation', () => {
                 }
             });
 
-            await executeRoute(mockRequest as Request, mockResponse as Response);
+            await executeRoute(mockRequest as Request, mockResponse as unknown as Response);
 
             expect(mockResponse.status).toHaveBeenCalledWith(400);
             expect(mockResponse.json).toHaveBeenCalledWith({ error: '지원하지 않는 언어입니다.' });
@@ -112,7 +117,7 @@ describe('Execute Route Validation', () => {
                 }
             });
 
-            await executeRoute(mockRequest as Request, mockResponse as Response);
+            await executeRoute(mockRequest as Request, mockResponse as unknown as Response);
 
             expect(mockResponse.status).toHaveBeenCalledWith(400);
             expect(mockResponse.json).toHaveBeenCalledWith({
@@ -128,7 +133,7 @@ describe('Execute Route Validation', () => {
                 }
             });
 
-            await executeRoute(mockRequest as Request, mockResponse as Response);
+            await executeRoute(mockRequest as Request, mockResponse as unknown as Response);
 
             expect(mockResponse.status).toHaveBeenCalledWith(400);
         });
@@ -141,7 +146,7 @@ describe('Execute Route Validation', () => {
                 }
             });
 
-            await executeRoute(mockRequest as Request, mockResponse as Response);
+            await executeRoute(mockRequest as Request, mockResponse as unknown as Response);
 
             expect(mockResponse.status).toHaveBeenCalledWith(400);
         });
@@ -162,7 +167,7 @@ describe('Execute Route Validation', () => {
                     }
                 });
 
-                await executeRoute(mockRequest as Request, mockResponse as Response);
+                await executeRoute(mockRequest as Request, mockResponse as unknown as Response);
 
                 expect(mockResponse.status).toHaveBeenCalledWith(400);
             }

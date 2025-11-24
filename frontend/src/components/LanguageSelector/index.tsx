@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
-import { useApp } from '../context/AppContext';
-import { LANGUAGE_CONFIG } from '../config/constants';
-import type { ProgrammingLanguage } from '../types';
-import Modal from './Modal';
-import './LanguageSelector.css';
+import React, { useState, useEffect, useRef } from 'react';
+import { useApp } from '../../context/useApp';
+import { LANGUAGE_CONFIG } from '../../config/constants';
+import type { ProgrammingLanguage } from '../../types';
+import Modal from '../Modal';
+import './styles.css';
 
 interface LanguageSelectorProps {
     onLanguageChange: (lang: ProgrammingLanguage) => void;

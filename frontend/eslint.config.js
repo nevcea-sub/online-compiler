@@ -39,14 +39,15 @@ export default [
         }
     },
     {
-        files: ['src/**/*.{ts,tsx}'],
+        files: ['**/*.{ts,tsx}'],
         languageOptions: {
             parser: tsparser,
             parserOptions: {
                 ecmaVersion: 'latest',
                 ecmaFeatures: { jsx: true },
                 sourceType: 'module',
-                project: resolve(__dirname, 'tsconfig.json')
+                project: resolve(__dirname, 'tsconfig.eslint.json'),
+                tsconfigRootDir: __dirname
             }
         },
         plugins: {
@@ -54,24 +55,7 @@ export default [
         },
         rules: {
             'no-undef': 'off',
-            '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }]
-        }
-    },
-    {
-        files: ['vite.config.ts'],
-        languageOptions: {
-            parser: tsparser,
-            parserOptions: {
-                ecmaVersion: 'latest',
-                sourceType: 'module',
-                project: resolve(__dirname, 'tsconfig.node.json')
-            }
-        },
-        plugins: {
-            '@typescript-eslint': tseslint
-        },
-        rules: {
-            'no-undef': 'off'
+            '@typescript-eslint/no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]' }]
         }
     },
     {

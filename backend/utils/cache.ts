@@ -1,6 +1,11 @@
 import { createHash } from 'crypto';
 import { CONFIG } from '../config';
 
+const DEFAULT_CACHE_MAX_SIZE = 1000;
+const DEFAULT_CACHE_TTL_MS = 60 * 60 * 1000;
+const MAX_CACHE_ENTRY_SIZE_BYTES = 10 * 1024 * 1024;
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+
 export interface CacheEntry {
     output?: string;
     error?: string;
@@ -16,14 +21,23 @@ interface CacheStats {
     evictions: number;
 }
 
+interface LRUNode {
+    key: string;
+    entry: CacheEntry;
+    prev: LRUNode | null;
+    next: LRUNode | null;
+}
+
 class ExecutionCache {
-    private cache: Map<string, CacheEntry>;
+    private cache: Map<string, LRUNode>;
     private stats: CacheStats;
     private readonly maxSize: number;
     private readonly ttl: number;
     private cleanupInterval: NodeJS.Timeout | null = null;
+    private head: LRUNode | null = null;
+    private tail: LRUNode | null = null;
 
-    constructor(maxSize: number = 1000, ttl: number = 60 * 60 * 1000) {
+    constructor(maxSize: number = DEFAULT_CACHE_MAX_SIZE, ttl: number = DEFAULT_CACHE_TTL_MS) {
         this.cache = new Map();
         this.stats = {
             hits: 0,
@@ -36,6 +50,51 @@ class ExecutionCache {
         this.startCleanup();
     }
 
+    private moveToHead(node: LRUNode): void {
+        if (node === this.head) {
+            return;
+        }
+
+        if (node.prev) {
+            node.prev.next = node.next;
+        }
+        if (node.next) {
+            node.next.prev = node.prev;
+        }
+        if (node === this.tail) {
+            this.tail = node.prev;
+        }
+
+        node.prev = null;
+        node.next = this.head;
+        if (this.head) {
+            this.head.prev = node;
+        }
+        this.head = node;
+        if (!this.tail) {
+            this.tail = node;
+        }
+    }
+
+    private removeTail(): string | null {
+        if (!this.tail) {
+            return null;
+        }
+
+        const key = this.tail.key;
+        this.cache.delete(key);
+
+        if (this.tail.prev) {
+            this.tail.prev.next = null;
+            this.tail = this.tail.prev;
+        } else {
+            this.head = null;
+            this.tail = null;
+        }
+
+        return key;
+    }
+
     private generateKey(code: string, language: string, input: string): string {
         const normalizedCode = code.trim();
         const normalizedInput = input.trim();
@@ -43,8 +102,8 @@ class ExecutionCache {
         return createHash('sha256').update(data).digest('hex');
     }
 
-    private isExpired(entry: CacheEntry): boolean {
-        return Date.now() - entry.timestamp > this.ttl;
+    private isExpired(entry: CacheEntry, now: number = Date.now()): boolean {
+        return now - entry.timestamp > this.ttl;
     }
 
     get(code: string, language: string, input: string): CacheEntry | null {
@@ -53,22 +112,38 @@ class ExecutionCache {
         }
 
         const key = this.generateKey(code, language, input);
-        const entry = this.cache.get(key);
+        const node = this.cache.get(key);
 
-        if (!entry) {
+        if (!node) {
             this.stats.misses++;
             return null;
         }
 
-        if (this.isExpired(entry)) {
+        const now = Date.now();
+        if (this.isExpired(node.entry, now)) {
+            if (node.prev) {
+                node.prev.next = node.next;
+            }
+            if (node.next) {
+                node.next.prev = node.prev;
+            }
+            if (node === this.head) {
+                this.head = node.next;
+            }
+            if (node === this.tail) {
+                this.tail = node.prev;
+            }
             this.cache.delete(key);
             this.stats.misses++;
             this.stats.size--;
             return null;
         }
 
+        if (node !== this.head) {
+            this.moveToHead(node);
+        }
         this.stats.hits++;
-        return entry;
+        return node.entry;
     }
 
     set(code: string, language: string, input: string, result: Omit<CacheEntry, 'timestamp'>): void {
@@ -76,13 +151,30 @@ class ExecutionCache {
             return;
         }
 
-        const resultSize = JSON.stringify(result).length;
-        if (resultSize > 10 * 1024 * 1024) {
+        let resultSize = 0;
+        if (result.output) {
+            resultSize += result.output.length;
+        }
+        if (result.error) {
+            resultSize += result.error.length;
+        }
+        if (result.images) {
+            for (let i = 0; i < result.images.length; i++) {
+                resultSize += result.images[i].length;
+            }
+            resultSize += result.images.length - 1;
+        }
+        resultSize += 20;
+        if (resultSize > MAX_CACHE_ENTRY_SIZE_BYTES) {
             return;
         }
 
         if (this.cache.size >= this.maxSize) {
-            this.evictOldest();
+            const evictedKey = this.removeTail();
+            if (evictedKey) {
+                this.stats.evictions++;
+                this.stats.size--;
+            }
         }
 
         const key = this.generateKey(code, language, input);
@@ -91,40 +183,59 @@ class ExecutionCache {
             timestamp: Date.now()
         };
 
-        this.cache.set(key, entry);
-        this.stats.size = this.cache.size;
-    }
-
-    private evictOldest(): void {
-        if (this.cache.size === 0) {
-            return;
-        }
-
-        let oldestKey: string | null = null;
-        let oldestTime = Infinity;
-
-        for (const [key, entry] of this.cache.entries()) {
-            if (entry.timestamp < oldestTime) {
-                oldestTime = entry.timestamp;
-                oldestKey = key;
+        const existingNode = this.cache.get(key);
+        if (existingNode) {
+            existingNode.entry = entry;
+            if (existingNode !== this.head) {
+                this.moveToHead(existingNode);
             }
-        }
+        } else {
+            const newNode: LRUNode = {
+                key,
+                entry,
+                prev: null,
+                next: this.head
+            };
 
-        if (oldestKey) {
-            this.cache.delete(oldestKey);
-            this.stats.evictions++;
+            if (this.head) {
+                this.head.prev = newNode;
+            }
+            this.head = newNode;
+            if (!this.tail) {
+                this.tail = newNode;
+            }
+
+            this.cache.set(key, newNode);
             this.stats.size = this.cache.size;
         }
     }
 
     private cleanup(): void {
         let cleaned = 0;
+        const now = Date.now();
+        const nodesToRemove: LRUNode[] = [];
 
-        for (const [key, entry] of this.cache.entries()) {
-            if (this.isExpired(entry)) {
-                this.cache.delete(key);
-                cleaned++;
+        for (const node of this.cache.values()) {
+            if (this.isExpired(node.entry, now)) {
+                nodesToRemove.push(node);
             }
+        }
+
+        for (const node of nodesToRemove) {
+            if (node.prev) {
+                node.prev.next = node.next;
+            }
+            if (node.next) {
+                node.next.prev = node.prev;
+            }
+            if (node === this.head) {
+                this.head = node.next;
+            }
+            if (node === this.tail) {
+                this.tail = node.prev;
+            }
+            this.cache.delete(node.key);
+            cleaned++;
         }
 
         if (cleaned > 0) {
@@ -138,7 +249,7 @@ class ExecutionCache {
     private startCleanup(): void {
         this.cleanupInterval = setInterval(() => {
             this.cleanup();
-        }, 5 * 60 * 1000);
+        }, CLEANUP_INTERVAL_MS);
     }
 
     getStats(): CacheStats & { hitRate: number; totalRequests: number } {
@@ -160,19 +271,15 @@ class ExecutionCache {
     }
 }
 
-function parseIntegerEnv(value: string | undefined, defaultValue: number, min: number, max: number): number {
-    if (!value) {
-        return defaultValue;
-    }
-    const parsed = parseInt(value, 10);
-    if (isNaN(parsed) || parsed < min || parsed > max) {
-        return defaultValue;
-    }
-    return parsed;
-}
+import { parseIntegerEnv } from './envValidation';
+
+const CACHE_MAX_SIZE_MIN = 100;
+const CACHE_MAX_SIZE_MAX = 10000;
+const CACHE_TTL_MS_MIN = 60 * 1000;
+const CACHE_TTL_MS_MAX = 24 * 60 * 60 * 1000;
 
 export const executionCache = new ExecutionCache(
-    parseIntegerEnv(process.env.CACHE_MAX_SIZE, 1000, 100, 10000),
-    parseIntegerEnv(process.env.CACHE_TTL_MS, 60 * 60 * 1000, 60 * 1000, 24 * 60 * 60 * 1000)
+    parseIntegerEnv(process.env.CACHE_MAX_SIZE, DEFAULT_CACHE_MAX_SIZE, CACHE_MAX_SIZE_MIN, CACHE_MAX_SIZE_MAX),
+    parseIntegerEnv(process.env.CACHE_TTL_MS, DEFAULT_CACHE_TTL_MS, CACHE_TTL_MS_MIN, CACHE_TTL_MS_MAX)
 );
 

@@ -1,58 +1,61 @@
+const TRUNCATED_MARKER = '\n[truncated]';
+const UTF8_ENCODING = 'utf8';
+
+interface OutputState {
+    content: string;
+    bytes: number;
+    truncated: boolean;
+}
+
 export class OutputCollector {
     private maxBytes: number;
-    private stdout: string;
-    private stderr: string;
-    private stdoutBytes: number;
-    private stderrBytes: number;
-    private stdoutTruncated: boolean;
-    private stderrTruncated: boolean;
+    private stdoutState: OutputState;
+    private stderrState: OutputState;
 
     constructor(maxBytes: number) {
         this.maxBytes = maxBytes;
-        this.stdout = '';
-        this.stderr = '';
-        this.stdoutBytes = 0;
-        this.stderrBytes = 0;
-        this.stdoutTruncated = false;
-        this.stderrTruncated = false;
+        this.stdoutState = this.createOutputState();
+        this.stderrState = this.createOutputState();
+    }
+
+    private createOutputState(): OutputState {
+        return {
+            content: '',
+            bytes: 0,
+            truncated: false
+        };
+    }
+
+    private getState(isStdout: boolean): OutputState {
+        return isStdout ? this.stdoutState : this.stderrState;
     }
 
     private addOutput(data: Buffer | string, isStdout: boolean): void {
-        const truncated = isStdout ? this.stdoutTruncated : this.stderrTruncated;
-        if (truncated) {
+        const state = this.getState(isStdout);
+
+        if (state.truncated) {
             return;
         }
-        const s = data.toString('utf8');
-        const bytes = Buffer.byteLength(s, 'utf8');
-        const currentBytes = isStdout ? this.stdoutBytes : this.stderrBytes;
-        const remaining = this.maxBytes - currentBytes;
+
+        const text = data.toString(UTF8_ENCODING);
+        const bytes = Buffer.byteLength(text, UTF8_ENCODING);
+        const remaining = this.maxBytes - state.bytes;
+
         if (remaining <= 0) {
-            if (isStdout) {
-                this.stdoutTruncated = true;
-            } else {
-                this.stderrTruncated = true;
-            }
+            state.truncated = true;
             return;
         }
+
         if (bytes <= remaining) {
-            if (isStdout) {
-                this.stdout += s;
-                this.stdoutBytes += bytes;
-            } else {
-                this.stderr += s;
-                this.stderrBytes += bytes;
-            }
+            state.content += text;
+            state.bytes += bytes;
         } else {
-            const slice = Buffer.from(s, 'utf8').subarray(0, remaining).toString('utf8');
-            if (isStdout) {
-                this.stdout += slice;
-                this.stdoutBytes += remaining;
-                this.stdoutTruncated = true;
-            } else {
-                this.stderr += slice;
-                this.stderrBytes += remaining;
-                this.stderrTruncated = true;
-            }
+            const slice = Buffer.from(text, UTF8_ENCODING)
+                .subarray(0, remaining)
+                .toString(UTF8_ENCODING);
+            state.content += slice;
+            state.bytes += remaining;
+            state.truncated = true;
         }
     }
 
@@ -65,14 +68,12 @@ export class OutputCollector {
     }
 
     getFinalOutput(): { stdout: string; stderr: string } {
-        let stdout = this.stdout;
-        let stderr = this.stderr;
-        if (this.stdoutTruncated) {
-            stdout += '\n[truncated]';
-        }
-        if (this.stderrTruncated) {
-            stderr += '\n[truncated]';
-        }
+        const stdout = this.stdoutState.truncated
+            ? this.stdoutState.content + TRUNCATED_MARKER
+            : this.stdoutState.content;
+        const stderr = this.stderrState.truncated
+            ? this.stderrState.content + TRUNCATED_MARKER
+            : this.stderrState.content;
         return { stdout, stderr };
     }
 }

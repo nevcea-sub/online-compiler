@@ -1,8 +1,8 @@
-import { useEffect, useRef, memo, useCallback } from 'react';
+import React, { useEffect, useRef, memo, useCallback } from 'react';
 import AceEditor from 'react-ace';
-import { useApp } from '../context/AppContext';
-import { LANGUAGE_CONFIG } from '../config/constants';
-import './CodeEditor.css';
+import { useApp } from '../../context/useApp';
+import { LANGUAGE_CONFIG } from '../../config/constants';
+import './styles.css';
 
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/mode-javascript';
@@ -96,7 +96,7 @@ const CodeEditor = memo(({ onRun }: CodeEditorProps) => {
                     }}
                 >
                     <div className="text-center px-4">
-                        <p className="text-sm text-muted-foreground">{t('code-placeholder') || '코드를 입력하세요'}</p>
+                        <p className="text-sm text-muted-foreground">{t('code-placeholder')}</p>
                     </div>
                 </div>
             ) : null}

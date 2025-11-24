@@ -10,6 +10,8 @@ build/
 backend/dist/
 frontend/dist/
 frontend/dist-ssr/
+*.tsbuildinfo
+*.map
 
 # Environment variables
 .env
@@ -72,6 +74,13 @@ backend/output/*
 backend/tool_cache/
 !backend/code/.gitkeep
 !backend/output/.gitkeep
+
+# Prometheus and Grafana data
+prometheus-data/
+grafana-data/
+
+# Docker volumes
+docker-volumes/
 
 # Docker
 docker-compose.override.yml

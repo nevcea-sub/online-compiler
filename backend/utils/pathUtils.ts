@@ -21,13 +21,13 @@ export function validatePath(filePath: unknown): boolean {
     if (!normalized) {
         return false;
     }
+    if (normalized.includes('\0')) {
+        return false;
+    }
+    if (normalized.startsWith('/')) {
+        return !normalized.includes('..');
+    }
     try {
-        if (normalized.startsWith('/')) {
-            if (normalized.includes('..') || normalized.includes('\0')) {
-                return false;
-            }
-            return true;
-        }
         const resolved = path.resolve(normalized);
         return resolved === normalized || resolved.startsWith(normalized);
     } catch {
@@ -52,10 +52,8 @@ export function getContainerCodePath(language: string, extension: string, contai
     return containerCodePaths[language] || `/tmp/code${extension}`;
 }
 
-export function validateDockerPath(dockerPath: string, pathName: string): void {
-    if (!dockerPath || dockerPath.trim() === '' || !dockerPath.startsWith('/')) {
-        throw new Error(`Invalid Docker ${pathName} path: ${dockerPath}`);
-    }
+export function validateDockerPath(dockerPath: string): boolean {
+    return !!(dockerPath && dockerPath.length > 0 && dockerPath[0] === '/');
 }
 
 let kotlinCompilerPathCache: { exists: boolean; timestamp: number } | null = null;

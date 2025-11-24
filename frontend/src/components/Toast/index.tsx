@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { useApp } from '../context/AppContext';
-import type { ToastType } from '../types';
-import './Toast.css';
+import React, { useEffect, useState } from 'react';
+import { useApp } from '../../context/useApp';
+import type { ToastType } from '../../types';
+import './styles.css';
 
 interface ToastProps {
     message: string;

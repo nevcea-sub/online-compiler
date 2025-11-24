@@ -1,16 +1,21 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
-import CompilerPage from './pages/CompilerPage';
-import SettingsPage from './pages/SettingsPage';
-import { useApp } from './context/AppContext';
+import CompilerPage from './pages/CompilerPage/index';
+import SettingsPage from './pages/SettingsPage/index';
+import { useApp } from './context/useApp';
 import Toast from './components/Toast';
 
 const AppContent = () => {
-    const { currentPage, toast, hideToast } = useApp();
+    const { toast, hideToast } = useApp();
 
     return (
         <>
-            {currentPage === 'compiler' && <CompilerPage />}
-            {currentPage === 'settings' && <SettingsPage />}
+            <Routes>
+                <Route path="/" element={<CompilerPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
             {toast && (
                 <Toast
                     message={toast.message}
@@ -25,9 +30,11 @@ const AppContent = () => {
 
 function App() {
     return (
-        <AppProvider>
-            <AppContent />
-        </AppProvider>
+        <BrowserRouter>
+            <AppProvider>
+                <AppContent />
+            </AppProvider>
+        </BrowserRouter>
     );
 }
 

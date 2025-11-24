@@ -1,0 +1,14 @@
+apiVersion: 1
+
+notifiers:
+  - name: default
+    type: webhook
+    uid: default-webhook
+    org_id: 1
+    is_default: false
+    settings:
+      url: ""
+      httpMethod: POST
+      username: ""
+      password: ""
+

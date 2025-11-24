@@ -12,6 +12,14 @@ const STACK_TRACE_REGEX = /(.*?)(\n\s+at\s+.*)/s;
 const FILE_PATH_PLACEHOLDER_REGEX = /^\[file path\]$/;
 const DEBUG_PREFIX_REGEX = /^\[DEBUG\]|^DEBUG:/;
 
+const DEFAULT_ERROR_MESSAGE = 'An error occurred during execution.';
+const DEFAULT_SANITIZED_ERROR_MESSAGE = '실행 중 오류가 발생했습니다.';
+const TRUNCATE_LENGTH_ERROR = 500;
+const TRUNCATE_LENGTH_SANITIZED = 300;
+const MAX_ERROR_LINES = 10;
+const MIN_ERROR_LINE_LENGTH = 5;
+const MAX_ERROR_LINE_LENGTH = 200;
+
 function truncateString(str: string, maxLength: number): string {
     if (str.length > maxLength) {
         return str.substring(0, maxLength) + '...';
@@ -47,11 +55,28 @@ const DOCKER_ERROR_CHECKS: DockerErrorCheck[] = [
     }
 ];
 
+const DOCKER_ERROR_CHECKS_LOWER: Array<{ patterns: string[]; message: string }> = DOCKER_ERROR_CHECKS.map(check => ({
+    patterns: check.patterns.map(p => p.toLowerCase()),
+    message: check.message
+}));
+
 function checkDockerError(errorStr: string): string | null {
     const lowerError = errorStr.toLowerCase();
-    for (const check of DOCKER_ERROR_CHECKS) {
-        if (check.patterns.some(pattern => lowerError.includes(pattern))) {
-            if (check.patterns[0] === 'permission denied' && !lowerError.includes('docker')) {
+
+    for (let i = 0; i < DOCKER_ERROR_CHECKS_LOWER.length; i++) {
+        const check = DOCKER_ERROR_CHECKS_LOWER[i];
+        const patterns = check.patterns;
+        let found = false;
+
+        for (let j = 0; j < patterns.length; j++) {
+            if (lowerError.includes(patterns[j])) {
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            if (patterns[0] === 'permission denied' && !lowerError.includes('docker')) {
                 continue;
             }
             return check.message;
@@ -61,25 +86,28 @@ function checkDockerError(errorStr: string): string | null {
 }
 
 export function filterDockerMessages(text: unknown): string {
-    if (!text || typeof text !== 'string') {
+    if (!text || typeof text !== 'string' || text.length === 0) {
         return '';
     }
-    let filtered = text;
-    const lines = filtered.split('\n');
-    const filteredLines: string[] = [];
 
-    for (const line of lines) {
-        const lowerLine = line.toLowerCase().trim();
-        if (DOCKER_PULL_MESSAGES_SET.has(lowerLine)) {
-            continue;
+    const lines = text.split('\n');
+    const filteredLines: string[] = [];
+    const linesLen = lines.length;
+
+    for (let i = 0; i < linesLen; i++) {
+        const line = lines[i];
+        const trimmed = line.trim();
+        const lowerLine = trimmed.toLowerCase();
+
+        if (!DOCKER_PULL_MESSAGES_SET.has(lowerLine)) {
+            filteredLines.push(line);
         }
-        filteredLines.push(line);
     }
 
-    filtered = filteredLines.join('\n');
+    let filtered = filteredLines.join('\n');
     filtered = filtered.replace(ANSI_REGEX, '');
 
-    return truncateString(filtered, 500);
+    return truncateString(filtered, TRUNCATE_LENGTH_ERROR);
 }
 
 export function sanitizeError(error: unknown): string {
@@ -87,137 +115,97 @@ export function sanitizeError(error: unknown): string {
         return '';
     }
     let filtered = filterDockerMessages(error);
+    if (filtered.length === 0) {
+        return '';
+    }
 
     filtered = filtered.replace(FILE_PATH_REGEX, '[file path]');
     filtered = filtered.replace(WINDOWS_PATH_REGEX, '[file path]');
 
-    for (const pattern of DEBUG_PATTERNS) {
-        filtered = filtered.replace(pattern, '');
+    for (let i = 0; i < DEBUG_PATTERNS.length; i++) {
+        filtered = filtered.replace(DEBUG_PATTERNS[i], '');
     }
 
-    return truncateString(filtered, 500);
+    return truncateString(filtered, TRUNCATE_LENGTH_ERROR);
 }
 
-export function sanitizeErrorForUser(errorStr: unknown): string {
-    if (!errorStr || typeof errorStr !== 'string') {
-        return 'An error occurred during execution.';
-    }
+const ERROR_PATTERN_DOCKER = /docker:\s*(.+?)(?:\n|$)/i;
+const ERROR_PATTERN_ERROR = /error[:\s]+(.+?)(?:\n|$)/i;
+const ERROR_PATTERN_INVALID = /invalid[:\s]+(.+?)(?:\n|$)/i;
+const ERROR_PATTERN_UNKNOWN = /unknown[:\s]+(.+?)(?:\n|$)/i;
+const ERROR_PATTERN_FAILED = /failed[:\s]+(.+?)(?:\n|$)/i;
+const ERROR_PATTERN_CANNOT = /cannot[:\s]+(.+?)(?:\n|$)/i;
+const DOCKER_PREFIX_CLEAN = /^docker:\s*/i;
 
-    console.error('[DEBUG] Original error message:', truncateString(errorStr, 500));
+const ERROR_PATTERNS = [
+    ERROR_PATTERN_DOCKER,
+    ERROR_PATTERN_ERROR,
+    ERROR_PATTERN_INVALID,
+    ERROR_PATTERN_UNKNOWN,
+    ERROR_PATTERN_FAILED,
+    ERROR_PATTERN_CANNOT
+];
 
+function extractErrorFromDockerHelpMessage(errorStr: string): string | null {
     const originalLower = errorStr.toLowerCase();
-    let sanitized = filterDockerMessages(errorStr);
-    const lowerSanitized = sanitized.toLowerCase();
-
-    const dockerError = checkDockerError(errorStr);
-    if (dockerError) {
-        return dockerError;
+    const hasRunDocker = originalLower.includes('run \'docker');
+    const hasHelp = originalLower.includes('--help');
+    if (!hasRunDocker && !hasHelp) {
+        return null;
     }
 
-    if (lowerSanitized.includes('run \'docker run --help\'') ||
-        (lowerSanitized.includes('run \'docker') && lowerSanitized.includes('--help')) ||
-        originalLower.includes('run \'docker run --help\'') ||
-        (originalLower.includes('run \'docker') && originalLower.includes('--help'))) {
-        const originalLines = errorStr.split('\n');
+    const originalLines = errorStr.split('\n');
+    const linesLen = originalLines.length;
+    const maxCheck = Math.min(linesLen, 20);
 
-        for (let i = 0; i < originalLines.length; i++) {
-            const line = originalLines[i].trim();
-            const lineLower = line.toLowerCase();
+    for (let i = 0; i < maxCheck; i++) {
+        const line = originalLines[i];
+        const trimmed = line.trim();
+        if (trimmed.length < MIN_ERROR_LINE_LENGTH) {
+            continue;
+        }
+        const lineLower = trimmed.toLowerCase();
 
-            if (lineLower.includes('run \'docker') && lineLower.includes('--help')) {
-                break;
-            }
-
-            if (!line ||
-                lineLower.includes('for more information') ||
-                lineLower.includes('see \'docker') ||
-                line.length < 5) {
-                continue;
-            }
-
-            const errorPatterns = [
-                /docker:\s*(.+?)(?:\n|$)/i,
-                /error[:\s]+(.+?)(?:\n|$)/i,
-                /invalid[:\s]+(.+?)(?:\n|$)/i,
-                /unknown[:\s]+(.+?)(?:\n|$)/i,
-                /failed[:\s]+(.+?)(?:\n|$)/i,
-                /cannot[:\s]+(.+?)(?:\n|$)/i
-            ];
-
-            for (const pattern of errorPatterns) {
-                const match = line.match(pattern);
-                if (match && match[1]) {
-                    const errorMsg = match[1].trim();
-                    if (errorMsg.length > 0 && errorMsg.length < 200) {
-                        const cleaned = errorMsg.replace(/^docker:\s*/i, '').trim();
-                        if (cleaned.length > 0) {
-                            return cleaned;
-                        }
-                    }
-                }
-            }
-
-            if (lineLower.includes('error') ||
-                lineLower.includes('invalid') ||
-                lineLower.includes('unknown') ||
-                lineLower.includes('failed') ||
-                lineLower.includes('cannot') ||
-                lineLower.includes('docker:')) {
-                const cleaned = line.replace(/^docker:\s*/i, '').trim();
-                if (cleaned.length > 5 && cleaned.length < 200) {
-                    return cleaned;
-                }
-            }
+        if (lineLower.includes('run \'docker') && lineLower.includes('--help')) {
+            break;
         }
 
-        const beforeHelp = errorStr.split(/run ['"]docker/i)[0].trim();
-        if (beforeHelp && beforeHelp.length > 0) {
-            const beforeLines = beforeHelp.split('\n').filter(l => l.trim().length > 0);
-            if (beforeLines.length > 0) {
-                for (let i = beforeLines.length - 1; i >= 0; i--) {
-                    const lastLine = beforeLines[i].trim();
-                    if (lastLine.length > 5 && lastLine.length < 200) {
-                        const cleaned = lastLine.replace(/^docker:\s*/i, '').trim();
-                        if (cleaned.length > 0) {
-                            return cleaned;
-                        }
+        if (lineLower.includes('for more information') || lineLower.includes('see \'docker')) {
+            continue;
+        }
+
+        for (let j = 0; j < ERROR_PATTERNS.length; j++) {
+            ERROR_PATTERNS[j].lastIndex = 0;
+            const match = ERROR_PATTERNS[j].exec(trimmed);
+            if (match && match[1]) {
+                const errorMsg = match[1].trim();
+                if (errorMsg.length > 0 && errorMsg.length < MAX_ERROR_LINE_LENGTH) {
+                    const cleaned = errorMsg.replace(DOCKER_PREFIX_CLEAN, '');
+                    if (cleaned.length > 0) {
+                        return cleaned;
                     }
                 }
             }
         }
 
-        for (const line of originalLines) {
-            const trimmed = line.trim();
-            if (trimmed &&
-                !trimmed.toLowerCase().includes('run \'docker') &&
-                !trimmed.toLowerCase().includes('for more information') &&
-                trimmed.length > 5 &&
-                trimmed.length < 200) {
-                const cleaned = trimmed.replace(/^docker:\s*/i, '').trim();
-                if (cleaned.length > 0) {
+        if (lineLower.includes('error') || lineLower.includes('invalid') ||
+            lineLower.includes('unknown') || lineLower.includes('failed') ||
+            lineLower.includes('cannot') || lineLower.includes('docker:')) {
+            if (trimmed.length < MAX_ERROR_LINE_LENGTH) {
+                const cleaned = trimmed.replace(DOCKER_PREFIX_CLEAN, '');
+                if (cleaned.length > MIN_ERROR_LINE_LENGTH) {
                     return cleaned;
                 }
             }
         }
-
-        return 'Docker 명령어 실행 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
     }
 
-    sanitized = sanitized.replace(/docker:.*/gi, '');
-    sanitized = sanitized.replace(/Error response from daemon.*/gi, '');
-    sanitized = sanitized.replace(/Run 'docker run --help'.*/gi, '');
-    sanitized = sanitized.replace(FILE_PATH_REGEX, '[file path]');
-    sanitized = sanitized.replace(WINDOWS_PATH_REGEX, '[file path]');
+    return null;
+}
 
-    const stackTraceMatch = sanitized.match(STACK_TRACE_REGEX);
-    if (stackTraceMatch) {
-        sanitized = stackTraceMatch[1];
-    }
-
-    const lines = sanitized.split('\n');
+function filterErrorLines(lines: string[]): string[] {
     const filtered: string[] = [];
-
-    for (let i = 0; i < lines.length && filtered.length < 10; i++) {
+    for (let i = 0; i < lines.length && filtered.length < MAX_ERROR_LINES; i++) {
         const trimmed = lines[i].trim();
         if (!trimmed) {
             continue;
@@ -233,12 +221,126 @@ export function sanitizeErrorForUser(errorStr: unknown): string {
         }
         filtered.push(lines[i]);
     }
+    return filtered;
+}
+
+const DOCKER_PREFIX_REGEX = /docker:.*/gi;
+const DOCKER_DAEMON_REGEX = /Error response from daemon.*/gi;
+const DOCKER_HELP_REGEX = /Run 'docker run --help'.*/gi;
+
+function resetRegexLastIndex(...regexes: RegExp[]): void {
+    for (let i = 0; i < regexes.length; i++) {
+        regexes[i].lastIndex = 0;
+    }
+}
+
+interface CachedError {
+    result: string;
+    timestamp: number;
+}
+
+const ERROR_CACHE = new Map<string, CachedError>();
+const ERROR_CACHE_MAX_SIZE = 100;
+const ERROR_CACHE_TTL = 5 * 60 * 1000;
+
+function getCachedError(errorStr: string): string | null {
+    const cached = ERROR_CACHE.get(errorStr);
+    if (cached) {
+        const now = Date.now();
+        if (now - cached.timestamp < ERROR_CACHE_TTL) {
+            return cached.result;
+        }
+        ERROR_CACHE.delete(errorStr);
+    }
+    return null;
+}
+
+function setCachedError(errorStr: string, result: string): void {
+    if (ERROR_CACHE.size >= ERROR_CACHE_MAX_SIZE) {
+        const firstKey = ERROR_CACHE.keys().next().value;
+        if (firstKey !== undefined) {
+            ERROR_CACHE.delete(firstKey);
+        }
+    }
+    ERROR_CACHE.set(errorStr, { result, timestamp: Date.now() });
+}
+
+export function sanitizeErrorForUser(errorStr: unknown): string {
+    if (!errorStr || typeof errorStr !== 'string' || errorStr.length === 0) {
+        return DEFAULT_ERROR_MESSAGE;
+    }
+
+    if (errorStr.length > 1000) {
+        const shortError = errorStr.substring(0, 1000);
+        const cached = getCachedError(shortError);
+        if (cached) {
+            return cached;
+        }
+    } else {
+        const cached = getCachedError(errorStr);
+        if (cached) {
+            return cached;
+        }
+    }
+
+    const dockerError = checkDockerError(errorStr);
+    if (dockerError) {
+        if (errorStr.length <= 1000) {
+            setCachedError(errorStr, dockerError);
+        }
+        return dockerError;
+    }
+
+    const dockerHelpError = extractErrorFromDockerHelpMessage(errorStr);
+    if (dockerHelpError) {
+        if (errorStr.length <= 1000) {
+            setCachedError(errorStr, dockerHelpError);
+        }
+        return dockerHelpError;
+    }
+
+    let sanitized = filterDockerMessages(errorStr);
+    if (sanitized.length === 0) {
+        return DEFAULT_SANITIZED_ERROR_MESSAGE;
+    }
+
+    resetRegexLastIndex(DOCKER_PREFIX_REGEX, DOCKER_DAEMON_REGEX, DOCKER_HELP_REGEX, FILE_PATH_REGEX, WINDOWS_PATH_REGEX);
+    sanitized = sanitized
+        .replace(DOCKER_PREFIX_REGEX, '')
+        .replace(DOCKER_DAEMON_REGEX, '')
+        .replace(DOCKER_HELP_REGEX, '')
+        .replace(FILE_PATH_REGEX, '[file path]')
+        .replace(WINDOWS_PATH_REGEX, '[file path]');
+
+    if (sanitized.length === 0) {
+        return DEFAULT_SANITIZED_ERROR_MESSAGE;
+    }
+
+    STACK_TRACE_REGEX.lastIndex = 0;
+    const stackTraceMatch = STACK_TRACE_REGEX.exec(sanitized);
+    if (stackTraceMatch) {
+        sanitized = stackTraceMatch[1];
+        if (sanitized.length === 0) {
+            return DEFAULT_SANITIZED_ERROR_MESSAGE;
+        }
+    }
+
+    const lines = sanitized.split('\n');
+    const filtered = filterErrorLines(lines);
+
+    if (filtered.length === 0) {
+        return DEFAULT_SANITIZED_ERROR_MESSAGE;
+    }
 
     sanitized = filtered.join('\n').trim();
-    sanitized = truncateString(sanitized, 300);
+    sanitized = truncateString(sanitized, TRUNCATE_LENGTH_SANITIZED);
 
     if (!sanitized || sanitized.length === 0) {
-        return '실행 중 오류가 발생했습니다.';
+        return DEFAULT_SANITIZED_ERROR_MESSAGE;
+    }
+
+    if (errorStr.length <= 1000) {
+        setCachedError(errorStr, sanitized);
     }
 
     return sanitized;

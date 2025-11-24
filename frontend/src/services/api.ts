@@ -2,11 +2,19 @@ import { CONFIG } from '../config/constants';
 import type { ProgrammingLanguage, ExecuteResponse } from '../types';
 
 const REQUEST_TIMEOUT_MS = 300000;
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1000;
+const RETRYABLE_STATUS_CODES = [500, 502, 503, 504];
 
-export const executeCode = async (
+const sleep = (ms: number): Promise<void> => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+const makeRequest = async (
     code: string,
     language: ProgrammingLanguage,
-    input: string
+    input: string,
+    attempt: number = 0
 ): Promise<ExecuteResponse> => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -22,7 +30,9 @@ export const executeCode = async (
         clearTimeout(timeoutId);
 
         if (!response.ok) {
+            const status = response.status;
             let errorMessage = '';
+            
             try {
                 const errorData = await response.json();
                 if (errorData.error) {
@@ -31,10 +41,31 @@ export const executeCode = async (
             } catch (e) {
                 console.debug('Failed to parse error response:', e);
             }
-            if (!errorMessage) {
-                errorMessage = `HTTP ${response.status} error`;
+            
+            const shouldRetry = RETRYABLE_STATUS_CODES.includes(status) && attempt < MAX_RETRIES;
+            
+            if (shouldRetry) {
+                const delay = RETRY_DELAY_MS * Math.pow(2, attempt);
+                await sleep(delay);
+                return makeRequest(code, language, input, attempt + 1);
             }
-            throw new Error(`HTTP ${response.status}: ${errorMessage}`);
+
+            let translationKey: string;
+            if (status === 400) {
+                translationKey = 'bad-request';
+            } else if (status === 500) {
+                translationKey = 'server-error';
+            } else if (status === 502 || status === 503 || status === 504) {
+                translationKey = 'server-error';
+            } else {
+                translationKey = 'request-error';
+            }
+
+            if (errorMessage) {
+                throw new Error(`TRANSLATION_KEY:${translationKey}:${errorMessage}`);
+            } else {
+                throw new Error(`TRANSLATION_KEY:${translationKey}`);
+            }
         }
 
         return await response.json();
@@ -43,14 +74,43 @@ export const executeCode = async (
 
         if (error instanceof Error) {
             if (error.name === 'AbortError') {
-                throw new Error('Request timeout: The request took too long to complete.');
+                throw new Error('TRANSLATION_KEY:request-timeout-retry');
             }
-            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                throw new Error('Network error: Unable to connect to the server. Please check your connection.');
+            
+            const isNetworkError = error.message.includes('Failed to fetch') || 
+                                 error.message.includes('NetworkError') ||
+                                 error.message.includes('Network request failed');
+            
+            if (isNetworkError && attempt < MAX_RETRIES) {
+                const delay = RETRY_DELAY_MS * Math.pow(2, attempt);
+                await sleep(delay);
+                return makeRequest(code, language, input, attempt + 1);
             }
-            throw error;
+            
+            if (isNetworkError) {
+                throw new Error('TRANSLATION_KEY:network-error-detail');
+            }
+            
+            if (error.message.includes('HTTP')) {
+                throw error;
+            }
+            
+            if (error.message.includes('TRANSLATION_KEY:')) {
+                throw error;
+            }
+            
+            throw new Error(`TRANSLATION_KEY:request-error:${error.message}`);
         }
-        throw new Error('An unexpected error occurred.');
+        
+        throw new Error('TRANSLATION_KEY:unexpected-error');
     }
+};
+
+export const executeCode = async (
+    code: string,
+    language: ProgrammingLanguage,
+    input: string
+): Promise<ExecuteResponse> => {
+    return makeRequest(code, language, input, 0);
 };
 

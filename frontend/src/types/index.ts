@@ -1,7 +1,8 @@
+import type { TranslationKey } from '../i18n/translations';
+
 export type Language = 'ko' | 'en';
 export type Theme = 'light' | 'dark' | 'system';
 export type ToastType = 'info' | 'success' | 'error' | 'warning';
-export type Page = 'compiler' | 'settings';
 
 export type ProgrammingLanguage =
     | 'python'
@@ -59,7 +60,6 @@ export interface AppContextType {
     output: Output;
     error: string;
     isRunning: boolean;
-    currentPage: Page;
     toast: Toast | null;
     executionTime: number | null;
     setCurrentLang: (lang: Language) => void;
@@ -72,11 +72,10 @@ export interface AppContextType {
     setOutput: (output: Output) => void;
     setError: (error: string) => void;
     setIsRunning: (isRunning: boolean) => void;
-    setCurrentPage: (page: Page) => void;
     setExecutionTime: (time: number | null) => void;
     showToast: (message: string, type?: ToastType, duration?: number) => void;
     hideToast: () => void;
-    t: (key: string) => string;
+    t: (key: TranslationKey) => string;
     getSystemTheme: () => 'light' | 'dark';
 }
 

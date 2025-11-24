@@ -6,6 +6,14 @@ import {
 } from '../../utils/envValidation';
 
 describe('Environment Variable Validation Utilities', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     describe('parseIntegerEnv', () => {
         it('should return default value when env var is undefined', () => {
             expect(parseIntegerEnv(undefined, 100)).toBe(100);

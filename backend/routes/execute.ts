@@ -71,6 +71,8 @@ export function createExecuteRoute(
             if (CONFIG.DEBUG_MODE) {
                 console.log('[CACHE] Cache hit for code execution');
             }
+            const { cacheHits } = await import('../utils/metrics');
+            cacheHits.inc();
             res.json({
                 output: cachedResult.output,
                 error: cachedResult.error,
@@ -80,6 +82,9 @@ export function createExecuteRoute(
             });
             return;
         }
+
+        const { cacheMisses } = await import('../utils/metrics');
+        cacheMisses.inc();
 
         const sessionId = generateSessionId();
         const codePathBase = path.join(codeDir, `${sessionId}_code`);
@@ -121,9 +126,30 @@ export function createExecuteRoute(
             }
 
             const resolvedCodePath = path.resolve(`${codePathBase}${fileExtension}`);
+            const config = LANGUAGE_CONFIGS[language];
+
             const [writtenPath] = await Promise.all([
                 writeCodeFile(resolvedCodePath, finalCode, language, CONTAINER_CODE_PATHS, LANGUAGE_EXTENSIONS),
-                fs.mkdir(sessionOutputDir, { recursive: true })
+                fs.mkdir(sessionOutputDir, { recursive: true }),
+                CONFIG.ENABLE_WARMUP ? import('../docker/dockerWarmup').then(({ ensureWarmedUp }) => {
+                    ensureWarmedUp(language, config.image, kotlinCacheDir).catch(() => {
+                    });
+                }).catch(() => {
+                }) : Promise.resolve(),
+                CONFIG.ENABLE_PRELOAD ? import('../docker/dockerImage').then(({ checkImageExists }) => {
+                    return checkImageExists(config.image).then(async (exists) => {
+                        if (!exists) {
+                            if (CONFIG.DEBUG_MODE) {
+                                console.log(`[EXECUTE] Image ${config.image} not found, pulling in background...`);
+                            }
+                            const { pullDockerImage } = await import('../docker/dockerImage');
+                            pullDockerImage(config.image, 1, true).catch(() => {
+                            });
+                        }
+                    }).catch(() => {
+                    });
+                }).catch(() => {
+                }) : Promise.resolve()
             ]);
             fullCodePath = writtenPath;
 
@@ -132,34 +158,40 @@ export function createExecuteRoute(
                 throw new Error('파일 경로 생성에 실패했습니다.');
             }
 
-            try {
-                const stats = await fs.stat(fullCodePath);
-                if (!stats.isFile()) {
-                    console.error('[ERROR] Path exists but is not a file:', fullCodePath);
-                    throw new Error('파일 경로가 올바르지 않습니다.');
+            if (CONFIG.DEBUG_MODE) {
+                try {
+                    const stats = await fs.stat(fullCodePath);
+                    if (stats.isFile()) {
+                        console.log(
+                            `[DEBUG] File created successfully: ${fullCodePath}, size: ${stats.size} bytes`
+                        );
+                    }
+                } catch {
                 }
-                if (CONFIG.DEBUG_MODE) {
-                    console.log(
-                        `[DEBUG] File created successfully: ${fullCodePath}, size: ${stats.size} bytes`
-                    );
-                }
-            } catch {
-                console.error(`[ERROR] File verification failed: ${fullCodePath}`);
-                throw new Error('코드 파일 생성 또는 검증에 실패했습니다.');
             }
 
             let buildOptions: BuildOptions = {};
             if (language === 'kotlin') {
                 if (!kotlinCompilerExistsOnHost(kotlinCacheDir)) {
-                    warmupKotlinOnStart(kotlinCacheDir).catch(() => {});
+                    warmupKotlinOnStart(kotlinCacheDir).catch((error: unknown) => {
+                        if (CONFIG.DEBUG_MODE) {
+                            console.warn('[WARMUP] Kotlin warmup failed:', error);
+                        }
+                    });
                     await cleanupFile(fullCodePath);
-                    await fs.rm(sessionOutputDir, { recursive: true, force: true }).catch(() => {});
+                    await fs.rm(sessionOutputDir, { recursive: true, force: true }).catch((error: unknown) => {
+                        if (CONFIG.DEBUG_MODE && error instanceof Error) {
+                            console.warn(`[CLEANUP] Failed to remove session output dir ${sessionOutputDir}:`, error);
+                        }
+                    });
                     safeSendErrorResponse(res, 503, 'Kotlin 컴파일러가 아직 준비되지 않았습니다. 준비 중입니다. 잠시 후 다시 시도해주세요.');
                     return;
                 }
             }
             buildOptions.hasInput = !!(inputText && inputText.trim().length > 0);
             buildOptions.outputDirHost = sessionOutputDir;
+
+            const startTime = Date.now();
 
             if (buildOptions.hasInput) {
                 const inputPath = path.join(codeDir, `${sessionId}_input`);
@@ -171,9 +203,6 @@ export function createExecuteRoute(
                     );
                 }
             }
-
-            const config = LANGUAGE_CONFIGS[language];
-            const startTime = Date.now();
 
             if (!fullCodePath) {
                 console.error('[ERROR] Code path is null');
@@ -202,10 +231,21 @@ export function createExecuteRoute(
                 0
             );
         } catch (error) {
-            await cleanupFile(fullCodePath);
+            const cleanupPromises = [cleanupFile(fullCodePath)];
             if (fullInputPath) {
-                await cleanupFile(fullInputPath);
+                cleanupPromises.push(cleanupFile(fullInputPath));
             }
+            if (sessionId) {
+                const sessionOutputDir = path.join(outputDir, sessionId);
+                cleanupPromises.push(
+                    fs.rm(sessionOutputDir, { recursive: true, force: true }).catch((error: unknown) => {
+                        if (CONFIG.DEBUG_MODE && error instanceof Error) {
+                            console.warn(`[CLEANUP] Failed to remove session output dir ${sessionOutputDir}:`, error);
+                        }
+                    })
+                );
+            }
+            await Promise.allSettled(cleanupPromises);
 
             if (!res.headersSent) {
                 const errorMessage = error instanceof Error ? error.message : String(error);

@@ -5,6 +5,14 @@ import {
 } from '../../utils/errorHandling';
 
 describe('Error Handling Utilities', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     describe('filterDockerMessages', () => {
         it('should return empty string for non-string inputs', () => {
             expect(filterDockerMessages(null)).toBe('');

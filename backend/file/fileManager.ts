@@ -4,15 +4,22 @@ import crypto from 'crypto';
 import { validatePath } from '../utils/validation';
 import { getContainerCodePath } from '../utils/pathUtils';
 import { ImageFile } from '../types';
+import { CONFIG } from '../config';
 
 export async function cleanupFile(filePath: string | null): Promise<void> {
     if (!filePath || !validatePath(filePath)) {
         return;
     }
     try {
-        await fs.unlink(filePath).catch(() => {});
+        await fs.unlink(filePath).catch((error: unknown) => {
+            if (CONFIG?.DEBUG_MODE && error instanceof Error && !error.message.includes('ENOENT')) {
+                console.warn(`[CLEANUP] Failed to delete file ${filePath}:`, error);
+            }
+        });
     } catch (error) {
-        console.error('Cleanup error:', error);
+        if (CONFIG?.DEBUG_MODE) {
+            console.error('[CLEANUP] Cleanup error:', error);
+        }
     }
 }
 
@@ -59,6 +66,15 @@ export async function writeCodeFile(
 
 export async function findImageFiles(outputDir: string): Promise<ImageFile[]> {
     const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.bmp', '.webp'];
+    const mimeTypeMap: Record<string, string> = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.svg': 'image/svg+xml',
+        '.bmp': 'image/bmp',
+        '.webp': 'image/webp'
+    };
     const images: ImageFile[] = [];
 
     try {
@@ -70,12 +86,16 @@ export async function findImageFiles(outputDir: string): Promise<ImageFile[]> {
                 try {
                     const imageBuffer = await fs.readFile(filePath);
                     const base64 = imageBuffer.toString('base64');
-                    const mimeType = ext === '.svg' ? 'image/svg+xml' : `image/${ext.slice(1)}`;
+                    const mimeType = mimeTypeMap[ext] || `image/${ext.slice(1)}`;
                     images.push({
                         name: file,
                         data: `data:${mimeType};base64,${base64}`
                     });
-                    await fs.unlink(filePath).catch(() => {});
+                    await fs.unlink(filePath).catch((error: unknown) => {
+                        if (CONFIG.DEBUG_MODE && error instanceof Error) {
+                            console.warn(`[CLEANUP] Failed to delete image file ${filePath}:`, error);
+                        }
+                    });
                 } catch (error) {
                     console.error(`[ERROR] Failed to read image file ${file}:`, error);
                 }

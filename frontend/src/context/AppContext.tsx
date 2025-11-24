@@ -1,18 +1,9 @@
-/* @refresh reset */
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { CONFIG, LANGUAGE_CONFIG } from '../config/constants';
-import { getTranslation } from '../i18n/translations';
-import type { AppContextType, Language, ProgrammingLanguage, Theme, ToastType, Page, Output } from '../types';
+import { getTranslation, type TranslationKey } from '../i18n/translations';
+import type { AppContextType, Language, ProgrammingLanguage, Theme, ToastType, Output } from '../types';
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
-
-export function useApp(): AppContextType {
-    const context = useContext(AppContext);
-    if (!context) {
-        throw new Error('useApp must be used within AppProvider');
-    }
-    return context;
-}
+export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 interface AppProviderProps {
     children: ReactNode;
@@ -41,7 +32,6 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     const [output, setOutput] = useState<Output>('');
     const [error, setError] = useState<string>('');
     const [isRunning, setIsRunning] = useState<boolean>(false);
-    const [currentPage, setCurrentPage] = useState<Page>('compiler');
     const [toast, setToast] = useState<{ message: string; type: ToastType; duration: number } | null>(null);
     const [executionTime, setExecutionTime] = useState<number | null>(null);
 
@@ -95,7 +85,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
         setExecutionTime(null);
     }, []);
 
-    const t = useCallback((key: string) => getTranslation(key, currentLang), [currentLang]);
+    const t = useCallback((key: TranslationKey) => getTranslation(key, currentLang), [currentLang]);
 
     const showToast = useCallback((message: string, type: ToastType = 'info', duration: number = 3000) => {
         setToast({ message, type, duration });
@@ -116,7 +106,6 @@ export const AppProvider = ({ children }: AppProviderProps) => {
         output,
         error,
         isRunning,
-        currentPage,
         toast,
         executionTime,
         setCurrentLang: changeLanguage,
@@ -129,7 +118,6 @@ export const AppProvider = ({ children }: AppProviderProps) => {
         setOutput,
         setError,
         setIsRunning,
-        setCurrentPage,
         setExecutionTime,
         showToast,
         hideToast,

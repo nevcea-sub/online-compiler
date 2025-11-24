@@ -1,8 +1,9 @@
-import { memo, useState, useEffect, useRef } from 'react';
-import { useApp } from '../context/AppContext';
-import type { Output } from '../types';
-import Modal from './Modal';
-import './OutputPanel.css';
+import React, { memo, useState, useEffect, useRef, useMemo } from 'react';
+import { useApp } from '../../context/useApp';
+import type { Output } from '../../types';
+import { formatExecutionTime } from '../../utils/outputFormatter';
+import Modal from '../Modal';
+import './styles.css';
 
 interface OutputPanelProps {
     input: string;
@@ -34,7 +35,8 @@ const OutputPanel = memo(({ input, setInput, output, error }: OutputPanelProps) 
     const images = typeof output === 'object' && 'images' in output ? output.images : [];
     const hasContent = outputText || error || images.length > 0;
 
-    // 실행 완료 후 자동 스크롤
+    const formattedExecutionTime = useMemo(() => formatExecutionTime(executionTime), [executionTime]);
+
     useEffect(() => {
         if (!isRunning && hasContent && consoleOutputRef.current) {
             const timer = setTimeout(() => {
@@ -53,13 +55,13 @@ const OutputPanel = memo(({ input, setInput, output, error }: OutputPanelProps) 
                 <div className="output-title">
                     <div className="output-title-content">
                         {t('execution-result')}
-                        {executionTime !== null && !isRunning && (
+                        {formattedExecutionTime && !isRunning && (
                             <span className="execution-time" title={t('execution-time')}>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '0.25rem' }}>
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <polyline points="12 6 12 12 16 14"></polyline>
                                 </svg>
-                                {(executionTime / 1000).toFixed(3)}{t('seconds')}
+                                {formattedExecutionTime}
                             </span>
                         )}
                     </div>
@@ -86,7 +88,7 @@ const OutputPanel = memo(({ input, setInput, output, error }: OutputPanelProps) 
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <p className="loading-text">{t('executing') || 'Executing code...'}</p>
+                        <p className="loading-text">{t('executing')}</p>
                     </div>
                 ) : !hasContent ? (
                     <div className="output-empty">
@@ -129,12 +131,12 @@ const OutputPanel = memo(({ input, setInput, output, error }: OutputPanelProps) 
                     <input
                         type="text"
                         className="console-input"
-                        placeholder={t('console-input-placeholder') || '프로그램 입력'}
+                        placeholder={t('console-input-placeholder')}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         autoComplete="off"
                         disabled={isRunning}
-                        aria-label={t('console-input-placeholder') || '프로그램 입력'}
+                        aria-label={t('console-input-placeholder')}
                     />
                 </div>
             </div>

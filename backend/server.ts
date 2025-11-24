@@ -1,26 +1,19 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors, { CorsOptions } from 'cors';
 import helmet from 'helmet';
-import path from 'path';
 import { CONFIG, validateConfig } from './config';
-import { ensureDirectories } from './file/fileManager';
 import { preloadDockerImages } from './docker/dockerImage';
-import { warmupKotlinOnStart, warmupContainers } from './docker/dockerWarmup';
+import { warmupContainers } from './docker/dockerWarmup';
 import { executeLimiter, executeHourlyLimiter, healthLimiter } from './middleware/rateLimit';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { metricsMiddleware } from './middleware/metrics';
 import { createExecuteRoute } from './routes/execute';
 import { healthRoute } from './routes/health';
-import { createCleanupScheduler } from './utils/cleanupScheduler';
-import { setResourceMonitorPaths } from './utils/resourceMonitor';
-import { executionCache } from './utils/cache';
+import { metricsRoute } from './routes/metrics';
+import { getServerPaths, initializeServer } from './server/initialization';
 
 const app = express();
-
-const codeDir = path.join(__dirname, 'code');
-const outputDir = path.join(__dirname, 'output');
-const toolCacheDir = path.join(__dirname, 'tool_cache');
-const kotlinCacheDir = path.join(toolCacheDir, 'kotlin');
-const kotlinBuildsDir = path.join(toolCacheDir, 'kotlin_builds');
+const paths = getServerPaths();
 
 function isProductionEnv(): boolean {
     return (process.env.NODE_ENV || '').toLowerCase() === 'production';
@@ -76,7 +69,7 @@ function createCorsOptions(isProduction: boolean): CorsOptions {
     }
 
     return {
-        origin: (origin, callback) => {
+        origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
             if (!origin) {
                 return callback(null, true);
             }
@@ -99,11 +92,13 @@ function setupMiddlewares(app: express.Application, isProduction: boolean): void
     const corsOptions = createCorsOptions(isProduction);
     app.use(cors(corsOptions));
     app.use(express.json({ limit: '10mb' }));
+    app.use(metricsMiddleware);
 }
 
 function setupRoutes(app: express.Application): void {
-    app.post('/api/execute', executeLimiter, executeHourlyLimiter, createExecuteRoute(codeDir, outputDir, kotlinCacheDir));
+    app.post('/api/execute', executeLimiter, executeHourlyLimiter, createExecuteRoute(paths.codeDir, paths.outputDir, paths.kotlinCacheDir));
     app.get('/api/health', healthLimiter, healthRoute);
+    app.get('/metrics', metricsRoute);
 }
 
 function setupErrorHandling(app: express.Application): void {
@@ -120,7 +115,7 @@ function startHttpServer(): void {
     });
 
     if (CONFIG.ENABLE_WARMUP) {
-        warmupContainers(kotlinCacheDir);
+        warmupContainers(paths.kotlinCacheDir);
     }
 }
 
@@ -139,38 +134,12 @@ setupMiddlewares(app, isProduction);
 setupRoutes(app);
 setupErrorHandling(app);
 
-console.log('[SERVER] Ensuring required directories...', {
-    codeDir,
-    outputDir,
-    toolCacheDir
-});
-
-ensureDirectories(codeDir, outputDir, toolCacheDir, kotlinCacheDir, kotlinBuildsDir)
-    .then(async () => {
-        console.log('[SERVER] Directories ready. Starting Kotlin warmup (if needed)...');
-        await warmupKotlinOnStart(kotlinCacheDir);
-        console.log('[SERVER] Kotlin warmup finished. Starting HTTP server...');
-
-        setResourceMonitorPaths(codeDir, outputDir);
-
-        const cleanupScheduler = createCleanupScheduler(codeDir, outputDir);
-        cleanupScheduler.start();
-
-        process.on('SIGTERM', () => {
-            console.log('[SERVER] SIGTERM received, stopping cleanup scheduler...');
-            cleanupScheduler.stop();
-            executionCache.stop();
-        });
-
-        process.on('SIGINT', () => {
-            console.log('[SERVER] SIGINT received, stopping cleanup scheduler...');
-            cleanupScheduler.stop();
-            executionCache.stop();
-        });
-
+initializeServer(paths)
+    .then(() => {
+        console.log('[SERVER] Initialization complete. Starting HTTP server...');
         startHttpServer();
     })
     .catch((e: unknown) => {
-        console.error('Startup error: directory ensure or warmup failed. Starting server anyway.', e);
+        console.error('Startup error: initialization failed. Starting server anyway.', e);
         startHttpServer();
     });

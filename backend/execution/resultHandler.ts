@@ -4,6 +4,8 @@ import { ExecutionError, ImageFile } from '../types';
 import { filterDockerMessages, sanitizeError, sanitizeErrorForUser } from '../utils/errorHandling';
 import { findImageFiles } from '../file/fileManager';
 import { executionCache } from '../utils/cache';
+import { codeExecutionTotal, codeExecutionDuration, codeExecutionErrors } from '../utils/metrics';
+import { CONFIG } from '../config';
 
 export async function handleExecutionResult(
     error: ExecutionError | Error | null,
@@ -12,7 +14,8 @@ export async function handleExecutionResult(
     executionTime: number,
     res: Response,
     outputDir: string | null = null,
-    cacheKey?: { code: string; language: string; input: string }
+    cacheKey?: { code: string; language: string; input: string },
+    language?: string
 ): Promise<void> {
     const filteredStdout = filterDockerMessages(stdout || '');
     const filteredStderr = filterDockerMessages(stderr || '');
@@ -25,10 +28,25 @@ export async function handleExecutionResult(
         } catch (error) {
             console.error('[ERROR] Failed to find image files:', error);
         }
-        try {
-            await fs.rm(outputDir, { recursive: true, force: true });
-        } catch (error) {
-            console.error('[ERROR] Failed to cleanup output directory:', error);
+        fs.rm(outputDir, { recursive: true, force: true }).catch((error) => {
+            if (CONFIG.DEBUG_MODE) {
+                console.error('[ERROR] Failed to cleanup output directory:', error);
+            }
+        });
+    }
+
+    if (language) {
+        const executionTimeSeconds = executionTime / 1000;
+        codeExecutionDuration.observe({ language }, executionTimeSeconds);
+
+        if (error) {
+            const errorType = ('killed' in error && error.killed) || ('signal' in error && error.signal === 'SIGTERM')
+                ? 'timeout'
+                : 'execution_error';
+            codeExecutionErrors.inc({ language, error_type: errorType });
+            codeExecutionTotal.inc({ language, status: 'error' });
+        } else {
+            codeExecutionTotal.inc({ language, status: 'success' });
         }
     }
 

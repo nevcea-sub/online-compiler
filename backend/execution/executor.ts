@@ -8,12 +8,9 @@ import { OutputCollector } from './outputCollector';
 import { handleExecutionResult } from './resultHandler';
 import { cleanupFile } from '../file/fileManager';
 import { safeSendErrorResponse } from '../middleware/errorHandler';
+import { validateContainerName, isDockerError, createExecutionError } from './errorHandler';
 
 const execAsync = promisify(exec);
-
-function validateContainerName(name: string): boolean {
-    return /^[a-zA-Z0-9_-]+$/.test(name) && name.length <= 128;
-}
 
 async function cleanupContainer(containerName: string): Promise<void> {
     if (!validateContainerName(containerName)) {
@@ -24,24 +21,6 @@ async function cleanupContainer(containerName: string): Promise<void> {
         await execAsync(`docker rm -f ${containerName} 2>/dev/null || true`);
     } catch {
     }
-}
-
-function isDockerError(stderr: string): boolean {
-    const stderrLower = stderr.toLowerCase();
-    const dockerErrorPatterns = [
-        'run \'docker',
-        'docker:',
-        'cannot connect to the docker daemon',
-        'docker daemon',
-        '\'docker\' is not recognized',
-        'docker: command not found',
-        'spawn docker enoent',
-        'error response from daemon',
-        'invalid reference format',
-        'no such image',
-        'permission denied'
-    ];
-    return dockerErrorPatterns.some(pattern => stderrLower.includes(pattern));
 }
 
 export async function executeDockerProcess(
@@ -64,7 +43,6 @@ export async function executeDockerProcess(
             timeout: config.timeout,
             hasInput: !!fullInputPath
         });
-        console.log('[DEBUG] Docker command:', 'docker', dockerArgs.join(' '));
     }
 
     const controller = new AbortController();
@@ -108,12 +86,13 @@ export async function executeDockerProcess(
         }
 
         try {
+            const { stdout, stderr } = outputCollector.getFinalOutput();
             const executionTime = Date.now() - startTime;
 
-            await cleanupContainer(containerName);
-            await cleanupResources(fullCodePath, fullInputPath);
-
-            const { stdout, stderr } = outputCollector.getFinalOutput();
+            cleanupContainer(containerName).catch(() => {
+            });
+            cleanupResources(fullCodePath, fullInputPath).catch(() => {
+            });
 
             if (CONFIG.DEBUG_MODE) {
                 console.log('[EXECUTE] Process closed', {
@@ -123,14 +102,9 @@ export async function executeDockerProcess(
                 });
             }
 
-            let error: ExecutionError | null = null;
-            if (code !== 0) {
-                error = { code, killed: false, signal: null };
-                const stderrStr = stderr || '';
-                if (stderrStr && (isDockerError(stderrStr) || stderrStr.trim())) {
-                    error.message = stderrStr || 'Docker error';
-                }
-            }
+            const error: ExecutionError | null = code !== 0
+                ? createExecutionError(code, stderr || '')
+                : null;
 
             await handleExecutionResult(
                 error,
@@ -139,7 +113,8 @@ export async function executeDockerProcess(
                 executionTime,
                 res,
                 sessionOutputDir,
-                cacheKey
+                cacheKey,
+                language
             );
         } catch (err) {
             console.error('[ERROR] Error in handleClose:', err);
@@ -156,12 +131,13 @@ export async function executeDockerProcess(
         }
 
         try {
+            const { stdout, stderr } = outputCollector.getFinalOutput();
             const executionTime = Date.now() - startTime;
 
-            await cleanupContainer(containerName);
-            await cleanupResources(fullCodePath, fullInputPath);
-
-            const { stdout, stderr } = outputCollector.getFinalOutput();
+            cleanupContainer(containerName).catch(() => {
+            });
+            cleanupResources(fullCodePath, fullInputPath).catch(() => {
+            });
 
             if (CONFIG.DEBUG_MODE) {
                 console.error('[EXECUTE] Process error', {
@@ -173,24 +149,9 @@ export async function executeDockerProcess(
 
             const errorMessage = error.message || '';
             const combinedStderr = stderr || errorMessage;
-
-            let executionError: ExecutionError | Error = error;
-
-            if (errorMessage.includes('ENOENT') || isDockerError(combinedStderr)) {
-                executionError = {
-                    message: combinedStderr || errorMessage,
-                    code: null,
-                    killed: false,
-                    signal: null
-                } as ExecutionError;
-            } else if (combinedStderr) {
-                executionError = {
-                    message: combinedStderr,
-                    code: null,
-                    killed: false,
-                    signal: null
-                } as ExecutionError;
-            }
+            const executionError = errorMessage.includes('ENOENT') || isDockerError(combinedStderr)
+                ? createExecutionError(null, combinedStderr, errorMessage)
+                : createExecutionError(null, combinedStderr);
 
             await handleExecutionResult(
                 executionError,
@@ -244,14 +205,18 @@ export async function executeDockerProcess(
                 await cleanupContainer(containerName);
             }, CONFIG.SIGKILL_DELAY_MS);
 
-            dockerProcess.once('close', () => {
+            const cleanupKillTimeout = (): void => {
                 clearTimeout(killTimeoutId);
-            });
-            dockerProcess.once('error', () => {
-                clearTimeout(killTimeoutId);
-            });
+            };
+            dockerProcess.once('close', cleanupKillTimeout);
+            dockerProcess.once('error', cleanupKillTimeout);
         } catch (killError) {
             console.error('[ERROR] Failed to send SIGTERM to Docker process:', killError);
+            if (!res.headersSent && markResponseHandled()) {
+                await cleanupContainer(containerName);
+                await cleanupResources(fullCodePath, fullInputPath);
+                safeSendErrorResponse(res, 500, '실행 시간 초과 처리 중 오류가 발생했습니다.');
+            }
         }
     }, config.timeout + CONFIG.TIMEOUT_BUFFER_MS);
 

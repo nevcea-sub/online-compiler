@@ -3,10 +3,26 @@ import { executionQueue } from '../execution/executionQueue';
 import { getResourceStats, formatBytes, formatUptime } from '../utils/resourceMonitor';
 import { executionCache } from '../utils/cache';
 
+const INCLUDE_DISK_STATS = process.env.HEALTH_INCLUDE_DISK_STATS !== 'false';
+let diskStatsCache: { stats: any; timestamp: number } | null = null;
+const DISK_STATS_CACHE_TTL = 5000;
+
 export async function healthRoute(_: Request, res: Response): Promise<void> {
     const queueStatus = executionQueue.getStatus();
-    const resourceStats = await getResourceStats();
     const cacheStats = executionCache.getStats();
+
+    let resourceStats;
+    if (INCLUDE_DISK_STATS) {
+        const now = Date.now();
+        if (diskStatsCache && now - diskStatsCache.timestamp < DISK_STATS_CACHE_TTL) {
+            resourceStats = diskStatsCache.stats;
+        } else {
+            resourceStats = await getResourceStats();
+            diskStatsCache = { stats: resourceStats, timestamp: now };
+        }
+    } else {
+        resourceStats = await getResourceStats();
+    }
 
     const response: any = {
         status: 'ok',

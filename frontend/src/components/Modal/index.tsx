@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { useApp } from '../context/AppContext';
-import './Modal.css';
+import React, { useEffect } from 'react';
+import { useApp } from '../../context/useApp';
+import './styles.css';
 
 interface ModalProps {
     title: string;

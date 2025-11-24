@@ -1,6 +1,14 @@
 import { sanitizeCode, validateLanguage } from '../../utils/validation';
 
 describe('Security - Input Validation and Edge Cases', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     describe('String Validation', () => {
         it('should handle Unicode and international characters', () => {
             const unicodeCodes = [

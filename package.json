@@ -31,5 +31,8 @@
         "eslint-plugin-react-refresh": "^0.4.24",
         "globals": "^16.5.0",
         "prettier": "^3.3.3"
+    },
+    "dependencies": {
+        "prom-client": "^15.1.3"
     }
 }

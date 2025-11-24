@@ -44,22 +44,26 @@ function buildCompileAndRunCommand(
 }
 
 export function buildPythonCommand(path: string, inputPath?: string): string {
-    const envVars = ['export PYTHONPATH=/tmp', 'PYTHONUNBUFFERED=1'];
-    const python3Cmd = `python3 -u -c "import runpy,sys; sys.path.insert(0,'/tmp'); runpy.run_path('${path}', run_name='__main__')"`;
-    const pythonCmd = `python -u -c "import runpy,sys; sys.path.insert(0,'/tmp'); runpy.run_path('${path}', run_name='__main__')"`;
+    const envVars = 'PYTHONUNBUFFERED=1';
+    const python3Cmd = `python3 -u "${path}"`;
+    const pythonCmd = `python -u "${path}"`;
 
     if (inputPath) {
         const inputCopy = buildInputRedirection(inputPath);
         const cmd = `${python3Cmd} < "${TMP_INPUT_PATH}" ${REDIRECT_STDERR} || ${pythonCmd} < "${TMP_INPUT_PATH}" ${REDIRECT_STDERR}`;
-        return `cd ${TMP_DIR} && ${inputCopy}${envVars.join(' ')} && ${cmd}`;
+        return `cd ${TMP_DIR} && ${inputCopy}${envVars} ${cmd}`;
     } else {
-        const cmd = `(${python3Cmd} ${REDIRECT_STDERR} || ${pythonCmd} ${REDIRECT_STDERR})`;
-        return `cd ${TMP_DIR} && ${envVars.join(' ')} && ${cmd}`;
+        const cmd = `${python3Cmd} ${REDIRECT_STDERR} || ${pythonCmd} ${REDIRECT_STDERR}`;
+        return `cd ${TMP_DIR} && ${envVars} ${cmd}`;
     }
 }
 
 export function buildJavascriptCommand(path: string, inputPath?: string): string {
-    return buildSimpleCommand('node', path, inputPath);
+    if (inputPath) {
+        const inputCopy = buildInputRedirection(inputPath);
+        return `cd ${TMP_DIR} && ${inputCopy}node "${path}" < "${TMP_INPUT_PATH}" ${REDIRECT_STDERR}`;
+    }
+    return `cd ${TMP_DIR} && node "${path}" ${REDIRECT_STDERR}`;
 }
 
 export function buildJavaCommand(path: string, inputPath?: string): string {

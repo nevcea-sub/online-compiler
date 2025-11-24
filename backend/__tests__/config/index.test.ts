@@ -6,10 +6,12 @@ describe('Config', () => {
     beforeEach(() => {
         jest.resetModules();
         process.env = { ...originalEnv };
+        jest.clearAllMocks();
     });
 
     afterEach(() => {
         process.env = originalEnv;
+        jest.clearAllMocks();
     });
 
     describe('CONFIG', () => {

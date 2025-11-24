@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useApp } from '../context/AppContext';
+import React, { useState, useEffect } from 'react';
+import { useApp } from '../../context/useApp';
 
 const KeyboardShortcuts = () => {
     const { t } = useApp();
@@ -22,10 +22,10 @@ const KeyboardShortcuts = () => {
     }, [showModal]);
 
     const shortcuts = [
-        { keys: ['Ctrl', 'Enter'], description: t('shortcut-run-code') || 'Run code' },
-        { keys: ['Ctrl', 'Shift', '/'], description: t('shortcut-show-help') || 'Show keyboard shortcuts' },
-        { keys: ['Ctrl', 'K'], description: t('shortcut-clear') || 'Clear editor' },
-        { keys: ['Esc'], description: t('shortcut-close-modal') || 'Close modal/dropdown' }
+        { keys: ['Ctrl', 'Enter'], description: t('shortcut-run-code') },
+        { keys: ['Ctrl', 'Shift', '/'], description: t('shortcut-show-help') },
+        { keys: ['Ctrl', 'K'], description: t('shortcut-clear') },
+        { keys: ['Esc'], description: t('shortcut-close-modal') }
     ];
 
     if (!showModal) {
@@ -40,7 +40,7 @@ const KeyboardShortcuts = () => {
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                         </svg>
-                        {t('keyboard-shortcuts') || 'Keyboard Shortcuts'}
+                        {t('keyboard-shortcuts')}
                     </h3>
                 </div>
                 <div className="p-6 flex-1 overflow-y-auto">
