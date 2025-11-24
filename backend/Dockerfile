@@ -16,6 +16,7 @@ COPY tsconfig.json ./
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi && npm cache clean --force
 
 COPY server.ts ./
+COPY server/ ./server/
 COPY config/ ./config/
 COPY docker/ ./docker/
 COPY execution/ ./execution/
