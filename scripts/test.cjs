@@ -80,6 +80,32 @@ try {
 
 		const frontendPackageJson = require(path.join(rootDir, 'frontend', 'package.json'));
 		if (frontendPackageJson.devDependencies?.typescript) {
+			// Clean up any .d.ts files in src directory before type check
+			const fs = require('fs');
+			const srcDir = path.join(rootDir, 'frontend', 'src');
+
+			function deleteDtsFiles(dir) {
+				if (!fs.existsSync(dir)) {
+					return;
+				}
+				const files = fs.readdirSync(dir);
+				files.forEach(file => {
+					const filePath = path.join(dir, file);
+					const stat = fs.statSync(filePath);
+					if (stat.isDirectory()) {
+						deleteDtsFiles(filePath);
+					} else if (file.endsWith('.d.ts') && file !== 'vite-env.d.ts') {
+						try {
+							fs.unlinkSync(filePath);
+						} catch {
+							// Ignore errors
+						}
+					}
+				});
+			}
+
+			deleteDtsFiles(srcDir);
+
 			if (!runCommand('npx tsc --noEmit',
 			                path.join(rootDir, 'frontend'),
 			                'Running TypeScript type check')) {

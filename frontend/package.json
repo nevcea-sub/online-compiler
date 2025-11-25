@@ -8,6 +8,8 @@
         "build": "vite build",
         "lint": "eslint .",
         "preview": "vite preview",
+        "type-check": "tsc --noEmit",
+        "type-check:clean": "find src -name '*.d.ts' ! -name 'vite-env.d.ts' -type f -delete 2>/dev/null || true && tsc --noEmit",
         "test": "vitest",
         "test:ui": "vitest --ui",
         "test:coverage": "vitest --coverage",

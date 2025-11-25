@@ -63,6 +63,12 @@ if (-not (Run-Command -Command "npm run lint" -Cwd (Join-Path $PSScriptRoot "..\
 
 $frontendPackageJson = Get-Content (Join-Path $PSScriptRoot "..\frontend\package.json") | ConvertFrom-Json
 if ($frontendPackageJson.devDependencies.PSObject.Properties.Name -contains "typescript") {
+    # Clean up any .d.ts files in src directory before type check
+    $srcDir = Join-Path $PSScriptRoot "..\frontend\src"
+    if (Test-Path $srcDir) {
+        Get-ChildItem -Path $srcDir -Recurse -Filter "*.d.ts" | Where-Object { $_.Name -ne "vite-env.d.ts" } | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
+    
     if (-not (Run-Command -Command "npx tsc --noEmit" -Cwd (Join-Path $PSScriptRoot "..\frontend") -Description "Running TypeScript type check")) {
         $allPassed = $false
     }

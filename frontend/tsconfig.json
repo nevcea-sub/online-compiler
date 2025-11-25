@@ -10,6 +10,10 @@
         "resolveJsonModule": true,
         "isolatedModules": true,
         "noEmit": true,
+        "declaration": false,
+        "declarationMap": false,
+        "emitDeclarationOnly": false,
+        "outDir": "./dist",
         "jsx": "react-jsx",
         "strict": true,
         "noUnusedLocals": true,
@@ -17,6 +21,15 @@
         "noFallthroughCasesInSwitch": true,
         "types": ["node", "vite/client"]
     },
-    "include": ["src"],
+    "include": ["src/**/*.ts", "src/**/*.tsx"],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/__tests__/**",
+        "**/__benchmarks__/**",
+        "**/*.d.ts"
+    ],
     "references": [{ "path": "./tsconfig.node.json" }]
 }

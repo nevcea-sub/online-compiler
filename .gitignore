@@ -13,6 +13,10 @@ frontend/dist-ssr/
 *.tsbuildinfo
 *.map
 
+# TypeScript declaration files in source (should not be committed)
+frontend/src/**/*.d.ts
+!frontend/src/vite-env.d.ts
+
 # Environment variables
 .env
 .env.local
