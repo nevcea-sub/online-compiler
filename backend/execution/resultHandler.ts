@@ -4,7 +4,6 @@ import { ExecutionError, ImageFile } from '../types';
 import { filterDockerMessages, sanitizeError, sanitizeErrorForUser } from '../utils/errorHandling';
 import { findImageFiles } from '../file/fileManager';
 import { executionCache } from '../utils/cache';
-import { codeExecutionTotal, codeExecutionDuration, codeExecutionErrors } from '../utils/metrics';
 import { createLogger } from '../utils/logger';
 import { ERROR_MESSAGES } from '../utils/constants';
 
@@ -46,8 +45,7 @@ export async function handleExecutionResult(
     executionTime: number,
     res: Response,
     outputDir: string | null = null,
-    cacheKey?: { code: string; language: string; input: string },
-    language?: string
+    cacheKey?: { code: string; language: string; input: string }
 ): Promise<void> {
     const filteredStdout = filterDockerMessages(stdout || '');
     const filteredStderr = filterDockerMessages(stderr || '');
@@ -62,40 +60,6 @@ export async function handleExecutionResult(
         }
         fs.rm(outputDir, { recursive: true, force: true }).catch((error) => {
             logger.debug('Failed to cleanup output directory:', error);
-        });
-    }
-
-    // Use language from parameter or fallback to cacheKey
-    const finalLanguage = language || cacheKey?.language;
-
-    logger.debug('[METRICS] Recording metrics:', {
-        languageParam: language,
-        cacheKeyLanguage: cacheKey?.language,
-        finalLanguage,
-        hasError: !!error,
-        executionTimeMs: executionTime
-    });
-
-    if (finalLanguage) {
-        const executionTimeSeconds = executionTime / 1000;
-        codeExecutionDuration.observe({ language: finalLanguage }, executionTimeSeconds);
-
-        if (error) {
-            const errorType = ('killed' in error && error.killed) || ('signal' in error && error.signal === 'SIGTERM')
-                ? 'timeout'
-                : 'execution_error';
-            codeExecutionErrors.inc({ language: finalLanguage, error_type: errorType });
-            codeExecutionTotal.inc({ language: finalLanguage, status: 'error' });
-            logger.debug(`[METRICS] Recorded error metrics: language=${finalLanguage}, error_type=${errorType}`);
-        } else {
-            codeExecutionTotal.inc({ language: finalLanguage, status: 'success' });
-            logger.debug(`[METRICS] Recorded success metrics: language=${finalLanguage}, duration=${executionTimeSeconds}s`);
-        }
-    } else {
-        logger.warn('[METRICS] Language not available for metrics recording', {
-            languageParam: language,
-            cacheKeyLanguage: cacheKey?.language,
-            cacheKeyExists: !!cacheKey
         });
     }
 

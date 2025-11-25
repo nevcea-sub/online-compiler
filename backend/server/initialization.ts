@@ -4,7 +4,6 @@ import { warmupKotlinOnStart } from '../docker/dockerWarmup';
 import { createCleanupScheduler } from '../utils/cleanupScheduler';
 import { setResourceMonitorPaths } from '../utils/resourceMonitor';
 import { executionCache } from '../utils/cache';
-import { startMetricsCollection, stopMetricsCollection } from '../utils/metrics';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ServerInit');
@@ -61,13 +60,10 @@ export async function initializeServer(paths: ServerPaths): Promise<void> {
     const cleanupScheduler = createCleanupScheduler(paths.codeDir, paths.outputDir);
     cleanupScheduler.start();
 
-    startMetricsCollection();
-
     const shutdown = (signal: string) => {
         logger.info(`${signal} received, shutting down gracefully...`);
         cleanupScheduler.stop();
         executionCache.stop();
-        stopMetricsCollection();
         process.exit(0);
     };
 

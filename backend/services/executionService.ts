@@ -14,7 +14,6 @@ import { warmupKotlinOnStart } from '../docker/dockerWarmup';
 import { safeSendErrorResponse } from '../middleware/errorHandler';
 import { sanitizeError } from '../utils/errorHandling';
 import { createLogger } from '../utils/logger';
-import { cacheHits, cacheMisses } from '../utils/metrics';
 import { ERROR_MESSAGES } from '../utils/constants';
 
 const logger = createLogger('ExecutionService');
@@ -69,7 +68,6 @@ export class ExecutionService {
         const cachedResult = executionCache.get(validCode, validLanguage, inputText);
         if (cachedResult) {
             logger.debug('Cache hit for code execution');
-            cacheHits.inc();
             res.json({
                 output: cachedResult.output,
                 error: cachedResult.error,
@@ -79,8 +77,6 @@ export class ExecutionService {
             });
             return;
         }
-
-        cacheMisses.inc();
 
         // 3. Session Setup
         const sessionId = generateSessionId();

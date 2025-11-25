@@ -169,8 +169,7 @@ export async function executeDockerProcess(
                 executionTime,
                 res,
                 sessionOutputDir,
-                cacheKey,
-                language
+                cacheKey
             );
 
             performCleanup().catch(err => logger.error('Cleanup failed after response', err));
@@ -217,8 +216,7 @@ export async function executeDockerProcess(
                 executionTime,
                 res,
                 sessionOutputDir,
-                cacheKey,
-                language
+                cacheKey
             );
 
             performCleanup().catch(err => logger.error('Cleanup failed after response (error case)', err));

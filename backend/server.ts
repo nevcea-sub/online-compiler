@@ -6,10 +6,8 @@ import { preloadDockerImages } from './docker/dockerImage';
 import { warmupContainers } from './docker/dockerWarmup';
 import { executeLimiter, executeHourlyLimiter, healthLimiter } from './middleware/rateLimit';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
-import { metricsMiddleware } from './middleware/metrics';
 import { createExecuteRoute } from './routes/execute';
 import { healthRoute } from './routes/health';
-import { metricsRoute } from './routes/metrics';
 import { getServerPaths, initializeServer } from './server/initialization';
 import { createLogger } from './utils/logger';
 
@@ -94,13 +92,11 @@ function setupMiddlewares(app: express.Application, isProduction: boolean): void
     const corsOptions = createCorsOptions(isProduction);
     app.use(cors(corsOptions));
     app.use(express.json({ limit: '10mb' }));
-    app.use(metricsMiddleware);
 }
 
 function setupRoutes(app: express.Application): void {
     app.post('/api/execute', executeLimiter, executeHourlyLimiter, createExecuteRoute(paths.codeDir, paths.outputDir, paths.kotlinCacheDir));
     app.get('/api/health', healthLimiter, healthRoute);
-    app.get('/metrics', metricsRoute);
 }
 
 function setupErrorHandling(app: express.Application): void {
