@@ -1,14 +1,7 @@
 #!/usr/bin/env node
-
-const path = require('path');
-const {
-	isWindows,
-	rootDir,
-	runPs1,
-	checkCommand,
-	resolveDockerComposeCommand,
-	loadEnvFile
-} = require('./shared.cjs');
+import path from 'path';
+import { execFileSync } from 'child_process';
+import { isWindows, rootDir, runPs1, checkCommand, resolveDockerComposeCommand, loadEnvFile } from './shared';
 
 const args = process.argv.slice(2);
 
@@ -23,8 +16,8 @@ try {
 		console.log(`Building for ${env} environment...\n`);
 
 		console.log('Checking dependencies...');
-		if (!checkCommand('node', 'Node.js')) {process.exit(1);}
-		if (!checkCommand('npm', 'npm')) {process.exit(1);}
+		if (!checkCommand('node', 'Node.js')) { process.exit(1); }
+		if (!checkCommand('npm', 'npm')) { process.exit(1); }
 
 		const envFile = path.join(rootDir, `.env.${env}`);
 		const defaultEnvFile = path.join(rootDir, '.env');
@@ -37,7 +30,6 @@ try {
 		if (!skipTests) {
 			console.log('\nRunning tests...');
 			try {
-				const { execFileSync } = require('child_process');
 				execFileSync('npm', ['run', 'test'], { stdio: 'inherit', cwd: rootDir });
 				console.log('  All tests passed\n');
 			} catch {
@@ -49,25 +41,21 @@ try {
 		}
 
 		console.log('Installing dependencies...');
-		const { execFileSync } = require('child_process');
 		execFileSync('npm', ['install', '--production=false'], { stdio: 'inherit', cwd: rootDir });
 		execFileSync('npm', ['install', '--production=false'], { stdio: 'inherit', cwd: path.join(rootDir, 'backend') });
 		execFileSync('npm', ['install', '--production=false'], { stdio: 'inherit', cwd: path.join(rootDir, 'frontend') });
 
 		console.log('\nBuilding frontend...');
 		process.env.NODE_ENV = env;
-		const { execFileSync: _execFileSync } = require('child_process');
-		_execFileSync('npm', ['run', 'build'], { stdio: 'inherit', cwd: path.join(rootDir, 'frontend') });
+		execFileSync('npm', ['run', 'build'], { stdio: 'inherit', cwd: path.join(rootDir, 'frontend') });
 		console.log('  Frontend build complete\n');
 
 		if (!skipDocker) {
 			console.log('Building Docker images...');
 			const composeCmd = resolveDockerComposeCommand();
 			if (composeCmd === 'docker compose') {
-				const { execFileSync } = require('child_process');
 				execFileSync('docker', ['compose', 'build'], { stdio: 'inherit', cwd: rootDir });
 			} else {
-				const { execFileSync } = require('child_process');
 				execFileSync('docker-compose', ['build'], { stdio: 'inherit', cwd: rootDir });
 			}
 			console.log('  Docker images built\n');
@@ -85,10 +73,11 @@ try {
 		console.log('   Deploy: docker compose up -d');
 		console.log('   Preview: cd frontend && npm run preview');
 	}
-} catch (error) {
-	console.error(`\n[ERROR] ${error.message}`);
-	if (error.stack) {
-		console.error(error.stack);
+} catch (error: unknown) {
+	const err = error as Error;
+	console.error(`\n[ERROR] ${err.message}`);
+	if (err.stack) {
+		console.error(err.stack);
 	}
 	process.exit(1);
 }

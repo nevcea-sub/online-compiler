@@ -1,67 +1,58 @@
 #!/usr/bin/env node
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { execFileSync } from 'child_process';
+import { isWindows, rootDir, runPs1, resolveDockerComposeCommand } from './shared';
 
-const { execSync } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const isWindows = process.platform === 'win32';
-const rootDir = path.join(__dirname, '..');
 const scriptPath = path.join(__dirname, 'clean.ps1');
 const args = process.argv.slice(2);
 
-function resolveDockerComposeCommand() {
-	try {
-		execSync('docker compose version', { stdio: 'ignore' });
-		return 'docker compose';
-	} catch {
-		void 0;
-	}
-	try {
-		execSync('docker-compose --version', { stdio: 'ignore' });
-		return 'docker-compose';
-	} catch {
-		return null;
-	}
-}
-
-function removeDirIfExists(targetPath) {
+function removeDirIfExists(targetPath: string): boolean {
 	try {
 		if (fs.existsSync(targetPath)) {
 			fs.rmSync(targetPath, { recursive: true, force: true });
 			return true;
 		}
 		return false;
-	} catch (error) {
-		console.warn(`  Warning: Could not remove ${targetPath}: ${error.message}`);
+	} catch (error: unknown) {
+		const err = error as Error;
+		console.warn(`  Warning: Could not remove ${targetPath}: ${err.message}`);
 		return false;
 	}
 }
 
-function emptyDirIfExists(targetPath) {
+function emptyDirIfExists(targetPath: string): void {
 	if (!fs.existsSync(targetPath)) {
 		return;
 	}
-		try {
-			const entries = fs.readdirSync(targetPath, { withFileTypes: true });
-			for (const entry of entries) {
-				if (entry.name === '.gitkeep') {
-					continue;
-				}
-				const full = path.join(targetPath, entry.name);
-				removeDirIfExists(full);
+	try {
+		const entries = fs.readdirSync(targetPath, { withFileTypes: true });
+		for (const entry of entries) {
+			if (entry.name === '.gitkeep') {
+				continue;
 			}
-		} catch (error) {
-			console.warn(`  Warning: Could not empty ${targetPath}: ${error.message}`);
+			const full = path.join(targetPath, entry.name);
+			removeDirIfExists(full);
 		}
+	} catch (error: unknown) {
+		const err = error as Error;
+		console.warn(`  Warning: Could not empty ${targetPath}: ${err.message}`);
+	}
 }
 
-function removeLogsRecursively(startDir) {
+function removeLogsRecursively(startDir: string): number {
 	const stack = [startDir];
 	let removedCount = 0;
 
 	while (stack.length) {
 		const current = stack.pop();
-		let entries;
+		if (!current) continue;
+
+		let entries: fs.Dirent[];
 		try {
 			entries = fs.readdirSync(current, { withFileTypes: true });
 		} catch {
@@ -72,9 +63,9 @@ function removeLogsRecursively(startDir) {
 			const full = path.join(current, entry.name);
 
 			if (entry.name === 'node_modules' ||
-			    entry.name === '.git' ||
-			    entry.name === 'dist' ||
-			    entry.name === 'build') {
+				entry.name === '.git' ||
+				entry.name === 'dist' ||
+				entry.name === 'build') {
 				continue;
 			}
 
@@ -93,7 +84,7 @@ function removeLogsRecursively(startDir) {
 	return removedCount;
 }
 
-function getDirSize(dirPath) {
+function getDirSize(dirPath: string): number {
 	if (!fs.existsSync(dirPath)) {
 		return 0;
 	}
@@ -103,6 +94,8 @@ function getDirSize(dirPath) {
 
 	while (stack.length) {
 		const current = stack.pop();
+		if (!current) continue;
+
 		try {
 			const entries = fs.readdirSync(current, { withFileTypes: true });
 			for (const entry of entries) {
@@ -124,8 +117,8 @@ function getDirSize(dirPath) {
 	return size;
 }
 
-function formatBytes(bytes) {
-	if (bytes === 0) {return '0 B';}
+function formatBytes(bytes: number): string {
+	if (bytes === 0) { return '0 B'; }
 	const k = 1024;
 	const sizes = ['B', 'KB', 'MB', 'GB'];
 	const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -134,7 +127,6 @@ function formatBytes(bytes) {
 
 try {
 	if (isWindows) {
-		const { execFileSync } = require('child_process');
 		execFileSync('powershell', ['-ExecutionPolicy', 'Bypass', '-File', scriptPath, ...args], {
 			stdio: 'inherit',
 			cwd: rootDir
@@ -160,7 +152,6 @@ try {
 		if (composeCmd) {
 			console.log('Stopping Docker containers...');
 			try {
-				const { execFileSync } = require('child_process');
 				if (composeCmd === 'docker compose') {
 					execFileSync('docker', ['compose', 'down', '-v'], { stdio: 'inherit', cwd: rootDir });
 				} else {
@@ -242,7 +233,9 @@ try {
 			console.log(`Total space freed: ${formatBytes(totalFreed)}`);
 		}
 	}
-} catch (error) {
-	console.error(`\n[ERROR] ${error.message}`);
+} catch (error: unknown) {
+	const err = error as Error;
+	console.error(`\n[ERROR] ${err.message}`);
 	process.exit(1);
 }
+

@@ -1,27 +1,29 @@
 #!/usr/bin/env node
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { execFileSync } from 'child_process';
+import { isWindows, rootDir } from './shared';
 
-const path = require('path');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const isWindows = process.platform === 'win32';
-const rootDir = path.join(__dirname, '..');
 const args = process.argv.slice(2);
 
-function splitCommand(cmd) {
+function splitCommand(cmd: string): string[] {
 	const parts = cmd.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
 	return parts.map((p) => p.replace(/^"|"$/g, ''));
 }
 
-function runCommand(command, cwd, description) {
+function runCommand(command: string | string[], cwd: string, description: string): boolean {
 	try {
 		console.log(`\n${description}...`);
 		const parts = Array.isArray(command) ? command : splitCommand(command);
 		const cmd = parts[0];
-		const args = parts.slice(1);
-		const { execFileSync } = require('child_process');
-		execFileSync(cmd, args, { stdio: 'inherit', cwd });
+		const cmdArgs = parts.slice(1);
+		execFileSync(cmd, cmdArgs, { stdio: 'inherit', cwd });
 		console.log(`  ${description} passed\n`);
 		return true;
-	// eslint-disable-next-line no-unused-vars
 	} catch (_) {
 		console.error(`  ${description} failed\n`);
 		return false;
@@ -31,7 +33,6 @@ function runCommand(command, cwd, description) {
 try {
 	if (isWindows) {
 		const scriptPath = path.join(__dirname, 'test.ps1');
-		const { execFileSync } = require('child_process');
 		execFileSync('powershell', ['-ExecutionPolicy', 'Bypass', '-File', scriptPath, ...args], {
 			stdio: 'inherit',
 			cwd: rootDir
@@ -55,36 +56,38 @@ try {
 		}
 
 		if (!runCommand('npx eslint server.ts -c ../eslint.config.js',
-		                path.join(rootDir, 'backend'),
-		                'Running backend ESLint')) {
+			path.join(rootDir, 'backend'),
+			'Running backend ESLint')) {
 			allPassed = false;
 		}
 
 		if (!runCommand('npm run test',
-		                path.join(rootDir, 'backend'),
-		                'Running backend tests')) {
+			path.join(rootDir, 'backend'),
+			'Running backend tests')) {
 			allPassed = false;
 		}
 
 		if (!runCommand('npm install',
-		                path.join(rootDir, 'frontend'),
-		                'Installing frontend dependencies')) {
+			path.join(rootDir, 'frontend'),
+			'Installing frontend dependencies')) {
 			allPassed = false;
 		}
 
 		if (!runCommand('npm run lint',
-		                path.join(rootDir, 'frontend'),
-		                'Running frontend ESLint')) {
+			path.join(rootDir, 'frontend'),
+			'Running frontend ESLint')) {
 			allPassed = false;
 		}
 
-		const frontendPackageJson = require(path.join(rootDir, 'frontend', 'package.json'));
+		const frontendPackageJsonPath = path.join(rootDir, 'frontend', 'package.json');
+		// eslint-disable-next-line @typescript-eslint/no-var-requires
+		const frontendPackageJson = JSON.parse(fs.readFileSync(frontendPackageJsonPath, 'utf-8'));
+
 		if (frontendPackageJson.devDependencies?.typescript) {
 			// Clean up any .d.ts files in src directory before type check
-			const fs = require('fs');
 			const srcDir = path.join(rootDir, 'frontend', 'src');
 
-			function deleteDtsFiles(dir) {
+			const deleteDtsFiles = (dir: string) => {
 				if (!fs.existsSync(dir)) {
 					return;
 				}
@@ -102,13 +105,13 @@ try {
 						}
 					}
 				});
-			}
+			};
 
 			deleteDtsFiles(srcDir);
 
 			if (!runCommand('npx tsc --noEmit',
-			                path.join(rootDir, 'frontend'),
-			                'Running TypeScript type check')) {
+				path.join(rootDir, 'frontend'),
+				'Running TypeScript type check')) {
 				allPassed = false;
 			}
 		}
@@ -124,7 +127,9 @@ try {
 			process.exit(1);
 		}
 	}
-} catch (error) {
-	console.error(`\n[ERROR] ${error.message}`);
+} catch (error: unknown) {
+	const err = error as Error;
+	console.error(`\n[ERROR] ${err.message}`);
 	process.exit(1);
 }
+

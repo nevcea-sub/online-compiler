@@ -9,14 +9,14 @@
         "lint:fix": "eslint . --fix",
         "format": "prettier --write \"**/*.{js,json,css,html}\"",
         "format:check": "prettier --check \"**/*.{js,json,css,html}\"",
-        "dev": "node scripts/dev.cjs",
+        "dev": "npx tsx scripts/dev.ts",
         "dev:frontend": "cd frontend && npm run dev",
         "dev:backend": "cd backend && npm run dev",
-        "test": "node scripts/test.cjs",
+        "test": "npx tsx scripts/test.ts",
         "test:backend": "cd backend && npm test",
         "test:backend:watch": "cd backend && npm run test:watch",
         "test:backend:coverage": "cd backend && npm run test:coverage",
-        "clean": "node scripts/clean.cjs",
+        "clean": "npx tsx scripts/clean.ts",
         "docker:build": "docker-compose build",
         "docker:up": "docker-compose up -d",
         "docker:down": "docker-compose down",
@@ -24,13 +24,15 @@
     },
     "devDependencies": {
         "@eslint/js": "^9.15.0",
+        "@types/node": "^24.10.1",
         "@typescript-eslint/eslint-plugin": "^8.46.4",
         "@typescript-eslint/parser": "^8.46.4",
         "eslint": "^9.15.0",
         "eslint-plugin-react-hooks": "^7.0.1",
         "eslint-plugin-react-refresh": "^0.4.24",
         "globals": "^16.5.0",
-        "prettier": "^3.3.3"
+        "prettier": "^3.3.3",
+        "tsx": "^4.20.6"
     },
     "dependencies": {
         "prom-client": "^15.1.3"

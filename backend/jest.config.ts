@@ -1,4 +1,6 @@
-module.exports = {
+import type { Config } from 'jest';
+
+const config: Config = {
     preset: 'ts-jest',
     testEnvironment: 'node',
     roots: ['<rootDir>'],
@@ -30,3 +32,6 @@ module.exports = {
     testTimeout: 10000,
     verbose: true
 };
+
+export default config;
+

@@ -151,7 +151,7 @@ Write-Host "`nWaiting for backend to be ready..." -ForegroundColor Blue
 
 $backendPort = if ($env:BACKEND_PORT) { $env:BACKEND_PORT } elseif ($env:PORT) { $env:PORT } else { 3000 }
 try {
-    Wait-ForService -Url "http://localhost:$backendPort/health" -Timeout 30000
+    Wait-ForService -Url "http://localhost:$backendPort/health" -Timeout 60000
     Write-Host "  Backend is ready" -ForegroundColor Green
 } catch {
     Write-Host "  Backend health check failed, but continuing..." -ForegroundColor Yellow

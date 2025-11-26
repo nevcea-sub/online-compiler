@@ -1,13 +1,12 @@
 #!/usr/bin/env node
-
-const { execSync, spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
-const { isWindows, rootDir, runPs1, checkCommand, resolveDockerComposeCommand, loadEnvFile } = require('./shared.cjs');
+import { execSync, spawn, execFileSync } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+import { isWindows, rootDir, runPs1, checkCommand, resolveDockerComposeCommand, loadEnvFile } from './shared';
 
 const args = process.argv.slice(2);
 
-function waitForService(url, timeout = 30000, interval = 1000) {
+function waitForService(url: string, timeout = 30000, interval = 1000): Promise<boolean> {
 	return new Promise((resolve, reject) => {
 		const startTime = Date.now();
 		const check = async () => {
@@ -38,9 +37,9 @@ try {
 		console.log('Starting development environment...\n');
 
 		console.log('Checking dependencies...');
-		if (!checkCommand('node', 'Node.js')) {process.exit(1);}
-		if (!checkCommand('npm', 'npm')) {process.exit(1);}
-		if (!checkCommand('docker', 'Docker')) {process.exit(1);}
+		if (!checkCommand('node', 'Node.js')) { process.exit(1); }
+		if (!checkCommand('npm', 'npm')) { process.exit(1); }
+		if (!checkCommand('docker', 'Docker')) { process.exit(1); }
 
 		const envFile = path.join(rootDir, '.env');
 		const env = loadEnvFile(envFile);
@@ -70,7 +69,6 @@ try {
 
 		const composeCmd = resolveDockerComposeCommand();
 		console.log('\nBuilding Docker images...');
-		const { execFileSync } = require('child_process');
 		if (composeCmd === 'docker compose') {
 			execFileSync('docker', ['compose', 'build'], { stdio: 'inherit', cwd: rootDir });
 		} else {
@@ -87,7 +85,7 @@ try {
 		const backendPort = process.env.BACKEND_PORT || process.env.PORT || 3000;
 
 		console.log('\nWaiting for backend to be ready...');
-		waitForService(`http://localhost:${backendPort}/health`, 30000)
+		waitForService(`http://localhost:${backendPort}/health`, 60000)
 			.then(() => {
 				console.log('  Backend is ready');
 			})
@@ -130,10 +128,12 @@ try {
 			}
 		});
 	}
-} catch (error) {
-	console.error(`\n[ERROR] ${error.message}`);
-	if (error.stack) {
-		console.error(error.stack);
+} catch (error: unknown) {
+	const err = error as Error;
+	console.error(`\n[ERROR] ${err.message}`);
+	if (err.stack) {
+		console.error(err.stack);
 	}
 	process.exit(1);
 }
+

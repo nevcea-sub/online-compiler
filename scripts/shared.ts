@@ -1,20 +1,22 @@
-#!/usr/bin/env node
+import { execSync, execFileSync } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 
-const { execSync, execFileSync } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const isWindows = process.platform === 'win32';
-const rootDir = path.join(__dirname, '..');
+export const isWindows = process.platform === 'win32';
+export const rootDir = path.join(__dirname, '..');
 
-function runPs1(scriptName, args = []) {
+export function runPs1(scriptName: string, args: string[] = []): void {
 	execFileSync('powershell', ['-ExecutionPolicy', 'Bypass', '-File', path.join(__dirname, scriptName), ...args], {
 		stdio: 'inherit',
 		cwd: rootDir
 	});
 }
 
-function checkCommand(command, name) {
+export function checkCommand(command: string, name: string): boolean {
 	try {
 		execSync(`${command} --version`, { stdio: 'ignore' });
 		return true;
@@ -24,7 +26,7 @@ function checkCommand(command, name) {
 	}
 }
 
-function resolveDockerComposeCommand(options = {}) {
+export function resolveDockerComposeCommand(options: { allowMissing?: boolean } = {}): string | null {
 	const { allowMissing = false } = options;
 	try {
 		execSync('docker compose version', { stdio: 'ignore' });
@@ -43,12 +45,12 @@ function resolveDockerComposeCommand(options = {}) {
 	}
 }
 
-function loadEnvFile(envPath) {
+export function loadEnvFile(envPath: string): Record<string, string> {
 	if (!fs.existsSync(envPath)) {
 		return {};
 	}
 
-	const env = {};
+	const env: Record<string, string> = {};
 	const content = fs.readFileSync(envPath, 'utf-8');
 	const lines = content.split('\n');
 
@@ -64,13 +66,4 @@ function loadEnvFile(envPath) {
 
 	return env;
 }
-
-module.exports = {
-	isWindows,
-	rootDir,
-	runPs1,
-	checkCommand,
-	resolveDockerComposeCommand,
-	loadEnvFile
-};
 

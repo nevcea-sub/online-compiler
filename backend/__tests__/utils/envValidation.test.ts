@@ -43,7 +43,7 @@ describe('Environment Variable Validation Utilities', () => {
         it('should validate minimum value', () => {
             process.env.TEST_INT = '50';
             expect(Env.integer('TEST_INT', 100, 0)).toBe(50);
-            
+
             process.env.TEST_INT = '50';
             expect(() => Env.integer('TEST_INT', 100, 100)).toThrow('TEST_INT must be >= 100');
         });
@@ -51,7 +51,7 @@ describe('Environment Variable Validation Utilities', () => {
         it('should validate maximum value', () => {
             process.env.TEST_INT = '50';
             expect(Env.integer('TEST_INT', 100, undefined, 100)).toBe(50);
-            
+
             process.env.TEST_INT = '150';
             expect(() => Env.integer('TEST_INT', 100, undefined, 100)).toThrow('TEST_INT must be <= 100');
         });
@@ -122,7 +122,7 @@ describe('Environment Variable Validation Utilities', () => {
         it('should reject invalid CPU percentages', () => {
             process.env.TEST_CPU = 'abc';
             expect(() => Env.cpu('TEST_CPU', '2.0')).toThrow('Invalid CPU percent');
-            
+
             process.env.TEST_CPU = '101';
             expect(() => Env.cpu('TEST_CPU', '2.0')).toThrow('Invalid CPU percent');
         });
