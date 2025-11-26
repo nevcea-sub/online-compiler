@@ -18,20 +18,23 @@ The frontend is a React + Vite-based single-page application, and the backend is
 
 ### Quick Start
 
-1. Ensure Docker Desktop is running
-2. Install dependencies:
+**Prerequisites**: Node.js 20+, Docker Desktop (must be running)
+
+1. Install dependencies:
    ```bash
    npm install                    # Root dependencies
    cd frontend && npm install     # Frontend dependencies
    cd ../backend && npm install  # Backend dependencies
    cd ..                          # Return to root
    ```
-3. Start the development server:
+2. Start the development server:
    ```bash
-   npm run dev
+   # Open two terminals
+   npm run dev:backend   # Terminal 1: Start backend
+   npm run dev:frontend  # Terminal 2: Start frontend
    ```
-4. Open `http://localhost:5173` in your browser
-5. Write code and press **Ctrl+Enter** to execute
+3. Open `http://localhost:5173` in your browser
+4. Write code and press **Ctrl+Enter** to execute
 
 ---
 
@@ -39,25 +42,17 @@ The frontend is a React + Vite-based single-page application, and the backend is
 
 - **Frontend**
   - React 19, TypeScript
-  - Vite
+  - Vite, Vitest (Testing)
   - Ace Editor (`react-ace`, `ace-builds`)
   - Tailwind CSS
 - **Backend**
   - Node.js (TypeScript)
   - Express 5, CORS, Helmet, express-rate-limit
   - Docker CLI integration
-  - Jest (testing framework)
+  - Jest (Testing)
 - **Infrastructure**
   - Docker / Docker Desktop
   - Docker Compose
-
----
-
-## Prerequisites
-
-- Node.js 20+ (LTS recommended)
-- npm or pnpm
-- Docker Desktop (must be running)
 
 ---
 
@@ -118,11 +113,15 @@ Server health check
 
 ## Development Scripts
 
-- `npm run dev`: Run frontend + backend
-- `npm run test`: Run tests
-- `npm run lint`: Code linting
-- `npm run docker:build`: Build Docker containers
-- `npm run docker:up`: Start containers
+- `npm run dev:frontend`: Run frontend development server
+- `npm run dev:backend`: Run backend development server
+- `npm run test:frontend`: Run frontend tests (Vitest)
+- `npm run test:backend`: Run backend tests (Jest)
+- `npm run benchmark:frontend`: Run frontend benchmarks
+- `npm run benchmark:backend`: Run backend benchmarks
+- `npm run lint`: Code linting (ESLint)
+- `npm run format`: Code formatting (Prettier)
+- `npm run docker:up`: Start containers with Docker Compose
 - `npm run docker:down`: Stop containers
 
 ---

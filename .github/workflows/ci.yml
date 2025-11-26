@@ -25,12 +25,6 @@ jobs:
             - name: Install root dependencies
               run: npm install
 
-            - name: Run ESLint
-              run: npm run lint
-
-            - name: Check code formatting
-              run: npm run format:check
-
             - name: Install backend dependencies
               working-directory: ./backend
               run: npm install
@@ -39,9 +33,11 @@ jobs:
               working-directory: ./frontend
               run: npm install
 
-            - name: Check backend code
-              working-directory: ./backend
-              run: npx eslint server.ts -c ../eslint.config.js || echo "Backend lint check completed"
+            - name: Run ESLint
+              run: npm run lint
+
+            - name: Check code formatting
+              run: npx prettier --check "**/*.{js,json,css,html,ts,tsx}"
 
     test:
         name: Test
@@ -67,19 +63,15 @@ jobs:
               working-directory: ./frontend
               run: npm install
 
-            - name: Clean up .d.ts files in frontend src
-              working-directory: ./frontend
-              run: |
-                  find src -name "*.d.ts" ! -name "vite-env.d.ts" -type f -delete || true
+            - name: Backend Tests
+              run: npm run test:backend
 
-            - name: Run TypeScript type check
-              working-directory: ./frontend
-              run: |
-                  find src -name "*.d.ts" ! -name "vite-env.d.ts" -type f -delete 2>/dev/null || true
-                  npx tsc --noEmit || echo "TypeScript type check completed"
+            - name: Frontend Tests
+              run: npm run test:frontend
 
-            - name: Run tests
-              run: npm run test
+            - name: Frontend Type Check
+              working-directory: ./frontend
+              run: npm run type-check
 
     build-check:
         name: Build Check
@@ -105,8 +97,10 @@ jobs:
               working-directory: ./frontend
               run: npm install
 
-            - name: Verify backend server starts
+            - name: Build Backend
               working-directory: ./backend
-              run: |
-                  timeout 5 node server.js || true
-                  echo "Backend server check completed"
+              run: npm run build
+
+            - name: Build Frontend
+              working-directory: ./frontend
+              run: npm run build
