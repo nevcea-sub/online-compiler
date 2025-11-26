@@ -7,55 +7,68 @@ import path from 'path';
 import { promises as fs } from 'fs';
 
 jest.mock('../../execution/executor', () => ({
-    executeDockerProcess: jest.fn(async (_language, _fullCodePath, _buildOptions, _config, _startTime, res, _sessionOutputDir, _fullInputPath, _kotlinCacheDir, { code, input }) => {
-        await new Promise((resolve) => setTimeout(resolve, 10));
+    executeDockerProcess: jest.fn(
+        async (
+            _language,
+            _fullCodePath,
+            _buildOptions,
+            _config,
+            _startTime,
+            res,
+            _sessionOutputDir,
+            _fullInputPath,
+            _kotlinCacheDir,
+            { code, input }
+        ) => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
 
-        if (code.includes('while True')) {
+            if (code.includes('while True')) {
+                return res.status(200).json({
+                    output: '',
+                    error: '실행 시간이 초과되었습니다.',
+                    executionTime: null
+                });
+            }
+
+            if (code.includes('Missing paren')) {
+                return res.status(200).json({
+                    output: '',
+                    error: 'SyntaxError: missing ) after argument list',
+                    executionTime: null
+                });
+            }
+
+            if (input === 'SecretInput') {
+                return res.status(200).json({
+                    output: `Received: ${input}\n`,
+                    error: '',
+                    executionTime: 100
+                });
+            }
+
+            if (code.includes('Hello E2E World')) {
+                return res.status(200).json({
+                    output: 'Hello E2E World\n',
+                    error: '',
+                    executionTime: 100
+                });
+            }
+
+            if (code.includes('JS E2E Test')) {
+                return res.status(200).json({
+                    output: 'JS E2E Test\n',
+                    error: '',
+                    executionTime: 100
+                });
+            }
+
             return res.status(200).json({
                 output: '',
-                error: '실행 시간이 초과되었습니다.',
-                executionTime: null
-            });
-        }
-
-        if (code.includes('Missing paren')) {
-            return res.status(200).json({
-                output: '',
-                error: 'SyntaxError: missing ) after argument list',
-                executionTime: null
-            });
-        }
-
-        if (input === 'SecretInput') {
-            return res.status(200).json({
-                output: `Received: ${input}\n`,
                 error: '',
                 executionTime: 100
             });
         }
-
-        if (code.includes('Hello E2E World')) {
-            return res.status(200).json({
-                output: 'Hello E2E World\n',
-                error: '',
-                executionTime: 100
-            });
-        }
-
-        if (code.includes('JS E2E Test')) {
-            return res.status(200).json({
-                output: 'JS E2E Test\n',
-                error: '',
-                executionTime: 100
-            });
-        }
-
-        return res.status(200).json({
-            output: '',
-            error: '',
-            executionTime: 100
-        });
-    })
+    )
 }));
 
 const app = express();
