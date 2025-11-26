@@ -16,10 +16,10 @@ interface PooledContainer {
     lastUsed: number;
 }
 
-class ContainerPool {
+export class ContainerPool {
     private pools: Map<string, PooledContainer[]> = new Map();
     private maxPoolSize = Math.max(CONFIG.MAX_CONCURRENT_EXECUTIONS * 2, 10);
-    private containerTTL = 10 * 60 * 1000; // Increased TTL
+    private containerTTL = 10 * 60 * 1000;
     private cleanupInterval = 60 * 1000;
 
     constructor() {

@@ -1,18 +1,11 @@
 import path from 'path';
-import {
-    CONFIG,
-    TMPFS_SIZES,
-    CONTAINER_CODE_PATHS,
-    LANGUAGE_EXTENSIONS,
-    LANGUAGE_CONFIGS,
-    CPU_LIMITS
-} from '../config';
+import { CONFIG, TMPFS_SIZES, CONTAINER_CODE_PATHS, LANGUAGE_CONFIGS, CPU_LIMITS } from '../config';
 import { BuildOptions } from '../types';
 import { Validator } from '../utils/validation';
-import { convertToDockerPath, getContainerCodePath } from '../utils/pathUtils';
+import { getContainerCodePath } from '../utils/pathUtils';
 import { normalizePath } from '../utils/pathUtils';
-import { buildVolumeMounts } from './volumeMounts';
 import { createLogger } from '../utils/logger';
+import { languageStrategyFactory } from '../languages/factory';
 
 const logger = createLogger('DockerArgs');
 
@@ -37,22 +30,24 @@ export const DockerArgs = {
     buildExecutionCommand(
         language: string,
         opts: BuildOptions,
-        _kotlinCacheDir?: string // Unused but kept for API consistency
+        _kotlinCacheDir?: string
     ): { command: string; containerPath: string; containerInputPath?: string } {
+        // Config check
         const config = LANGUAGE_CONFIGS[language];
         if (!config) {
             throw new Error('Invalid language configuration');
         }
 
-        const extension = LANGUAGE_EXTENSIONS[language];
+        // Get Strategy
+        const strategy = languageStrategyFactory.getStrategy(language);
+
+        // Paths
+        const extension = strategy.prepareCode('').fileExtension; // Get extension from strategy
         const containerPath = getContainerCodePath(language, extension, CONTAINER_CODE_PATHS);
         const containerBuildDir = language === 'kotlin' ? '/tmp/kbuild' : undefined;
         const containerInputPath = opts.inputPath ? `/input/${path.basename(opts.inputPath)}` : undefined;
 
-        const command =
-            language === 'kotlin'
-                ? config.command(containerPath, containerInputPath, containerBuildDir)
-                : config.command(containerPath, containerInputPath);
+        const command = strategy.getExecutionCommand(containerPath, containerInputPath, containerBuildDir);
 
         return { command, containerPath, containerInputPath };
     },
@@ -77,13 +72,10 @@ export const DockerArgs = {
             throw new Error('Invalid language configuration');
         }
 
+        const strategy = languageStrategyFactory.getStrategy(language);
         const { command, containerPath } = DockerArgs.buildExecutionCommand(language, opts, kotlinCacheDir);
-        const tmpfsSize = TMPFS_SIZES[language] || TMPFS_SIZES.default;
-        const dockerHostPath = convertToDockerPath(hostCodePath);
 
-        if (dockerHostPath.includes(' ') || containerPath.includes(' ')) {
-            throw new Error('Invalid path format: paths with spaces are not supported');
-        }
+        const tmpfsSize = TMPFS_SIZES[language] || TMPFS_SIZES.default;
 
         if (containerPath.includes(':')) {
             throw new Error('Invalid container path format');
@@ -91,6 +83,7 @@ export const DockerArgs = {
 
         const containerName = `c${Date.now().toString(36)}${Math.random().toString(36).substring(2, 6)}`;
 
+        // Base Args Construction
         const args: string[] = [
             'run',
             '--rm',
@@ -123,14 +116,11 @@ export const DockerArgs = {
             '500'
         );
 
+        // Delegate to Strategy for volume mounts and specific args
+        const finalArgs = strategy.getDockerArgs(args, hostCodePath, opts, kotlinCacheDir);
+
         const hostFileName = path.basename(hostCodePath);
         const mountedFilePath = `/code/${hostFileName}`;
-        const volumeMounts = buildVolumeMounts(hostCodePath, opts, language, kotlinCacheDir);
-        args.push(...volumeMounts);
-
-        if (language === 'csharp') {
-            args.push('-e', 'DOTNET_CLI_HOME=/tmp', '-e', 'NUGET_PACKAGES=/tmp/.nuget', '-w', '/tmp');
-        }
 
         const inputBasename = opts.inputPath ? path.basename(opts.inputPath) : undefined;
         const actualMountedPath = mountedFilePath;
@@ -152,9 +142,9 @@ export const DockerArgs = {
 
         logger.debug('Full Docker command', { fullCommand: fullCommand.substring(0, 500) });
 
-        args.push(config.image, 'sh', '-c', fullCommand);
+        finalArgs.push(config.image, 'sh', '-c', fullCommand);
 
-        return { args, containerName };
+        return { args: finalArgs, containerName };
     },
 
     buildPoolStartupArgs(language: string, kotlinCacheDir?: string): { args: string[]; containerName: string } {
@@ -167,6 +157,7 @@ export const DockerArgs = {
             throw new Error('Invalid language configuration');
         }
 
+        const strategy = languageStrategyFactory.getStrategy(language);
         const tmpfsSize = TMPFS_SIZES[language] || TMPFS_SIZES.default;
         const containerName = `pool_${language}_${Date.now().toString(36)}${Math.random().toString(36).substring(2, 6)}`;
 
@@ -203,21 +194,11 @@ export const DockerArgs = {
             '500'
         );
 
-        if (language === 'kotlin' && kotlinCacheDir) {
-            try {
-                const hostKotlinCache = convertToDockerPath(kotlinCacheDir);
-                args.push('-v', `${hostKotlinCache}:/opt/kotlin`);
-            } catch (e) {
-                logger.warn('Failed to mount Kotlin cache for pool', { error: e });
-            }
-        }
+        // Delegate to Strategy for pool startup args
+        const finalArgs = strategy.getPoolStartupArgs(args, kotlinCacheDir);
 
-        if (language === 'csharp') {
-            args.push('-e', 'DOTNET_CLI_HOME=/tmp', '-e', 'NUGET_PACKAGES=/tmp/.nuget', '-w', '/tmp');
-        }
+        finalArgs.push(config.image, 'sh', '-c', 'trap "exit 0" TERM; sleep infinity & wait');
 
-        args.push(config.image, 'sh', '-c', 'trap "exit 0" TERM; sleep infinity & wait');
-
-        return { args, containerName };
+        return { args: finalArgs, containerName };
     }
 };
