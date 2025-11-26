@@ -1,3 +1,5 @@
+import type { TranslationKey } from '../i18n/translations';
+
 interface BenchmarkResult {
     name: string;
     iterations: number;
@@ -8,16 +10,16 @@ interface BenchmarkResult {
     opsPerSecond: number;
 }
 
-function formatResult(result: BenchmarkResult): string {
-    return `
-${result.name}:
-  Iterations: ${result.iterations}
-  Total Time: ${result.totalTime.toFixed(2)}ms
-  Average Time: ${result.averageTime.toFixed(4)}ms
-  Min Time: ${result.minTime.toFixed(4)}ms
-  Max Time: ${result.maxTime.toFixed(4)}ms
-  Ops/Second: ${result.opsPerSecond.toFixed(2)}
-`;
+function formatResult(result: BenchmarkResult): void {
+    console.log(`\n${result.name}:`);
+    console.table({
+        'Iterations': result.iterations,
+        'Total Time (ms)': parseFloat(result.totalTime.toFixed(2)),
+        'Avg Time (ms)': parseFloat(result.averageTime.toFixed(4)),
+        'Min Time (ms)': parseFloat(result.minTime.toFixed(4)),
+        'Max Time (ms)': parseFloat(result.maxTime.toFixed(4)),
+        'Ops/Sec': parseFloat(result.opsPerSecond.toFixed(2))
+    });
 }
 
 async function benchmark(
@@ -116,8 +118,8 @@ async function runTranslationBenchmarks(): Promise<BenchmarkResult[]> {
     }, 10000));
 
     results.push(await benchmark('getTranslation (missing key)', () => {
-        getTranslation('nonexistent-key', 'ko');
-        getTranslation('another-missing', 'en');
+        getTranslation('nonexistent-key' as any, 'ko');
+        getTranslation('another-missing' as any, 'en');
     }, 10000));
 
     results.push(await benchmark('mapServerErrorMessage (docker errors)', () => {
@@ -145,7 +147,7 @@ async function runErrorHandlerBenchmarks(): Promise<BenchmarkResult[]> {
     const { extractErrorMessage } = await import('../utils/errorHandler');
     const { getTranslation } = await import('../i18n/translations');
 
-    const t = (key: string) => getTranslation(key, 'ko');
+    const t = (key: TranslationKey) => getTranslation(key, 'ko');
 
     results.push(await benchmark('extractErrorMessage (HTTP errors)', () => {
         extractErrorMessage(new Error('HTTP 400: Bad Request from server'), t);
@@ -193,7 +195,7 @@ async function runAllBenchmarks(): Promise<void> {
 
     console.log('\n=== Benchmark Results ===\n');
     allResults.forEach(result => {
-        console.log(formatResult(result));
+        formatResult(result);
     });
 
     const totalOps = allResults.reduce((sum, r) => sum + r.opsPerSecond, 0);

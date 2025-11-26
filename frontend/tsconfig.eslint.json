@@ -5,6 +5,13 @@
         "rootDir": ".",
         "baseUrl": "."
     },
-    "include": ["src/**/*", "vite.config.ts", "vitest.config.ts", "eslint.config.js", "tailwind.config.ts", "postcss.config.ts"],
+    "include": [
+        "src/**/*",
+        "vite.config.ts",
+        "vitest.config.ts",
+        "eslint.config.js",
+        "tailwind.config.ts",
+        "postcss.config.ts"
+    ],
     "exclude": ["node_modules", "dist", "build"]
 }

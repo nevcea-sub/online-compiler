@@ -31,10 +31,10 @@ describe('executeCode', () => {
     });
 
     it('should throw error on network failure', async () => {
-        mockFetch.mockRejectedValueOnce(new Error('Failed to fetch'));
+        mockFetch.mockRejectedValue(new Error('Failed to fetch'));
 
         await expect(executeCode('print("hello")', 'python', '')).rejects.toThrow(
-            '네트워크 오류'
+            'TRANSLATION_KEY:network-error-detail'
         );
     });
 
@@ -42,12 +42,13 @@ describe('executeCode', () => {
         const controller = new AbortController();
         controller.abort();
 
-        mockFetch.mockRejectedValueOnce(
-            new Error('AbortError')
-        );
+        const abortError = new Error('AbortError');
+        abortError.name = 'AbortError';
+
+        mockFetch.mockRejectedValueOnce(abortError);
 
         await expect(executeCode('print("hello")', 'python', '')).rejects.toThrow(
-            '요청 시간이 초과되었습니다'
+            'TRANSLATION_KEY:request-timeout-retry'
         );
     });
 
@@ -59,7 +60,7 @@ describe('executeCode', () => {
         } as Response);
 
         await expect(executeCode('invalid', 'python', '')).rejects.toThrow(
-            'HTTP 400: Invalid code'
+            'TRANSLATION_KEY:bad-request:Invalid code'
         );
     });
 });

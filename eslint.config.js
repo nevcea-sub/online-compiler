@@ -183,6 +183,23 @@ export default [
         }
     },
     {
+        files: ['frontend/tailwind.config.ts', 'frontend/postcss.config.ts'],
+        languageOptions: {
+            parser: tsparser,
+            parserOptions: {
+                ecmaVersion: 'latest',
+                sourceType: 'module',
+                project: resolve(__dirname, 'frontend/tsconfig.eslint.json')
+            }
+        },
+        plugins: {
+            '@typescript-eslint': tseslint
+        },
+        rules: {
+            'no-undef': 'off'
+        }
+    },
+    {
         files: ['frontend/vite.config.ts'],
         languageOptions: {
             parser: tsparser,

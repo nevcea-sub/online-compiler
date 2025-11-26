@@ -45,7 +45,7 @@ describe('Environment Variable Validation Utilities', () => {
             expect(Env.integer('TEST_INT', 100, 0)).toBe(50);
 
             process.env.TEST_INT = '50';
-            expect(() => Env.integer('TEST_INT', 100, 100)).toThrow('TEST_INT must be >= 100');
+            expect(() => Env.integer('TEST_INT', 100, 100)).toThrow('Environment variable must be >= 100, got: 50');
         });
 
         it('should validate maximum value', () => {
@@ -53,7 +53,7 @@ describe('Environment Variable Validation Utilities', () => {
             expect(Env.integer('TEST_INT', 100, undefined, 100)).toBe(50);
 
             process.env.TEST_INT = '150';
-            expect(() => Env.integer('TEST_INT', 100, undefined, 100)).toThrow('TEST_INT must be <= 100');
+            expect(() => Env.integer('TEST_INT', 100, undefined, 100)).toThrow('Environment variable must be <= 100, got: 150');
         });
     });
 

@@ -2,15 +2,17 @@ import {
     normalizePath,
     validatePath,
     convertToDockerPath,
-    getContainerCodePath,
-    kotlinCompilerExistsOnHost
+    getContainerCodePath
 } from '../../utils/pathUtils';
-import * as fs from 'fs';
 import path from 'path';
 
 jest.mock('fs');
 
 describe('Path Utilities', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
     describe('normalizePath', () => {
         it('should normalize valid file paths', () => {
             const validPaths = [
@@ -252,43 +254,67 @@ describe('Path Utilities', () => {
     });
 
     describe('kotlinCompilerExistsOnHost', () => {
-        it.skip('should return true when Kotlin compiler exists', () => {
-            (fs.existsSync as jest.Mock).mockReturnValue(true);
-            const result = kotlinCompilerExistsOnHost('/tmp/kotlin_cache');
-            expect(result).toBe(true);
-        });
+        it('should return true when Kotlin compiler exists', () => {
+            jest.isolateModules(() => {
+                const { kotlinCompilerExistsOnHost } = require('../../utils/pathUtils');
+                const fs = require('fs');
+                (fs.existsSync as jest.Mock).mockReturnValue(true);
 
-        it.skip('should return false when Kotlin compiler does not exist', () => {
-            (fs.existsSync as jest.Mock).mockReturnValue(false);
-            const result = kotlinCompilerExistsOnHost('/tmp/kotlin_cache');
-            expect(result).toBe(false);
-        });
-
-        it.skip('should cache results for performance', () => {
-            (fs.existsSync as jest.Mock).mockReturnValue(true);
-
-            kotlinCompilerExistsOnHost('/tmp/kotlin_cache');
-            expect(fs.existsSync).toHaveBeenCalledTimes(1);
-
-            kotlinCompilerExistsOnHost('/tmp/kotlin_cache');
-            expect(fs.existsSync).toHaveBeenCalledTimes(1);
-        });
-
-        it.skip('should handle errors gracefully', () => {
-            (fs.existsSync as jest.Mock).mockImplementation(() => {
-                throw new Error('File system error');
+                const result = kotlinCompilerExistsOnHost('/tmp/kotlin_cache');
+                expect(result).toBe(true);
             });
-            const result = kotlinCompilerExistsOnHost('/tmp/kotlin_cache');
-            expect(result).toBe(false);
         });
 
-        it.skip('should check correct Kotlin compiler path', () => {
-            (fs.existsSync as jest.Mock).mockReturnValue(true);
-            const cacheDir = '/custom/kotlin_cache';
-            kotlinCompilerExistsOnHost(cacheDir);
+        it('should return false when Kotlin compiler does not exist', () => {
+            jest.isolateModules(() => {
+                const { kotlinCompilerExistsOnHost } = require('../../utils/pathUtils');
+                const fs = require('fs');
+                (fs.existsSync as jest.Mock).mockReturnValue(false);
 
-            const expectedPath = path.join(cacheDir, 'kotlinc', 'lib', 'kotlin-compiler.jar');
-            expect(fs.existsSync).toHaveBeenCalledWith(expectedPath);
+                const result = kotlinCompilerExistsOnHost('/tmp/kotlin_cache');
+                expect(result).toBe(false);
+            });
+        });
+
+        it('should cache results for performance', () => {
+            jest.isolateModules(() => {
+                const { kotlinCompilerExistsOnHost } = require('../../utils/pathUtils');
+                const fs = require('fs');
+                (fs.existsSync as jest.Mock).mockReturnValue(true);
+
+                kotlinCompilerExistsOnHost('/tmp/kotlin_cache');
+                expect(fs.existsSync).toHaveBeenCalledTimes(1);
+
+                kotlinCompilerExistsOnHost('/tmp/kotlin_cache');
+                expect(fs.existsSync).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        it('should handle errors gracefully', () => {
+            jest.isolateModules(() => {
+                const { kotlinCompilerExistsOnHost } = require('../../utils/pathUtils');
+                const fs = require('fs');
+                (fs.existsSync as jest.Mock).mockImplementation(() => {
+                    throw new Error('File system error');
+                });
+
+                const result = kotlinCompilerExistsOnHost('/tmp/kotlin_cache');
+                expect(result).toBe(false);
+            });
+        });
+
+        it('should check correct Kotlin compiler path', () => {
+            jest.isolateModules(() => {
+                const { kotlinCompilerExistsOnHost } = require('../../utils/pathUtils');
+                const fs = require('fs');
+                (fs.existsSync as jest.Mock).mockReturnValue(true);
+
+                const cacheDir = '/custom/kotlin_cache';
+                kotlinCompilerExistsOnHost(cacheDir);
+
+                const expectedPath = path.join(cacheDir, 'kotlinc', 'lib', 'kotlin-compiler.jar');
+                expect(fs.existsSync).toHaveBeenCalledWith(expectedPath);
+            });
         });
     });
 });

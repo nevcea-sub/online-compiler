@@ -1,5 +1,0 @@
-{
-    "ignore": ["code/**", "output/**", "node_modules/**", "dist/**", "*.log"],
-    "watch": ["server.ts", "config.ts"],
-    "ext": "ts,json"
-}

@@ -112,7 +112,8 @@ describe('Error Handler Middleware', () => {
             errorHandler(error, mockRequest as Request, mockResponse as unknown as Response, mockNext as unknown as NextFunction);
 
             expect(consoleErrorSpy).toHaveBeenCalledWith(
-                '[ERROR] Internal server error:',
+                expect.stringContaining('Internal server error:'),
+                '\n',
                 expect.objectContaining({
                     error: 'Database connection failed',
                     path: '/',

@@ -21,7 +21,7 @@ describe('extractErrorMessage', () => {
 
     it('should extract HTTP error messages', () => {
         const error = new Error('HTTP 400: Bad request');
-        expect(extractErrorMessage(error, t)).toBe('Bad request');
+        expect(extractErrorMessage(error, t)).toBe('Bad request: Bad request');
     });
 
     it('should map network errors', () => {

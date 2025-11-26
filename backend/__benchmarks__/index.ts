@@ -1,4 +1,3 @@
-import { performance } from 'perf_hooks';
 import { executionCache } from '../utils/cache';
 import { executionQueue } from '../execution/executionQueue';
 import { validateLanguage, sanitizeCode, validateJavaClass, validateImage } from '../utils/validation';
@@ -17,16 +16,16 @@ interface BenchmarkResult {
     opsPerSecond: number;
 }
 
-function formatResult(result: BenchmarkResult): string {
-    return `
-${result.name}:
-  Iterations: ${result.iterations}
-  Total Time: ${result.totalTime.toFixed(2)}ms
-  Average Time: ${result.averageTime.toFixed(4)}ms
-  Min Time: ${result.minTime.toFixed(4)}ms
-  Max Time: ${result.maxTime.toFixed(4)}ms
-  Ops/Second: ${result.opsPerSecond.toFixed(2)}
-`;
+function formatResult(result: BenchmarkResult): void {
+    console.log(`\n${result.name}:`);
+    console.table({
+        'Iterations': result.iterations,
+        'Total Time (ms)': parseFloat(result.totalTime.toFixed(2)),
+        'Avg Time (ms)': parseFloat(result.averageTime.toFixed(4)),
+        'Min Time (ms)': parseFloat(result.minTime.toFixed(4)),
+        'Max Time (ms)': parseFloat(result.maxTime.toFixed(4)),
+        'Ops/Sec': parseFloat(result.opsPerSecond.toFixed(2))
+    });
 }
 
 async function benchmark(
@@ -326,7 +325,7 @@ async function runAllBenchmarks(): Promise<void> {
 
     console.log('\n=== Benchmark Results ===\n');
     allResults.forEach(result => {
-        console.log(formatResult(result));
+        formatResult(result);
     });
 
     const totalOps = allResults.reduce((sum, r) => sum + r.opsPerSecond, 0);

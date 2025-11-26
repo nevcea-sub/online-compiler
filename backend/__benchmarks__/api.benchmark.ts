@@ -1,5 +1,4 @@
 import http from 'http';
-import { performance } from 'perf_hooks';
 
 interface ApiBenchmarkResult {
     endpoint: string;
@@ -268,50 +267,57 @@ interface ApiBenchmarkResultWithErrors extends ApiBenchmarkResult {
     errors?: string[];
 }
 
-function formatApiResult(result: ApiBenchmarkResultWithErrors): string {
-    let output = `
-${result.method} ${result.endpoint}:
-  Requests: ${result.requests}
-  Total Time: ${result.totalTime.toFixed(2)}ms
-  Success: ${result.successCount} (${((result.successCount / result.requests) * 100).toFixed(1)}%)
-  Errors: ${result.errorCount} (${((result.errorCount / result.requests) * 100).toFixed(1)}%)
-  Status Codes: ${JSON.stringify(result.statusCodes, null, 2)}
-  
-  Response Times (all requests):
-    Average: ${result.averageTime.toFixed(4)}ms
-    Median (p50): ${result.medianTime.toFixed(4)}ms
-    p95: ${result.p95Time.toFixed(4)}ms
-    p99: ${result.p99Time.toFixed(4)}ms
-    Min: ${result.minTime.toFixed(4)}ms
-    Max: ${result.maxTime.toFixed(4)}ms
-    Requests/Second: ${result.requestsPerSecond.toFixed(2)}`;
+function formatApiResult(result: ApiBenchmarkResultWithErrors): void {
+    console.log(`\n${result.method} ${result.endpoint}:`);
+
+    const generalStats = {
+        'Requests': result.requests,
+        'Total Time (ms)': parseFloat(result.totalTime.toFixed(2)),
+        'Success': `${result.successCount} (${((result.successCount / result.requests) * 100).toFixed(1)}%)`,
+        'Errors': `${result.errorCount} (${((result.errorCount / result.requests) * 100).toFixed(1)}%)`,
+        'Req/Sec': parseFloat(result.requestsPerSecond.toFixed(2))
+    };
+    console.table(generalStats);
+
+    const timeStats = {
+        'Average': parseFloat(result.averageTime.toFixed(4)),
+        'Median (p50)': parseFloat(result.medianTime.toFixed(4)),
+        'p95': parseFloat(result.p95Time.toFixed(4)),
+        'p99': parseFloat(result.p99Time.toFixed(4)),
+        'Min': parseFloat(result.minTime.toFixed(4)),
+        'Max': parseFloat(result.maxTime.toFixed(4))
+    };
+    console.log('Response Times (ms):');
+    console.table(timeStats);
 
     if (result.successOnlyStats && result.errorCount > 0) {
-        output += `
-  
-  Response Times (successful requests only):
-    Average: ${result.successOnlyStats.averageTime.toFixed(4)}ms
-    Median (p50): ${result.successOnlyStats.medianTime.toFixed(4)}ms
-    p95: ${result.successOnlyStats.p95Time.toFixed(4)}ms
-    p99: ${result.successOnlyStats.p99Time.toFixed(4)}ms
-    Requests/Second: ${result.successOnlyStats.requestsPerSecond.toFixed(2)}`;
+        console.log('Response Times (Successful Requests Only, ms):');
+        console.table({
+            'Average': parseFloat(result.successOnlyStats.averageTime.toFixed(4)),
+            'Median (p50)': parseFloat(result.successOnlyStats.medianTime.toFixed(4)),
+            'p95': parseFloat(result.successOnlyStats.p95Time.toFixed(4)),
+            'p99': parseFloat(result.successOnlyStats.p99Time.toFixed(4)),
+            'Req/Sec': parseFloat(result.successOnlyStats.requestsPerSecond.toFixed(2))
+        });
     }
 
     if (result.errors && result.errors.length > 0) {
-        output += `\n  Error Messages: ${result.errors.join(', ')}`;
+        console.log('Error Messages:');
+        result.errors.forEach(err => console.log(`  - ${err}`));
     }
 
-    if (result.statusCodes[429]) {
-        output += `\n  Rate limit hit: ${result.statusCodes[429]} requests returned 429 (Too Many Requests)`;
+    if (Object.keys(result.statusCodes).length > 0) {
+        console.log('Status Codes:', JSON.stringify(result.statusCodes, null, 2));
     }
 
     if (result.cacheStats) {
-        output += `\n  Cache Stats:
-    Hits: ${result.cacheStats.hits} (${result.cacheStats.hitRate.toFixed(1)}%)
-    Misses: ${result.cacheStats.misses} (${(100 - result.cacheStats.hitRate).toFixed(1)}%)`;
+        console.log('Cache Stats:');
+        console.table({
+            'Hits': result.cacheStats.hits,
+            'Misses': result.cacheStats.misses,
+            'Hit Rate (%)': parseFloat(result.cacheStats.hitRate.toFixed(1))
+        });
     }
-
-    return output;
 }
 
 function calculateRateLimitDelay(requestsPerMinute: number): number {
@@ -383,7 +389,7 @@ async function runApiBenchmarks(port: number = 4000, respectRateLimit: boolean =
 
     console.log('\n=== API Benchmark Results ===\n');
     results.forEach(result => {
-        console.log(formatApiResult(result));
+        formatApiResult(result);
     });
 }
 
