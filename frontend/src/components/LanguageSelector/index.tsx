@@ -44,7 +44,6 @@ const LanguageSelector = ({
     return (
         <>
             <div className="language-selector">
-                <label>{t('programming-language')}</label>
                 <div className="custom-select-wrapper">
                     <button
                         ref={buttonRef}
