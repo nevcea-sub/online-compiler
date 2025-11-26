@@ -26,6 +26,7 @@ COPY routes/ ./routes/
 COPY services/ ./services/
 COPY types/ ./types/
 COPY utils/ ./utils/
+COPY languages/ ./languages/
 
 RUN npm run build
 
