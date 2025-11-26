@@ -30,21 +30,21 @@ export const Env = {
     }
 };
 
-export function validateMemorySize(value: string): void {
+function validateMemorySize(value: string): void {
     const memoryRegex = /^(\d+)([kmg]?)$/i;
     if (!memoryRegex.test(value)) {
         throw new Error(`Invalid memory size format: ${value}. Expected format: <number>[k|m|g]`);
     }
 }
 
-export function validateCpuPercent(value: string): void {
+function validateCpuPercent(value: string): void {
     const cpu = parseFloat(value);
     if (isNaN(cpu) || cpu <= 0 || cpu > 100) {
         throw new Error(`Invalid CPU percent: ${value}. Must be between 0 and 100`);
     }
 }
 
-export function parseIntegerEnv(envVar: string | undefined, defaultValue: number, min?: number, max?: number): number {
+function parseIntegerEnv(envVar: string | undefined, defaultValue: number, min?: number, max?: number): number {
     if (envVar === undefined || envVar === '') {
         return defaultValue;
     }
@@ -62,7 +62,7 @@ export function parseIntegerEnv(envVar: string | undefined, defaultValue: number
     return parsed;
 }
 
-export function parseBooleanEnv(envVar: string | undefined, defaultValue: boolean): boolean {
+function parseBooleanEnv(envVar: string | undefined, defaultValue: boolean): boolean {
     if (envVar === undefined || envVar === '') {
         return defaultValue;
     }

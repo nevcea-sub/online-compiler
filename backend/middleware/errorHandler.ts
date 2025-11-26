@@ -58,7 +58,7 @@ export function errorHandler(err: AppError | Error, req: Request, res: Response,
     safeSendErrorResponse(res, statusCode, errorMessage);
 }
 
-export function notFoundHandler(req: Request, res: Response, next: NextFunction): void {
+export function notFoundHandler(_req: Request, res: Response, next: NextFunction): void {
     if (res.headersSent) {
         return next();
     }

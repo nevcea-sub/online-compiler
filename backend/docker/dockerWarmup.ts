@@ -28,7 +28,6 @@ export function markWarmedUp(language: string): void {
 
 export async function ensureWarmedUp(
     language: string,
-    image: string,
     kotlinCacheDir?: string
 ): Promise<boolean> {
     if (isWarmedUp(language)) {

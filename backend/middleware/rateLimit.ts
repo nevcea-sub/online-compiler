@@ -1,9 +1,9 @@
 import rateLimit from 'express-rate-limit';
 import { Request, Response, NextFunction } from 'express';
-import { parseIntegerEnv } from '../utils/envValidation';
+import { Env } from '../utils/envValidation';
 
-const MAX_EXECUTIONS_PER_MINUTE = parseIntegerEnv(process.env.MAX_EXECUTIONS_PER_MINUTE, 20, 1, 1000);
-const MAX_EXECUTIONS_PER_HOUR = parseIntegerEnv(process.env.MAX_EXECUTIONS_PER_HOUR, 100, 1, 10000);
+const MAX_EXECUTIONS_PER_MINUTE = Env.integer('MAX_EXECUTIONS_PER_MINUTE', 20, 1, 1000);
+const MAX_EXECUTIONS_PER_HOUR = Env.integer('MAX_EXECUTIONS_PER_HOUR', 100, 1, 10000);
 
 export const executeLimiter = rateLimit({
     windowMs: 1 * 60 * 1000,
@@ -14,7 +14,7 @@ export const executeLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-    handler: (req: Request, res: Response) => {
+    handler: (_req: Request, res: Response) => {
         res.status(429).json({
             error: 'Too many execution requests. Please try again later.',
             retryAfter: '1 minute',
@@ -33,7 +33,7 @@ export const executeHourlyLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-    handler: (req: Request, res: Response) => {
+    handler: (_req: Request, res: Response) => {
         res.status(429).json({
             error: 'Hourly execution limit exceeded. Please try again later.',
             retryAfter: '1 hour',
@@ -43,11 +43,11 @@ export const executeHourlyLimiter = rateLimit({
     }
 });
 
-const DISABLE_RATE_LIMIT = process.env.DISABLE_RATE_LIMIT === 'true';
-const HEALTH_RATE_LIMIT = parseIntegerEnv(process.env.HEALTH_RATE_LIMIT, 60, 1, 10000);
+const DISABLE_RATE_LIMIT = Env.boolean('DISABLE_RATE_LIMIT', false);
+const HEALTH_RATE_LIMIT = Env.integer('HEALTH_RATE_LIMIT', 60, 1, 10000);
 
 export const healthLimiter = DISABLE_RATE_LIMIT
-    ? (req: Request, res: Response, next: NextFunction) => next()
+    ? (_req: Request, _res: Response, next: NextFunction) => next()
     : rateLimit({
         windowMs: 1 * 60 * 1000,
         max: HEALTH_RATE_LIMIT,

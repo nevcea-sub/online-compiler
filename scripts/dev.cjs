@@ -79,9 +79,9 @@ try {
 
 		console.log('\nStarting services...');
 		if (composeCmd === 'docker compose') {
-			execFileSync('docker', ['compose', 'up', '-d'], { stdio: 'inherit', cwd: rootDir });
+			execFileSync('docker', ['compose', 'up', '-d', '--remove-orphans'], { stdio: 'inherit', cwd: rootDir });
 		} else {
-			execFileSync('docker-compose', ['up', '-d'], { stdio: 'inherit', cwd: rootDir });
+			execFileSync('docker-compose', ['up', '-d', '--remove-orphans'], { stdio: 'inherit', cwd: rootDir });
 		}
 
 		const backendPort = process.env.BACKEND_PORT || process.env.PORT || 3000;

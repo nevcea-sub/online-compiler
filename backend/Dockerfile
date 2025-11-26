@@ -23,6 +23,7 @@ COPY execution/ ./execution/
 COPY file/ ./file/
 COPY middleware/ ./middleware/
 COPY routes/ ./routes/
+COPY services/ ./services/
 COPY types/ ./types/
 COPY utils/ ./utils/
 

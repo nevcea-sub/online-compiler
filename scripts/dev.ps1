@@ -9,7 +9,8 @@ function Assert-LastExitCode {
 }
 
 function Resolve-DockerCompose {
-    if (docker compose version 2>$null) {
+    docker compose version 2>&1 | Out-Null
+    if ($?) {
         return @{ Exe = 'docker'; Args = @('compose') }
     } elseif (Get-Command docker-compose -ErrorAction SilentlyContinue) {
         return @{ Exe = 'docker-compose'; Args = @() }
@@ -55,7 +56,7 @@ function Wait-ForService {
     }
 }
 
-function Load-EnvFile {
+function Import-EnvFile {
     param([string]$EnvPath)
     
     if (-not (Test-Path $EnvPath)) {
@@ -94,7 +95,7 @@ if (-not (Test-Path $envFile)) {
     Write-Host "Creating .env file (optional - you can customize it later)" -ForegroundColor Yellow
     New-Item -Path $envFile -ItemType File -Force | Out-Null
 }
-$envVars = Load-EnvFile $envFile
+$envVars = Import-EnvFile $envFile
 if ($envVars.Count -gt 0) {
     Write-Host "Loaded environment variables from .env" -ForegroundColor Green
     foreach ($key in $envVars.Keys) {
@@ -142,7 +143,7 @@ $buildArgs = $compose.Args + @('build')
 Assert-LastExitCode "docker compose build"
 
 Write-Host "`nStarting services..." -ForegroundColor Blue
-$upArgs = $compose.Args + @('up','-d')
+$upArgs = $compose.Args + @('up','-d', '--remove-orphans')
 & $compose.Exe @upArgs
 Assert-LastExitCode "docker compose up -d"
 

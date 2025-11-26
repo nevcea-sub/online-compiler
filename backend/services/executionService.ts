@@ -160,7 +160,7 @@ export class ExecutionService {
     private async handleWarmupAndPreload(language: string, image: string, kotlinCacheDir: string): Promise<void> {
         if (CONFIG.ENABLE_WARMUP) {
             import('../docker/dockerWarmup').then(({ ensureWarmedUp }) => {
-                ensureWarmedUp(language, image, kotlinCacheDir).catch(() => {});
+                ensureWarmedUp(language, kotlinCacheDir).catch(() => {});
             }).catch(() => {});
         }
 

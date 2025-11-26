@@ -2,7 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { CONFIG, LANGUAGE_CONFIGS } from '../config';
 import { ImageCacheEntry, PullResult } from '../types';
-import { validateImage } from '../utils/validation';
+import { Validator } from '../utils/validation';
 import { createTimeoutController } from '../utils/timeout';
 import { createLogger } from '../utils/logger';
 
@@ -12,7 +12,7 @@ const IMAGE_CACHE_TTL = 10 * 60 * 1000;
 const imageCheckPromises = new Map<string, Promise<boolean>>();
 
 export async function checkImageExists(image: string): Promise<boolean> {
-    if (!validateImage(image)) {
+    if (!Validator.image(image)) {
         return false;
     }
 
@@ -51,7 +51,7 @@ export async function checkImageExists(image: string): Promise<boolean> {
 }
 
 export async function pullDockerImage(image: string, retries: number = CONFIG.DOCKER_PULL_RETRIES, silent: boolean = false): Promise<PullResult> {
-    if (!validateImage(image)) {
+    if (!Validator.image(image)) {
         return { success: false, image, error: 'Invalid image' };
     }
 
