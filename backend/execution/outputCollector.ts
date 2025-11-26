@@ -50,9 +50,7 @@ export class OutputCollector {
             state.content += text;
             state.bytes += bytes;
         } else {
-            const slice = Buffer.from(text, UTF8_ENCODING)
-                .subarray(0, remaining)
-                .toString(UTF8_ENCODING);
+            const slice = Buffer.from(text, UTF8_ENCODING).subarray(0, remaining).toString(UTF8_ENCODING);
             state.content += slice;
             state.bytes += remaining;
             state.truncated = true;
@@ -77,4 +75,3 @@ export class OutputCollector {
         return { stdout, stderr };
     }
 }
-

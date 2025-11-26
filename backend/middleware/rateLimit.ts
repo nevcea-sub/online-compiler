@@ -49,12 +49,11 @@ const HEALTH_RATE_LIMIT = Env.integer('HEALTH_RATE_LIMIT', 60, 1, 10000);
 export const healthLimiter = DISABLE_RATE_LIMIT
     ? (_req: Request, _res: Response, next: NextFunction) => next()
     : rateLimit({
-        windowMs: 1 * 60 * 1000,
-        max: HEALTH_RATE_LIMIT,
-        standardHeaders: true,
-        legacyHeaders: false,
-        skip: (req: Request) => {
-            return req.headers['x-benchmark'] === 'true';
-        }
-    });
-
+          windowMs: 1 * 60 * 1000,
+          max: HEALTH_RATE_LIMIT,
+          standardHeaders: true,
+          legacyHeaders: false,
+          skip: (req: Request) => {
+              return req.headers['x-benchmark'] === 'true';
+          }
+      });

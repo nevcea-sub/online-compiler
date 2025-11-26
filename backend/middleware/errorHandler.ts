@@ -64,4 +64,3 @@ export function notFoundHandler(_req: Request, res: Response, next: NextFunction
     }
     safeSendErrorResponse(res, 404, 'Endpoint not found');
 }
-

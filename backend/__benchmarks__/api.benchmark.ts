@@ -48,8 +48,7 @@ async function makeRequest(
                     if (body) {
                         parsedBody = JSON.parse(body);
                     }
-                } catch {
-                }
+                } catch {}
                 resolve({
                     statusCode: res.statusCode || 0,
                     time: end - start,
@@ -86,17 +85,20 @@ async function makeRequest(
 
 async function checkServerConnection(port: number): Promise<boolean> {
     return new Promise((resolve) => {
-        const req = http.request({
-            hostname: 'localhost',
-            port,
-            path: '/api/health',
-            method: 'GET',
-            timeout: 2000
-        }, (res) => {
-            resolve(true);
-            res.on('data', () => {});
-            res.on('end', () => {});
-        });
+        const req = http.request(
+            {
+                hostname: 'localhost',
+                port,
+                path: '/api/health',
+                method: 'GET',
+                timeout: 2000
+            },
+            (res) => {
+                resolve(true);
+                res.on('data', () => {});
+                res.on('end', () => {});
+            }
+        );
 
         req.on('error', () => {
             resolve(false);
@@ -149,11 +151,13 @@ async function benchmarkEndpoint(
         }
     };
 
-    console.log(`Benchmarking ${method} ${endpoint} (${requests} requests${delayMs > 0 ? `, ${delayMs}ms delay between requests` : ''})...`);
+    console.log(
+        `Benchmarking ${method} ${endpoint} (${requests} requests${delayMs > 0 ? `, ${delayMs}ms delay between requests` : ''})...`
+    );
 
     for (let i = 0; i < requests; i++) {
         if (i > 0 && delayMs > 0) {
-            await new Promise(resolve => setTimeout(resolve, delayMs));
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
         }
 
         let requestData = data;
@@ -271,21 +275,21 @@ function formatApiResult(result: ApiBenchmarkResultWithErrors): void {
     console.log(`\n${result.method} ${result.endpoint}:`);
 
     const generalStats = {
-        'Requests': result.requests,
+        Requests: result.requests,
         'Total Time (ms)': parseFloat(result.totalTime.toFixed(2)),
-        'Success': `${result.successCount} (${((result.successCount / result.requests) * 100).toFixed(1)}%)`,
-        'Errors': `${result.errorCount} (${((result.errorCount / result.requests) * 100).toFixed(1)}%)`,
+        Success: `${result.successCount} (${((result.successCount / result.requests) * 100).toFixed(1)}%)`,
+        Errors: `${result.errorCount} (${((result.errorCount / result.requests) * 100).toFixed(1)}%)`,
         'Req/Sec': parseFloat(result.requestsPerSecond.toFixed(2))
     };
     console.table(generalStats);
 
     const timeStats = {
-        'Average': parseFloat(result.averageTime.toFixed(4)),
+        Average: parseFloat(result.averageTime.toFixed(4)),
         'Median (p50)': parseFloat(result.medianTime.toFixed(4)),
-        'p95': parseFloat(result.p95Time.toFixed(4)),
-        'p99': parseFloat(result.p99Time.toFixed(4)),
-        'Min': parseFloat(result.minTime.toFixed(4)),
-        'Max': parseFloat(result.maxTime.toFixed(4))
+        p95: parseFloat(result.p95Time.toFixed(4)),
+        p99: parseFloat(result.p99Time.toFixed(4)),
+        Min: parseFloat(result.minTime.toFixed(4)),
+        Max: parseFloat(result.maxTime.toFixed(4))
     };
     console.log('Response Times (ms):');
     console.table(timeStats);
@@ -293,17 +297,17 @@ function formatApiResult(result: ApiBenchmarkResultWithErrors): void {
     if (result.successOnlyStats && result.errorCount > 0) {
         console.log('Response Times (Successful Requests Only, ms):');
         console.table({
-            'Average': parseFloat(result.successOnlyStats.averageTime.toFixed(4)),
+            Average: parseFloat(result.successOnlyStats.averageTime.toFixed(4)),
             'Median (p50)': parseFloat(result.successOnlyStats.medianTime.toFixed(4)),
-            'p95': parseFloat(result.successOnlyStats.p95Time.toFixed(4)),
-            'p99': parseFloat(result.successOnlyStats.p99Time.toFixed(4)),
+            p95: parseFloat(result.successOnlyStats.p95Time.toFixed(4)),
+            p99: parseFloat(result.successOnlyStats.p99Time.toFixed(4)),
             'Req/Sec': parseFloat(result.successOnlyStats.requestsPerSecond.toFixed(2))
         });
     }
 
     if (result.errors && result.errors.length > 0) {
         console.log('Error Messages:');
-        result.errors.forEach(err => console.log(`  - ${err}`));
+        result.errors.forEach((err) => console.log(`  - ${err}`));
     }
 
     if (Object.keys(result.statusCodes).length > 0) {
@@ -313,8 +317,8 @@ function formatApiResult(result: ApiBenchmarkResultWithErrors): void {
     if (result.cacheStats) {
         console.log('Cache Stats:');
         console.table({
-            'Hits': result.cacheStats.hits,
-            'Misses': result.cacheStats.misses,
+            Hits: result.cacheStats.hits,
+            Misses: result.cacheStats.misses,
             'Hit Rate (%)': parseFloat(result.cacheStats.hitRate.toFixed(1))
         });
     }
@@ -327,7 +331,11 @@ function calculateRateLimitDelay(requestsPerMinute: number): number {
     return Math.ceil((60 * 1000) / requestsPerMinute);
 }
 
-async function runApiBenchmarks(port: number = 4000, respectRateLimit: boolean = true, bypassCache: boolean = false): Promise<void> {
+async function runApiBenchmarks(
+    port: number = 4000,
+    respectRateLimit: boolean = true,
+    bypassCache: boolean = false
+): Promise<void> {
     console.log('Starting API benchmarks...\n');
     console.log('Make sure the server is running on port', port, '\n');
 
@@ -381,14 +389,36 @@ async function runApiBenchmarks(port: number = 4000, respectRateLimit: boolean =
                 input: ''
             });
         };
-        results.push(await benchmarkEndpoint('/api/execute', 'POST', baseExecutePayload, 10, port, executeDelay, uniqueCodeGenerator, executeTimeout));
+        results.push(
+            await benchmarkEndpoint(
+                '/api/execute',
+                'POST',
+                baseExecutePayload,
+                10,
+                port,
+                executeDelay,
+                uniqueCodeGenerator,
+                executeTimeout
+            )
+        );
     } else {
         console.log('  Cache: Enabled (same code, may hit cache)');
-        results.push(await benchmarkEndpoint('/api/execute', 'POST', baseExecutePayload, 10, port, executeDelay, undefined, executeTimeout));
+        results.push(
+            await benchmarkEndpoint(
+                '/api/execute',
+                'POST',
+                baseExecutePayload,
+                10,
+                port,
+                executeDelay,
+                undefined,
+                executeTimeout
+            )
+        );
     }
 
     console.log('\n=== API Benchmark Results ===\n');
-    results.forEach(result => {
+    results.forEach((result) => {
         formatApiResult(result);
     });
 }
@@ -415,4 +445,3 @@ if (require.main === module) {
 }
 
 export { benchmarkEndpoint, runApiBenchmarks };
-

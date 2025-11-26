@@ -100,7 +100,6 @@ const CompilerPage = () => {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isRunning, handleRun, handleClear]);
 
-
     const confirmClear = () => {
         const template = LANGUAGE_CONFIG.templates[currentLanguage];
         if (template) {
@@ -145,9 +144,7 @@ const CompilerPage = () => {
                 <div className="compiler-layout">
                     <div className="editor-section">
                         <div className="editor-header">
-                            <div className="editor-title">
-                                {t('code-editor')}
-                            </div>
+                            <div className="editor-title">{t('code-editor')}</div>
                             <div className="editor-header-actions">
                                 <EditorLanguageSelector
                                     onLanguageChange={handleLanguageChange}
@@ -169,15 +166,45 @@ const CompilerPage = () => {
                             >
                                 {isRunning ? (
                                     <>
-                                        <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        <svg
+                                            className="animate-spin"
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            ></path>
                                         </svg>
                                         <span>{t('running')}</span>
                                     </>
                                 ) : (
                                     <>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <svg
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
                                             <polygon points="5 3 19 12 5 21 5 3"></polygon>
                                         </svg>
                                         <span>{t('run')}</span>
@@ -191,7 +218,16 @@ const CompilerPage = () => {
                                 disabled={isRunning}
                                 aria-label={t('clear')}
                             >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
                                     <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                 </svg>
                                 <span>{t('clear')}</span>
@@ -222,4 +258,3 @@ const CompilerPage = () => {
 };
 
 export default CompilerPage;
-

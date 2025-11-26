@@ -17,15 +17,15 @@ export interface ServerPaths {
 }
 
 export function getServerPaths(): ServerPaths {
-    const codeDir = process.env.CODE_DIR || (process.env.NODE_ENV === 'production'
-        ? '/app/code'
-        : path.join(__dirname, '..', 'code'));
-    const outputDir = process.env.OUTPUT_DIR || (process.env.NODE_ENV === 'production'
-        ? '/app/output'
-        : path.join(__dirname, '..', 'output'));
-    const toolCacheDir = process.env.TOOL_CACHE_DIR || (process.env.NODE_ENV === 'production'
-        ? '/app/tool_cache'
-        : path.join(__dirname, '..', 'tool_cache'));
+    const codeDir =
+        process.env.CODE_DIR ||
+        (process.env.NODE_ENV === 'production' ? '/app/code' : path.join(__dirname, '..', 'code'));
+    const outputDir =
+        process.env.OUTPUT_DIR ||
+        (process.env.NODE_ENV === 'production' ? '/app/output' : path.join(__dirname, '..', 'output'));
+    const toolCacheDir =
+        process.env.TOOL_CACHE_DIR ||
+        (process.env.NODE_ENV === 'production' ? '/app/tool_cache' : path.join(__dirname, '..', 'tool_cache'));
     const kotlinCacheDir = path.join(toolCacheDir, 'kotlin');
     const kotlinBuildsDir = path.join(toolCacheDir, 'kotlin_builds');
 
@@ -70,4 +70,3 @@ export async function initializeServer(paths: ServerPaths): Promise<void> {
     process.on('SIGTERM', () => shutdown('SIGTERM'));
     process.on('SIGINT', () => shutdown('SIGINT'));
 }
-

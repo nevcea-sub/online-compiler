@@ -63,4 +63,3 @@ export const formatExecutionTime = (timeMs: number | null): string | null => {
     const remainingSeconds = (seconds % 60).toFixed(1);
     return `${minutes}m ${remainingSeconds}s`;
 };
-

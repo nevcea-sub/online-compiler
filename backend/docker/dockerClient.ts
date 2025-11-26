@@ -35,11 +35,24 @@ export async function runDockerCommand(
         try {
             const hostKotlinCache = convertToDockerPath(kotlinCacheDir);
             mounts.push('-v', `${hostKotlinCache}:/opt/kotlin`);
-        } catch {
-        }
+        } catch {}
     }
 
-    const args: string[] = ['run', '--rm', `--memory=${tmpfsSize}`, `--cpus=${CONFIG.MAX_CPU_PERCENT}`, ...networkFlag, '--read-only', '--tmpfs', `/tmp:rw,exec,nosuid,size=${tmpfsSize}`, ...mounts, image, 'sh', '-c', command];
+    const args: string[] = [
+        'run',
+        '--rm',
+        `--memory=${tmpfsSize}`,
+        `--cpus=${CONFIG.MAX_CPU_PERCENT}`,
+        ...networkFlag,
+        '--read-only',
+        '--tmpfs',
+        `/tmp:rw,exec,nosuid,size=${tmpfsSize}`,
+        ...mounts,
+        image,
+        'sh',
+        '-c',
+        command
+    ];
 
     const dockerCmdStr = ['docker', ...args].join(' ');
     const { controller, clear } = createTimeoutController(timeout + 500);
@@ -50,17 +63,26 @@ export async function runDockerCommand(
             signal: controller.signal,
             maxBuffer: 1024 * 1024
         } as any);
-        const stdoutStr = typeof stdout === 'string' ? stdout : (stdout ? stdout.toString('utf8') : '');
-        const stderrStr = typeof stderr === 'string' ? stderr : (stderr ? stderr.toString('utf8') : '');
+        const stdoutStr = typeof stdout === 'string' ? stdout : stdout ? stdout.toString('utf8') : '';
+        const stderrStr = typeof stderr === 'string' ? stderr : stderr ? stderr.toString('utf8') : '';
         clear();
         const elapsed = Date.now() - startTime;
         return { stdout: stdoutStr, stderr: stderrStr, elapsed, cmd: dockerCmdStr };
     } catch (error) {
         clear();
         const elapsed = Date.now() - startTime;
-        const err = error as { message?: string; code?: string | number; signal?: string | null; killed?: boolean; stderr?: Buffer | string; stdout?: Buffer | string };
-        const errorStdout = typeof err.stdout === 'string' ? err.stdout : (err.stdout ? (err.stdout as Buffer).toString('utf8') : '');
-        const errorStderr = typeof err.stderr === 'string' ? err.stderr : (err.stderr ? (err.stderr as Buffer).toString('utf8') : '');
+        const err = error as {
+            message?: string;
+            code?: string | number;
+            signal?: string | null;
+            killed?: boolean;
+            stderr?: Buffer | string;
+            stdout?: Buffer | string;
+        };
+        const errorStdout =
+            typeof err.stdout === 'string' ? err.stdout : err.stdout ? (err.stdout as Buffer).toString('utf8') : '';
+        const errorStderr =
+            typeof err.stderr === 'string' ? err.stderr : err.stderr ? (err.stderr as Buffer).toString('utf8') : '';
         const errorInfo: DockerCommandError['error'] = {
             message: err.message || 'Unknown error',
             code: err.code,
@@ -73,4 +95,3 @@ export async function runDockerCommand(
         throw { error: errorInfo, elapsed } as DockerCommandError;
     }
 }
-

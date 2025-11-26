@@ -17,11 +17,17 @@ const SettingsPage = () => {
                 <div className="settings-layout">
                     <div className="settings-header">
                         <h2>{t('settings-title')}</h2>
-                        <button
-                            className="back-button"
-                            onClick={() => navigate('/')}
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <button className="back-button" onClick={() => navigate('/')}>
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
                                 <polyline points="15 18 9 12 15 6"></polyline>
                             </svg>
                             <span>{t('back')}</span>
@@ -39,4 +45,3 @@ const SettingsPage = () => {
 };
 
 export default SettingsPage;
-

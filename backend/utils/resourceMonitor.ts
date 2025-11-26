@@ -72,8 +72,7 @@ export async function getResourceStats(): Promise<ResourceStats> {
                     directories: outputCount.directories
                 }
             };
-        } catch {
-        }
+        } catch {}
     }
 
     return stats;
@@ -105,4 +104,3 @@ export function formatUptime(ms: number): string {
         return `${seconds}s`;
     }
 }
-

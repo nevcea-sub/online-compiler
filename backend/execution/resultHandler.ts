@@ -18,7 +18,7 @@ function createResultObject(output: string, error: string, executionTime: number
         output: output || '',
         error,
         executionTime,
-        images: images.map(img => img.data)
+        images: images.map((img) => img.data)
     };
 }
 
@@ -67,11 +67,12 @@ export async function handleExecutionResult(
         const errorMsg = isTimeoutError(error)
             ? ERROR_MESSAGES.EXECUTION_TIMEOUT
             : (() => {
-                const errorSource = ('message' in error && error.message && error.message !== 'Docker error')
-                    ? error.message
-                    : stderr || ('message' in error ? error.message || 'Unknown error' : 'Unknown error');
-                return sanitizeErrorForUser(sanitizeError(errorSource));
-            })();
+                  const errorSource =
+                      'message' in error && error.message && error.message !== 'Docker error'
+                          ? error.message
+                          : stderr || ('message' in error ? error.message || 'Unknown error' : 'Unknown error');
+                  return sanitizeErrorForUser(sanitizeError(errorSource));
+              })();
 
         const result = createResultObject(filteredStdout, errorMsg, executionTime, images);
         cacheAndSendResult(result, res, cacheKey);
@@ -86,8 +87,7 @@ export async function handleExecutionResult(
         if (filteredStderr) {
             const isBuildSuccess = /Build succeeded/i.test(filteredStderr);
             const isBuildFailed = /Build FAILED/i.test(filteredStderr);
-            const isWarningOnly =
-                /warning/i.test(filteredStderr) && !/error/i.test(filteredStderr) && !isBuildFailed;
+            const isWarningOnly = /warning/i.test(filteredStderr) && !/error/i.test(filteredStderr) && !isBuildFailed;
 
             if (isBuildSuccess || isWarningOnly) {
                 return { finalOutput: '', finalError: '' };
@@ -101,4 +101,3 @@ export async function handleExecutionResult(
     const result = createResultObject(finalOutput, finalError, executionTime, images);
     cacheAndSendResult(result, res, cacheKey);
 }
-

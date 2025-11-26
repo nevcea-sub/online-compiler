@@ -28,7 +28,9 @@ class CleanupSchedulerImpl implements CleanupScheduler {
         }
 
         this.isActive = true;
-        logger.info(`Starting cleanup scheduler (interval: ${CONFIG.CLEANUP_INTERVAL_MS}ms, max age: ${CONFIG.SESSION_MAX_AGE_MS}ms)`);
+        logger.info(
+            `Starting cleanup scheduler (interval: ${CONFIG.CLEANUP_INTERVAL_MS}ms, max age: ${CONFIG.SESSION_MAX_AGE_MS}ms)`
+        );
 
         this.runCleanup().catch((error) => {
             logger.error('Initial cleanup failed:', error);
@@ -108,4 +110,3 @@ export function createCleanupScheduler(codeDir: string, outputDir: string): Clea
 export function getCleanupScheduler(): CleanupScheduler | null {
     return schedulerInstance;
 }
-

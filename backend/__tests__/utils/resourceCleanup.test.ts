@@ -1,9 +1,4 @@
-import {
-    cleanupOldFiles,
-    cleanupOldSessions,
-    getDirectorySize,
-    getDirectoryCount
-} from '../../utils/resourceCleanup';
+import { cleanupOldFiles, cleanupOldSessions, getDirectorySize, getDirectoryCount } from '../../utils/resourceCleanup';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
@@ -24,8 +19,7 @@ describe('Resource Cleanup Utilities', () => {
     afterEach(async () => {
         try {
             await fs.rm(testDir, { recursive: true, force: true });
-        } catch {
-        }
+        } catch {}
     });
 
     describe('cleanupOldFiles', () => {
@@ -130,7 +124,7 @@ describe('Resource Cleanup Utilities', () => {
             await fs.utimes(inputFile, new Date(oldTime), new Date(oldTime));
 
             await fs.utimes(outputFile, new Date(oldTime), new Date(oldTime));
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await new Promise((resolve) => setTimeout(resolve, 10));
             await fs.utimes(sessionDir, new Date(oldTime), new Date(oldTime));
 
             const stats = await cleanupOldSessions(codeDir, outputDir, 60 * 60 * 1000);
@@ -188,4 +182,3 @@ describe('Resource Cleanup Utilities', () => {
         });
     });
 });
-

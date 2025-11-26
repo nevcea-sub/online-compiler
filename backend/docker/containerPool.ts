@@ -93,9 +93,12 @@ class ContainerPool {
     }
 
     private async cleanContainer(containerId: string): Promise<void> {
-        await execAsync(`docker exec ${containerId} sh -c "rm -rf /tmp/* /code/* /input/* /output/* 2>/dev/null || true"`, {
-            timeout: 5000
-        });
+        await execAsync(
+            `docker exec ${containerId} sh -c "rm -rf /tmp/* /code/* /input/* /output/* 2>/dev/null || true"`,
+            {
+                timeout: 5000
+            }
+        );
     }
 
     private async isContainerRunning(containerId: string): Promise<boolean> {
@@ -126,7 +129,7 @@ class ContainerPool {
             const validityChecks = await Promise.all(
                 pool.map(async (container) => ({
                     container,
-                    isValid: this.isContainerValid(container) && await this.isContainerRunning(container.id)
+                    isValid: this.isContainerValid(container) && (await this.isContainerRunning(container.id))
                 }))
             );
 
@@ -195,4 +198,3 @@ class ContainerPool {
 }
 
 export const containerPool = new ContainerPool();
-

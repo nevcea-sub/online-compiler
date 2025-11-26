@@ -49,9 +49,7 @@ export function extractErrorMessage(error: unknown, t: (key: TranslationKey) => 
 
     const errorMessage = error.message.toLowerCase();
     for (const mapping of NETWORK_ERROR_PATTERNS) {
-        const pattern = typeof mapping.pattern === 'string'
-            ? new RegExp(mapping.pattern, 'i')
-            : mapping.pattern;
+        const pattern = typeof mapping.pattern === 'string' ? new RegExp(mapping.pattern, 'i') : mapping.pattern;
 
         if (pattern.test(errorMessage)) {
             return t(mapping.messageKey);
@@ -60,4 +58,3 @@ export function extractErrorMessage(error: unknown, t: (key: TranslationKey) => 
 
     return t('connection-error');
 }
-

@@ -27,4 +27,3 @@ export function prepareCode(code: string, language: string): PreparedCode {
 
     return { finalCode, fileExtension };
 }
-

@@ -38,7 +38,12 @@ const KeyboardShortcuts = () => {
                 <div className="p-6 border-b border-border-color/50 bg-gradient-to-r from-bg-tertiary to-bg-tertiary/50">
                     <h3 className="m-0 text-text-primary text-xl font-bold flex items-center gap-3">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                            />
                         </svg>
                         {t('keyboard-shortcuts')}
                     </h3>
@@ -46,7 +51,10 @@ const KeyboardShortcuts = () => {
                 <div className="p-6 flex-1 overflow-y-auto">
                     <div className="space-y-4">
                         {shortcuts.map((shortcut, index) => (
-                            <div key={index} className="flex items-center justify-between p-4 bg-bg-tertiary/50 rounded-lg border border-border-color/30">
+                            <div
+                                key={index}
+                                className="flex items-center justify-between p-4 bg-bg-tertiary/50 rounded-lg border border-border-color/30"
+                            >
                                 <span className="text-text-primary text-sm">{shortcut.description}</span>
                                 <div className="flex items-center gap-1.5">
                                     {shortcut.keys.map((key, keyIndex) => (
@@ -78,4 +86,3 @@ const KeyboardShortcuts = () => {
 };
 
 export default KeyboardShortcuts;
-

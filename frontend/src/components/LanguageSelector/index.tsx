@@ -12,7 +12,12 @@ interface LanguageSelectorProps {
     onCancelChange: () => void;
 }
 
-const LanguageSelector = ({ onLanguageChange, pendingChange, onConfirmChange, onCancelChange }: LanguageSelectorProps) => {
+const LanguageSelector = ({
+    onLanguageChange,
+    pendingChange,
+    onConfirmChange,
+    onCancelChange
+}: LanguageSelectorProps) => {
     const { currentLanguage, t } = useApp();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -48,14 +53,20 @@ const LanguageSelector = ({ onLanguageChange, pendingChange, onConfirmChange, on
                         onClick={() => setIsOpen(!isOpen)}
                     >
                         <div className="language-icon">
-                            <img
-                                src={LANGUAGE_CONFIG.icons[currentLanguage]}
-                                alt=""
-                                className="language-icon-img"
-                            />
+                            <img src={LANGUAGE_CONFIG.icons[currentLanguage]} alt="" className="language-icon-img" />
                         </div>
                         <span className="language-name">{LANGUAGE_CONFIG.names[currentLanguage]}</span>
-                        <svg className="select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                            className="select-arrow"
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                     </button>
@@ -70,11 +81,7 @@ const LanguageSelector = ({ onLanguageChange, pendingChange, onConfirmChange, on
                                 }}
                             >
                                 <div className="language-icon">
-                                    <img
-                                        src={LANGUAGE_CONFIG.icons[lang]}
-                                        alt=""
-                                        className="language-icon-img"
-                                    />
+                                    <img src={LANGUAGE_CONFIG.icons[lang]} alt="" className="language-icon-img" />
                                 </div>
                                 <span className="language-name">{LANGUAGE_CONFIG.names[lang]}</span>
                             </div>
@@ -95,4 +102,3 @@ const LanguageSelector = ({ onLanguageChange, pendingChange, onConfirmChange, on
 };
 
 export default LanguageSelector;
-

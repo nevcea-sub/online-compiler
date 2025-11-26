@@ -76,7 +76,7 @@ const KOTLIN_CACHE_TTL = 60 * 1000;
 
 export function kotlinCompilerExistsOnHost(kotlinCacheDir: string): boolean {
     const now = Date.now();
-    if (kotlinCompilerPathCache && (now - kotlinCompilerPathCache.timestamp) < KOTLIN_CACHE_TTL) {
+    if (kotlinCompilerPathCache && now - kotlinCompilerPathCache.timestamp < KOTLIN_CACHE_TTL) {
         return kotlinCompilerPathCache.exists;
     }
     try {

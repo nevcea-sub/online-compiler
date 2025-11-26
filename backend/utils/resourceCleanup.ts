@@ -11,11 +11,7 @@ export interface CleanupStats {
     errors: number;
 }
 
-export async function cleanupOldFiles(
-    dirPath: string,
-    maxAgeMs: number,
-    filePattern?: string
-): Promise<CleanupStats> {
+export async function cleanupOldFiles(dirPath: string, maxAgeMs: number, filePattern?: string): Promise<CleanupStats> {
     const stats: CleanupStats = {
         filesDeleted: 0,
         directoriesDeleted: 0,
@@ -65,11 +61,7 @@ export async function cleanupOldFiles(
     return stats;
 }
 
-export async function cleanupOldSessions(
-    codeDir: string,
-    outputDir: string,
-    maxAgeMs: number
-): Promise<CleanupStats> {
+export async function cleanupOldSessions(codeDir: string, outputDir: string, maxAgeMs: number): Promise<CleanupStats> {
     const totalStats: CleanupStats = {
         filesDeleted: 0,
         directoriesDeleted: 0,
@@ -107,11 +99,9 @@ export async function getDirectorySize(dirPath: string): Promise<number> {
                 } else {
                     totalSize += stat.size;
                 }
-            } catch {
-            }
+            } catch {}
         }
-    } catch {
-    }
+    } catch {}
 
     return totalSize;
 }
@@ -136,12 +126,9 @@ export async function getDirectoryCount(dirPath: string): Promise<{ files: numbe
                 } else {
                     files++;
                 }
-            } catch {
-            }
+            } catch {}
         }
-    } catch {
-    }
+    } catch {}
 
     return { files, directories };
 }
-

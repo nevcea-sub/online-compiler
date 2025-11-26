@@ -18,7 +18,7 @@ export async function checkImageExists(image: string): Promise<boolean> {
 
     const now = Date.now();
     const cached = imageExistenceCache.get(image);
-    if (cached && (now - cached.timestamp) < IMAGE_CACHE_TTL) {
+    if (cached && now - cached.timestamp < IMAGE_CACHE_TTL) {
         return cached.exists;
     }
 
@@ -50,7 +50,11 @@ export async function checkImageExists(image: string): Promise<boolean> {
     return checkPromise;
 }
 
-export async function pullDockerImage(image: string, retries: number = CONFIG.DOCKER_PULL_RETRIES, silent: boolean = false): Promise<PullResult> {
+export async function pullDockerImage(
+    image: string,
+    retries: number = CONFIG.DOCKER_PULL_RETRIES,
+    silent: boolean = false
+): Promise<PullResult> {
     if (!Validator.image(image)) {
         return { success: false, image, error: 'Invalid image' };
     }
@@ -106,9 +110,7 @@ export async function preloadDockerImages(): Promise<void> {
     const { isDockerAvailable } = await import('./dockerClient');
 
     if (!(await isDockerAvailable())) {
-        logger.warn(
-            'Docker is not available. Skipping preload. (Start Docker Desktop to auto-pull on first use)'
-        );
+        logger.warn('Docker is not available. Skipping preload. (Start Docker Desktop to auto-pull on first use)');
         return;
     }
     logger.debug('Starting Docker images preload...');
@@ -133,9 +135,7 @@ export async function preloadDockerImages(): Promise<void> {
     }
 
     if (existingImages.length > 0) {
-        logger.debug(
-            `${existingImages.length} images already exist: ${existingImages.join(', ')}`
-        );
+        logger.debug(`${existingImages.length} images already exist: ${existingImages.join(', ')}`);
     }
     logger.debug(`Pulling ${imagesToPull.length} images: ${imagesToPull.join(', ')}`);
 
@@ -150,9 +150,7 @@ export async function preloadDockerImages(): Promise<void> {
         const successCount = batchResults.filter((r) => r.success).length;
         const failCount = batchResults.filter((r) => !r.success).length;
         const batchNumber = Math.floor(i / CONFIG.PRELOAD_BATCH_SIZE) + 1;
-        logger.info(
-            `Batch ${batchNumber}: ${successCount} succeeded, ${failCount} failed`
-        );
+        logger.info(`Batch ${batchNumber}: ${successCount} succeeded, ${failCount} failed`);
     }
 
     const totalSuccess = results.filter((r) => r.success).length;
@@ -165,8 +163,5 @@ export async function preloadDockerImages(): Promise<void> {
         logger.warn('These images will be pulled on first use.');
     }
 
-    logger.info(
-        `Completed in ${elapsed}s: ${totalSuccess} succeeded, ${totalFailed} failed`
-    );
+    logger.info(`Completed in ${elapsed}s: ${totalSuccess} succeeded, ${totalFailed} failed`);
 }
-

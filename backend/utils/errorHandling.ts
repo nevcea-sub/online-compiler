@@ -1,7 +1,4 @@
-import {
-    DOCKER_PULL_MESSAGES,
-    DEBUG_PATTERNS
-} from '../config';
+import { DOCKER_PULL_MESSAGES, DEBUG_PATTERNS } from '../config';
 
 const ESC = String.fromCharCode(27);
 const ANSI_REGEX = new RegExp(`${ESC}\\[[0-9;]*[A-Za-z]`, 'g');
@@ -56,7 +53,12 @@ interface DockerErrorCheck {
 
 const DOCKER_ERROR_CHECKS: DockerErrorCheck[] = [
     {
-        patterns: ['cannot connect to the docker daemon', 'is the docker daemon running', 'docker daemon', 'not running'],
+        patterns: [
+            'cannot connect to the docker daemon',
+            'is the docker daemon running',
+            'docker daemon',
+            'not running'
+        ],
         message: 'Docker가 실행되지 않았습니다. Docker Desktop을 시작한 후 다시 시도해주세요.'
     },
     {
@@ -77,8 +79,8 @@ const DOCKER_ERROR_CHECKS: DockerErrorCheck[] = [
     }
 ];
 
-const DOCKER_ERROR_CHECKS_LOWER: Array<{ patterns: string[]; message: string }> = DOCKER_ERROR_CHECKS.map(check => ({
-    patterns: check.patterns.map(p => p.toLowerCase()),
+const DOCKER_ERROR_CHECKS_LOWER: Array<{ patterns: string[]; message: string }> = DOCKER_ERROR_CHECKS.map((check) => ({
+    patterns: check.patterns.map((p) => p.toLowerCase()),
     message: check.message
 }));
 
@@ -138,7 +140,7 @@ function filterErrorLines(lines: string[]): string[] {
         if (FILE_PATH_PLACEHOLDER_REGEX.test(trimmed)) {
             continue;
         }
-        if (trimmed.includes('Run \'docker') || trimmed.includes('for more information')) {
+        if (trimmed.includes("Run 'docker") || trimmed.includes('for more information')) {
             continue;
         }
         filtered.push(lines[i]);
@@ -173,7 +175,7 @@ function checkDockerError(errorStr: string): string | null {
 
 function extractErrorFromDockerHelpMessage(errorStr: string): string | null {
     const originalLower = errorStr.toLowerCase();
-    const hasRunDocker = originalLower.includes('run \'docker');
+    const hasRunDocker = originalLower.includes("run 'docker");
     const hasHelp = originalLower.includes('--help');
     if (!hasRunDocker && !hasHelp) {
         return null;
@@ -191,17 +193,22 @@ function extractErrorFromDockerHelpMessage(errorStr: string): string | null {
         }
         const lineLower = trimmed.toLowerCase();
 
-        if (lineLower.includes('run \'docker') && lineLower.includes('--help')) {
+        if (lineLower.includes("run 'docker") && lineLower.includes('--help')) {
             break;
         }
 
-        if (lineLower.includes('for more information') || lineLower.includes('see \'docker')) {
+        if (lineLower.includes('for more information') || lineLower.includes("see 'docker")) {
             continue;
         }
 
-        if (lineLower.includes('error') || lineLower.includes('invalid') ||
-            lineLower.includes('unknown') || lineLower.includes('failed') ||
-            lineLower.includes('cannot') || lineLower.includes('docker:')) {
+        if (
+            lineLower.includes('error') ||
+            lineLower.includes('invalid') ||
+            lineLower.includes('unknown') ||
+            lineLower.includes('failed') ||
+            lineLower.includes('cannot') ||
+            lineLower.includes('docker:')
+        ) {
             for (let j = 0; j < ERROR_PATTERNS.length; j++) {
                 ERROR_PATTERNS[j].lastIndex = 0;
                 const match = ERROR_PATTERNS[j].exec(trimmed);
@@ -278,9 +285,8 @@ export const ErrorHandler = {
             return DEFAULT_ERROR_MESSAGE;
         }
 
-        const cacheKey = errorStr.length > MAX_CACHEABLE_ERROR_LENGTH
-            ? errorStr.substring(0, MAX_CACHEABLE_ERROR_LENGTH)
-            : errorStr;
+        const cacheKey =
+            errorStr.length > MAX_CACHEABLE_ERROR_LENGTH ? errorStr.substring(0, MAX_CACHEABLE_ERROR_LENGTH) : errorStr;
         const cached = getCachedError(cacheKey);
         if (cached) {
             return cached;
@@ -303,7 +309,13 @@ export const ErrorHandler = {
             return DEFAULT_SANITIZED_ERROR_MESSAGE;
         }
 
-        resetRegexLastIndex(DOCKER_PREFIX_REGEX, DOCKER_DAEMON_REGEX, DOCKER_HELP_REGEX, FILE_PATH_REGEX, WINDOWS_PATH_REGEX);
+        resetRegexLastIndex(
+            DOCKER_PREFIX_REGEX,
+            DOCKER_DAEMON_REGEX,
+            DOCKER_HELP_REGEX,
+            FILE_PATH_REGEX,
+            WINDOWS_PATH_REGEX
+        );
         sanitized = sanitized
             .replace(DOCKER_PREFIX_REGEX, '')
             .replace(DOCKER_DAEMON_REGEX, '')

@@ -18,12 +18,7 @@ describe('Modal', () => {
 
         render(
             <AppProvider>
-                <Modal
-                    title="Test Title"
-                    message="Test Message"
-                    onConfirm={onConfirm}
-                    onCancel={onCancel}
-                />
+                <Modal title="Test Title" message="Test Message" onConfirm={onConfirm} onCancel={onCancel} />
             </AppProvider>
         );
 
@@ -37,12 +32,7 @@ describe('Modal', () => {
 
         render(
             <AppProvider>
-                <Modal
-                    title="Test"
-                    message="Test"
-                    onConfirm={onConfirm}
-                    onCancel={onCancel}
-                />
+                <Modal title="Test" message="Test" onConfirm={onConfirm} onCancel={onCancel} />
             </AppProvider>
         );
 
@@ -57,12 +47,7 @@ describe('Modal', () => {
 
         render(
             <AppProvider>
-                <Modal
-                    title="Test"
-                    message="Test"
-                    onConfirm={onConfirm}
-                    onCancel={onCancel}
-                />
+                <Modal title="Test" message="Test" onConfirm={onConfirm} onCancel={onCancel} />
             </AppProvider>
         );
 
@@ -77,12 +62,7 @@ describe('Modal', () => {
 
         render(
             <AppProvider>
-                <Modal
-                    title="Test"
-                    message="Test"
-                    onConfirm={onConfirm}
-                    onCancel={onCancel}
-                />
+                <Modal title="Test" message="Test" onConfirm={onConfirm} onCancel={onCancel} />
             </AppProvider>
         );
 
@@ -90,4 +70,3 @@ describe('Modal', () => {
         expect(onCancel).toHaveBeenCalledTimes(1);
     });
 });
-

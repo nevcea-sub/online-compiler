@@ -42,7 +42,7 @@ export function createMockResponse(overrides: Partial<MockResponse> = {}): MockR
 }
 
 export function delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function randomString(length: number = 10): string {
@@ -57,4 +57,3 @@ export function randomString(length: number = 10): string {
 export function longString(length: number): string {
     return 'a'.repeat(length);
 }
-

@@ -11,4 +11,3 @@ export function createTimeoutController(timeoutMs: number): {
         clear: () => clearTimeout(timeoutId)
     };
 }
-

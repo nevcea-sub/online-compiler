@@ -59,9 +59,6 @@ describe('executeCode', () => {
             json: async () => ({ error: 'Invalid code' })
         } as Response);
 
-        await expect(executeCode('invalid', 'python', '')).rejects.toThrow(
-            'TRANSLATION_KEY:bad-request:Invalid code'
-        );
+        await expect(executeCode('invalid', 'python', '')).rejects.toThrow('TRANSLATION_KEY:bad-request:Invalid code');
     });
 });
-

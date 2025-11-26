@@ -1,8 +1,4 @@
-import {
-    filterDockerMessages,
-    sanitizeError,
-    sanitizeErrorForUser
-} from '../../utils/errorHandling';
+import { filterDockerMessages, sanitizeError, sanitizeErrorForUser } from '../../utils/errorHandling';
 
 describe('Error Handling Utilities', () => {
     beforeEach(() => {
@@ -22,13 +18,8 @@ describe('Error Handling Utilities', () => {
         });
 
         it('should filter out Docker pull messages', () => {
-            const dockerPullMessages = [
-                'pulling from',
-                'digest:',
-                'status: downloaded',
-                'already exists'
-            ];
-            dockerPullMessages.forEach(msg => {
+            const dockerPullMessages = ['pulling from', 'digest:', 'status: downloaded', 'already exists'];
+            dockerPullMessages.forEach((msg) => {
                 const result = filterDockerMessages(msg);
                 expect(result).toBe('');
             });
@@ -135,7 +126,7 @@ describe('Error Handling Utilities', () => {
                 'Is the Docker daemon running?',
                 'Docker daemon is not running'
             ];
-            dockerNotRunningErrors.forEach(error => {
+            dockerNotRunningErrors.forEach((error) => {
                 const result = sanitizeErrorForUser(error);
                 expect(result).toBe('Docker가 실행되지 않았습니다. Docker Desktop을 시작한 후 다시 시도해주세요.');
             });
@@ -147,7 +138,7 @@ describe('Error Handling Utilities', () => {
                 'docker: command not found',
                 'spawn docker ENOENT'
             ];
-            dockerNotInstalledErrors.forEach(error => {
+            dockerNotInstalledErrors.forEach((error) => {
                 const result = sanitizeErrorForUser(error);
                 expect(result).toBe('Docker가 설치되지 않았습니다. Docker를 설치한 후 다시 시도해주세요.');
             });
@@ -159,9 +150,11 @@ describe('Error Handling Utilities', () => {
                 'pull access denied for myimage',
                 'repository does not exist'
             ];
-            imageNotFoundErrors.forEach(error => {
+            imageNotFoundErrors.forEach((error) => {
                 const result = sanitizeErrorForUser(error);
-                expect(result).toBe('Docker 이미지를 찾을 수 없습니다. 필요한 이미지를 다운로드 중입니다. 잠시 후 다시 시도해주세요.');
+                expect(result).toBe(
+                    'Docker 이미지를 찾을 수 없습니다. 필요한 이미지를 다운로드 중입니다. 잠시 후 다시 시도해주세요.'
+                );
             });
         });
 
@@ -170,18 +163,15 @@ describe('Error Handling Utilities', () => {
                 'permission denied while trying to connect to Docker',
                 'Docker permission denied'
             ];
-            permissionErrors.forEach(error => {
+            permissionErrors.forEach((error) => {
                 const result = sanitizeErrorForUser(error);
                 expect(result).toBe('Docker 권한 오류가 발생했습니다. Docker 권한을 확인해주세요.');
             });
         });
 
         it('should detect invalid reference format errors', () => {
-            const invalidRefErrors = [
-                'docker: invalid reference format',
-                'invalid reference format'
-            ];
-            invalidRefErrors.forEach(error => {
+            const invalidRefErrors = ['docker: invalid reference format', 'invalid reference format'];
+            invalidRefErrors.forEach((error) => {
                 const result = sanitizeErrorForUser(error);
                 expect(result).toBe('Docker 명령어 형식 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
             });
@@ -253,7 +243,8 @@ describe('Error Handling Utilities', () => {
         });
 
         it('should extract meaningful error from complex Docker errors', () => {
-            const complexError = 'docker: Error response from daemon: invalid mount config\nRun \'docker run --help\' for more information.';
+            const complexError =
+                "docker: Error response from daemon: invalid mount config\nRun 'docker run --help' for more information.";
             const result = sanitizeErrorForUser(complexError);
             expect(result).toBeTruthy();
             expect(result.length).toBeGreaterThan(0);

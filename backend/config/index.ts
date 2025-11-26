@@ -76,9 +76,7 @@ export const CONFIG: Config = {
     ENABLE_CONTAINER_POOL: Env.boolean('ENABLE_CONTAINER_POOL', true),
     ENABLE_CONTAINER_POOL_DEBUG: Env.boolean('ENABLE_CONTAINER_POOL_DEBUG', false),
     TRUST_PROXY: Env.boolean('TRUST_PROXY', false),
-    DEBUG_MODE: process.env.DEBUG
-        ? Env.boolean('DEBUG', false)
-        : false,
+    DEBUG_MODE: process.env.DEBUG ? Env.boolean('DEBUG', false) : false,
     TIMEOUT_BUFFER_MS: Env.integer('TIMEOUT_BUFFER_MS', 2000, 0, 60000),
     SIGKILL_DELAY_MS: Env.integer('SIGKILL_DELAY_MS', 2000, 0, 60000),
     MAX_BUFFER_SIZE: Env.integer('MAX_BUFFER_SIZE', 2 * 1024 * 1024, 1024, 100 * 1024 * 1024),
@@ -105,10 +103,14 @@ export function validateConfig(): void {
         throw new Error(`MAX_EXECUTION_TIME must be >= 1000ms, got: ${CONFIG.MAX_EXECUTION_TIME}`);
     }
     if (CONFIG.TIMEOUT_BUFFER_MS >= CONFIG.MAX_EXECUTION_TIME) {
-        throw new Error(`TIMEOUT_BUFFER_MS (${CONFIG.TIMEOUT_BUFFER_MS}) should be less than MAX_EXECUTION_TIME (${CONFIG.MAX_EXECUTION_TIME})`);
+        throw new Error(
+            `TIMEOUT_BUFFER_MS (${CONFIG.TIMEOUT_BUFFER_MS}) should be less than MAX_EXECUTION_TIME (${CONFIG.MAX_EXECUTION_TIME})`
+        );
     }
     if (CONFIG.SIGKILL_DELAY_MS >= CONFIG.MAX_EXECUTION_TIME) {
-        throw new Error(`SIGKILL_DELAY_MS (${CONFIG.SIGKILL_DELAY_MS}) should be less than MAX_EXECUTION_TIME (${CONFIG.MAX_EXECUTION_TIME})`);
+        throw new Error(
+            `SIGKILL_DELAY_MS (${CONFIG.SIGKILL_DELAY_MS}) should be less than MAX_EXECUTION_TIME (${CONFIG.MAX_EXECUTION_TIME})`
+        );
     }
     if (CONFIG.CLEANUP_INTERVAL_MS < 5 * 60 * 1000) {
         throw new Error(`CLEANUP_INTERVAL_MS (${CONFIG.CLEANUP_INTERVAL_MS}) should be at least 5 minutes`);
@@ -497,9 +499,4 @@ export const DEBUG_PATTERNS = [
     /^ERROR: Runtime file not found:.*/i
 ];
 
-export {
-    KOTLIN_COMPILER_VERSION,
-    KOTLIN_COMPILER_URL,
-    KOTLIN_DOWNLOAD_CMD,
-    KOTLIN_COMPILER_CHECK
-};
+export { KOTLIN_COMPILER_VERSION, KOTLIN_COMPILER_URL, KOTLIN_DOWNLOAD_CMD, KOTLIN_COMPILER_CHECK };

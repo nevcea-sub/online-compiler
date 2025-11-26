@@ -15,14 +15,7 @@ const AppContent = () => {
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-            {toast && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    duration={toast.duration}
-                    onClose={hideToast}
-                />
-            )}
+            {toast && <Toast message={toast.message} type={toast.type} duration={toast.duration} onClose={hideToast} />}
         </>
     );
 };
@@ -38,4 +31,3 @@ function App() {
 }
 
 export default App;
-

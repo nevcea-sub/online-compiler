@@ -39,4 +39,3 @@ describe('extractErrorMessage', () => {
         expect(extractErrorMessage(new Error('HTTP 500'), t)).toBe('Server error');
     });
 });
-

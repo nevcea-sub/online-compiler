@@ -160,4 +160,3 @@ const CodeEditor = memo(({ onRun }: CodeEditorProps) => {
 CodeEditor.displayName = 'CodeEditor';
 
 export default CodeEditor;
-

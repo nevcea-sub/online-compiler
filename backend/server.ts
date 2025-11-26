@@ -95,7 +95,12 @@ function setupMiddlewares(app: express.Application, isProduction: boolean): void
 }
 
 function setupRoutes(app: express.Application): void {
-    app.post('/api/execute', executeLimiter, executeHourlyLimiter, createExecuteRoute(paths.codeDir, paths.outputDir, paths.kotlinCacheDir));
+    app.post(
+        '/api/execute',
+        executeLimiter,
+        executeHourlyLimiter,
+        createExecuteRoute(paths.codeDir, paths.outputDir, paths.kotlinCacheDir)
+    );
     app.get('/api/health', healthLimiter, healthRoute);
 }
 

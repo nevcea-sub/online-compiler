@@ -51,4 +51,3 @@ describe('formatError', () => {
         expect(result).not.toContain('\r');
     });
 });
-

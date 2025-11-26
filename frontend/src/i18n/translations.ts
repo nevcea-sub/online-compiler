@@ -131,7 +131,8 @@ export const translations: Record<Language, TranslationData> = {
         'more-error-messages': '... (더 많은 오류 메시지가 있습니다)',
         'docker-not-running': 'Docker가 실행되지 않았습니다. Docker Desktop을 시작한 후 다시 시도해주세요.',
         'docker-not-installed': 'Docker가 설치되지 않았습니다. Docker를 설치한 후 다시 시도해주세요.',
-        'docker-image-not-found': 'Docker 이미지를 찾을 수 없습니다. 필요한 이미지를 다운로드 중입니다. 잠시 후 다시 시도해주세요.',
+        'docker-image-not-found':
+            'Docker 이미지를 찾을 수 없습니다. 필요한 이미지를 다운로드 중입니다. 잠시 후 다시 시도해주세요.',
         'docker-permission-error': 'Docker 권한 오류가 발생했습니다. Docker 권한을 확인해주세요.',
         'docker-invalid-format': 'Docker 명령어 형식 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
         'language-change-title': '언어 변경 확인',
@@ -261,16 +262,16 @@ export const getTranslation = (key: TranslationKey, lang: Language = 'ko'): stri
 export const mapServerErrorMessage = (errorMessage: string): TranslationKey | null => {
     const errorLower = errorMessage.toLowerCase();
 
-    if (errorMessage.includes('Docker가 실행되지 않았습니다') ||
-        errorMessage.includes('Docker Desktop을 시작한 후')) {
+    if (errorMessage.includes('Docker가 실행되지 않았습니다') || errorMessage.includes('Docker Desktop을 시작한 후')) {
         return 'docker-not-running';
     }
-    if (errorMessage.includes('Docker가 설치되지 않았습니다') ||
-        errorMessage.includes('Docker를 설치한 후')) {
+    if (errorMessage.includes('Docker가 설치되지 않았습니다') || errorMessage.includes('Docker를 설치한 후')) {
         return 'docker-not-installed';
     }
-    if (errorMessage.includes('Docker 이미지를 찾을 수 없습니다') ||
-        errorMessage.includes('이미지를 다운로드 중입니다')) {
+    if (
+        errorMessage.includes('Docker 이미지를 찾을 수 없습니다') ||
+        errorMessage.includes('이미지를 다운로드 중입니다')
+    ) {
         return 'docker-image-not-found';
     }
     if (errorMessage.includes('Docker 권한 오류가 발생했습니다')) {
@@ -286,24 +287,25 @@ export const mapServerErrorMessage = (errorMessage: string): TranslationKey | nu
         return 'execution-error';
     }
 
-    if (errorLower.includes('docker is not running') ||
-        (errorLower.includes('docker daemon') && errorLower.includes('not running'))) {
+    if (
+        errorLower.includes('docker is not running') ||
+        (errorLower.includes('docker daemon') && errorLower.includes('not running'))
+    ) {
         return 'docker-not-running';
     }
-    if (errorLower.includes('docker is not installed') ||
-        errorLower.includes('docker: command not found')) {
+    if (errorLower.includes('docker is not installed') || errorLower.includes('docker: command not found')) {
         return 'docker-not-installed';
     }
-    if (errorLower.includes('docker image not found') ||
-        errorLower.includes('no such image')) {
+    if (errorLower.includes('docker image not found') || errorLower.includes('no such image')) {
         return 'docker-image-not-found';
     }
-    if (errorLower.includes('docker permission') ||
-        (errorLower.includes('permission denied') && errorLower.includes('docker'))) {
+    if (
+        errorLower.includes('docker permission') ||
+        (errorLower.includes('permission denied') && errorLower.includes('docker'))
+    ) {
         return 'docker-permission-error';
     }
-    if (errorLower.includes('execution timeout') ||
-        errorLower.includes('timeout exceeded')) {
+    if (errorLower.includes('execution timeout') || errorLower.includes('timeout exceeded')) {
         return 'execution-timeout';
     }
     if (errorLower.includes('error occurred during execution')) {

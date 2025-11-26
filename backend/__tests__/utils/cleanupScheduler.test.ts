@@ -41,8 +41,7 @@ describe('Cleanup Scheduler', () => {
         }
         try {
             await fs.rm(testDir, { recursive: true, force: true });
-        } catch {
-        }
+        } catch {}
     });
 
     it('should create scheduler instance', () => {
@@ -84,4 +83,3 @@ describe('Cleanup Scheduler', () => {
         expect(retrieved).toBe(scheduler);
     });
 });
-

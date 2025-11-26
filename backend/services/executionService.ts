@@ -159,21 +159,25 @@ export class ExecutionService {
 
     private async handleWarmupAndPreload(language: string, image: string, kotlinCacheDir: string): Promise<void> {
         if (CONFIG.ENABLE_WARMUP) {
-            import('../docker/dockerWarmup').then(({ ensureWarmedUp }) => {
-                ensureWarmedUp(language, kotlinCacheDir).catch(() => {});
-            }).catch(() => {});
+            import('../docker/dockerWarmup')
+                .then(({ ensureWarmedUp }) => {
+                    ensureWarmedUp(language, kotlinCacheDir).catch(() => {});
+                })
+                .catch(() => {});
         }
 
         if (CONFIG.ENABLE_PRELOAD) {
-            import('../docker/dockerImage').then(({ checkImageExists }) => {
-                return checkImageExists(image).then(async (exists) => {
-                    if (!exists) {
-                        logger.debug('Image not found, pulling', { image });
-                        const { pullDockerImage } = await import('../docker/dockerImage');
-                        pullDockerImage(image, 1, true).catch(() => {});
-                    }
-                });
-            }).catch(() => {});
+            import('../docker/dockerImage')
+                .then(({ checkImageExists }) => {
+                    return checkImageExists(image).then(async (exists) => {
+                        if (!exists) {
+                            logger.debug('Image not found, pulling', { image });
+                            const { pullDockerImage } = await import('../docker/dockerImage');
+                            pullDockerImage(image, 1, true).catch(() => {});
+                        }
+                    });
+                })
+                .catch(() => {});
         }
     }
 
@@ -209,9 +213,7 @@ export class ExecutionService {
 
         if (sessionId) {
             const sessionOutputDir = path.join(outputDir, sessionId);
-            cleanupPromises.push(
-                fs.rm(sessionOutputDir, { recursive: true, force: true }).catch(() => {})
-            );
+            cleanupPromises.push(fs.rm(sessionOutputDir, { recursive: true, force: true }).catch(() => {}));
         }
         await Promise.allSettled(cleanupPromises);
 

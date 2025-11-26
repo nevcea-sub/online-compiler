@@ -14,14 +14,12 @@ export const AppProvider = ({ children }: AppProviderProps) => {
         () => (localStorage.getItem('language') as Language) || 'ko'
     );
     const [currentLanguage, setCurrentLanguage] = useState<ProgrammingLanguage>(CONFIG.DEFAULT_LANGUAGE);
-    const [theme, setTheme] = useState<Theme>(
-        () => (localStorage.getItem('theme') as Theme) || CONFIG.DEFAULT_THEME
-    );
+    const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || CONFIG.DEFAULT_THEME);
     const [fontFamily, setFontFamily] = useState<string>(
         () => localStorage.getItem('fontFamily') || CONFIG.DEFAULT_FONT_FAMILY
     );
-    const [fontSize, setFontSize] = useState<number>(
-        () => parseInt(localStorage.getItem('fontSize') || String(CONFIG.DEFAULT_FONT_SIZE), 10)
+    const [fontSize, setFontSize] = useState<number>(() =>
+        parseInt(localStorage.getItem('fontSize') || String(CONFIG.DEFAULT_FONT_SIZE), 10)
     );
     const [code, setCode] = useState<string>(() => {
         const template = LANGUAGE_CONFIG.templates[CONFIG.DEFAULT_LANGUAGE] || '';
@@ -118,4 +116,3 @@ export const AppProvider = ({ children }: AppProviderProps) => {
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-

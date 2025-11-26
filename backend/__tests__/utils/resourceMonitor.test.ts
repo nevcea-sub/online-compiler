@@ -35,7 +35,7 @@ describe('Resource Monitor', () => {
 
         it('should return increasing uptime', async () => {
             const stats1 = await getResourceStats();
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise((resolve) => setTimeout(resolve, 100));
             const stats2 = await getResourceStats();
 
             expect(stats2.uptime).toBeGreaterThanOrEqual(stats1.uptime);
@@ -88,4 +88,3 @@ describe('Resource Monitor', () => {
         });
     });
 });
-

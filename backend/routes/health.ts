@@ -66,4 +66,3 @@ export async function healthRoute(_: Request, res: Response): Promise<void> {
 
     res.json(response);
 }
-

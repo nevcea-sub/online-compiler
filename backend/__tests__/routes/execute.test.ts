@@ -152,11 +152,7 @@ describe('Execute Route Validation', () => {
         });
 
         it('should reject code with dangerous patterns', async () => {
-            const dangerousCodes = [
-                'rm -rf /',
-                'docker run malicious',
-                'sudo su'
-            ];
+            const dangerousCodes = ['rm -rf /', 'docker run malicious', 'sudo su'];
 
             for (const code of dangerousCodes) {
                 jest.clearAllMocks();

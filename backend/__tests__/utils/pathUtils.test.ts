@@ -1,9 +1,4 @@
-import {
-    normalizePath,
-    validatePath,
-    convertToDockerPath,
-    getContainerCodePath
-} from '../../utils/pathUtils';
+import { normalizePath, validatePath, convertToDockerPath, getContainerCodePath } from '../../utils/pathUtils';
 import path from 'path';
 
 jest.mock('fs');
@@ -15,12 +10,8 @@ describe('Path Utilities', () => {
 
     describe('normalizePath', () => {
         it('should normalize valid file paths', () => {
-            const validPaths = [
-                '/tmp/code.py',
-                'relative/path/file.js',
-                './current/dir/file.txt'
-            ];
-            validPaths.forEach(filePath => {
+            const validPaths = ['/tmp/code.py', 'relative/path/file.js', './current/dir/file.txt'];
+            validPaths.forEach((filePath) => {
                 const result = normalizePath(filePath);
                 expect(result).toBeTruthy();
                 expect(typeof result).toBe('string');
@@ -66,12 +57,8 @@ describe('Path Utilities', () => {
 
     describe('validatePath', () => {
         it('should validate legitimate file paths', () => {
-            const validPaths = [
-                '/tmp/code.py',
-                '/home/user/project/file.js',
-                path.resolve('./test.txt')
-            ];
-            validPaths.forEach(filePath => {
+            const validPaths = ['/tmp/code.py', '/home/user/project/file.js', path.resolve('./test.txt')];
+            validPaths.forEach((filePath) => {
                 expect(validatePath(filePath)).toBe(true);
             });
         });
@@ -104,43 +91,31 @@ describe('Path Utilities', () => {
                     './../../boot/grub',
                     'code/../../../root/'
                 ];
-                traversalPaths.forEach(filePath => {
+                traversalPaths.forEach((filePath) => {
                     const result = validatePath(filePath);
                     expect(typeof result).toBe('boolean');
                 });
             });
 
             it('should handle null byte injection attempts', () => {
-                const maliciousPaths = [
-                    '/tmp/file.txt\x00.jpg',
-                    'test\x00../../etc/passwd',
-                    'file.py\0.txt'
-                ];
-                maliciousPaths.forEach(filePath => {
+                const maliciousPaths = ['/tmp/file.txt\x00.jpg', 'test\x00../../etc/passwd', 'file.py\0.txt'];
+                maliciousPaths.forEach((filePath) => {
                     const result = validatePath(filePath);
                     expect(typeof result).toBe('boolean');
                 });
             });
 
             it('should handle symbolic link style paths safely', () => {
-                const symlinkPaths = [
-                    '/tmp/symlink',
-                    '/home/user/.ssh/authorized_keys',
-                    '/var/www/html/../../../etc'
-                ];
-                symlinkPaths.forEach(filePath => {
+                const symlinkPaths = ['/tmp/symlink', '/home/user/.ssh/authorized_keys', '/var/www/html/../../../etc'];
+                symlinkPaths.forEach((filePath) => {
                     const result = validatePath(filePath);
                     expect(typeof result).toBe('boolean');
                 });
             });
 
             it('should handle URL-encoded path traversal attempts', () => {
-                const encodedPaths = [
-                    '%2e%2e%2f%2e%2e%2fetc%2fpasswd',
-                    '..%2f..%2f..%2froot',
-                    'file%00.txt'
-                ];
-                encodedPaths.forEach(filePath => {
+                const encodedPaths = ['%2e%2e%2f%2e%2e%2fetc%2fpasswd', '..%2f..%2f..%2froot', 'file%00.txt'];
+                encodedPaths.forEach((filePath) => {
                     const result = validatePath(filePath);
                     expect(typeof result).toBe('boolean');
                 });
@@ -154,7 +129,7 @@ describe('Path Utilities', () => {
                     '/proc/self/environ',
                     'C:\\Windows\\System32\\config\\SAM'
                 ];
-                suspiciousPaths.forEach(filePath => {
+                suspiciousPaths.forEach((filePath) => {
                     const result = validatePath(filePath);
                     expect(typeof result).toBe('boolean');
                 });
@@ -162,12 +137,8 @@ describe('Path Utilities', () => {
         });
 
         it('should validate paths with special characters', () => {
-            const pathsWithSpecialChars = [
-                '/tmp/file-name.txt',
-                '/tmp/file_name.txt',
-                '/tmp/file.name.txt'
-            ];
-            pathsWithSpecialChars.forEach(filePath => {
+            const pathsWithSpecialChars = ['/tmp/file-name.txt', '/tmp/file_name.txt', '/tmp/file.name.txt'];
+            pathsWithSpecialChars.forEach((filePath) => {
                 expect(validatePath(filePath)).toBe(true);
             });
         });
@@ -208,7 +179,7 @@ describe('Path Utilities', () => {
 
             it('should handle different drive letters on Windows', () => {
                 const drives = ['C:', 'D:', 'E:'];
-                drives.forEach(drive => {
+                drives.forEach((drive) => {
                     const windowsPath = `${drive}\\temp\\file.txt`;
                     const result = convertToDockerPath(windowsPath);
                     expect(result).toMatch(/^\/[a-z]\//);
@@ -240,7 +211,7 @@ describe('Path Utilities', () => {
         it('should use correct extension in default path', () => {
             const containerPaths = {};
             const extensions = ['.js', '.cpp', '.rs', '.go'];
-            extensions.forEach(ext => {
+            extensions.forEach((ext) => {
                 const result = getContainerCodePath('somelang', ext, containerPaths);
                 expect(result).toBe(`/tmp/code${ext}`);
             });

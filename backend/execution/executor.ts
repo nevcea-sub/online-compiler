@@ -50,7 +50,11 @@ export async function executeDockerProcess(
             pooledContainerId = await containerPool.getOrCreateContainer(language, config.image, kotlinCacheDir);
 
             if (pooledContainerId) {
-                const { command, containerPath, containerInputPath } = DockerArgs.buildExecutionCommand(language, buildOptions, kotlinCacheDir);
+                const { command, containerPath, containerInputPath } = DockerArgs.buildExecutionCommand(
+                    language,
+                    buildOptions,
+                    kotlinCacheDir
+                );
 
                 await execAsync(`docker cp "${fullCodePath}" ${pooledContainerId}:"${containerPath}"`);
 
@@ -72,7 +76,12 @@ export async function executeDockerProcess(
     }
 
     if (!pooledContainerId) {
-        const { args, containerName } = DockerArgs.buildDockerArgs(language, fullCodePath, buildOptions, kotlinCacheDir);
+        const { args, containerName } = DockerArgs.buildDockerArgs(
+            language,
+            fullCodePath,
+            buildOptions,
+            kotlinCacheDir
+        );
         executionArgs = args;
         containerNameForCleanup = containerName;
     }
@@ -152,9 +161,7 @@ export async function executeDockerProcess(
                 stderrPreview: stderr.substring(0, 500)
             });
 
-            const error: ExecutionError | null = code !== 0
-                ? createExecutionError(code, stderr || '')
-                : null;
+            const error: ExecutionError | null = code !== 0 ? createExecutionError(code, stderr || '') : null;
 
             logger.debug('Calling handleExecutionResult', {
                 language,
@@ -162,17 +169,9 @@ export async function executeDockerProcess(
                 executionTime
             });
 
-            await handleExecutionResult(
-                error,
-                stdout,
-                stderr,
-                executionTime,
-                res,
-                sessionOutputDir,
-                cacheKey
-            );
+            await handleExecutionResult(error, stdout, stderr, executionTime, res, sessionOutputDir, cacheKey);
 
-            performCleanup().catch(err => logger.error('Cleanup failed after response', err));
+            performCleanup().catch((err) => logger.error('Cleanup failed after response', err));
         } catch (err) {
             logger.error('Error in handleClose', err);
             await performCleanup();
@@ -199,9 +198,10 @@ export async function executeDockerProcess(
 
             const errorMessage = error.message || '';
             const combinedStderr = stderr || errorMessage;
-            const executionError = errorMessage.includes('ENOENT') || isDockerError(combinedStderr)
-                ? createExecutionError(null, combinedStderr, errorMessage)
-                : createExecutionError(null, combinedStderr);
+            const executionError =
+                errorMessage.includes('ENOENT') || isDockerError(combinedStderr)
+                    ? createExecutionError(null, combinedStderr, errorMessage)
+                    : createExecutionError(null, combinedStderr);
 
             logger.debug('Calling handleExecutionResult (error handler)', {
                 language,
@@ -219,7 +219,7 @@ export async function executeDockerProcess(
                 cacheKey
             );
 
-            performCleanup().catch(err => logger.error('Cleanup failed after response (error case)', err));
+            performCleanup().catch((err) => logger.error('Cleanup failed after response (error case)', err));
         } catch (err) {
             logger.error('Error in handleError', err);
             await performCleanup();

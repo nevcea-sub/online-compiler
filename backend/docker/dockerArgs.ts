@@ -47,9 +47,7 @@ export const DockerArgs = {
         const extension = LANGUAGE_EXTENSIONS[language];
         const containerPath = getContainerCodePath(language, extension, CONTAINER_CODE_PATHS);
         const containerBuildDir = language === 'kotlin' ? '/tmp/kbuild' : undefined;
-        const containerInputPath = opts.inputPath
-            ? `/input/${path.basename(opts.inputPath)}`
-            : undefined;
+        const containerInputPath = opts.inputPath ? `/input/${path.basename(opts.inputPath)}` : undefined;
 
         const command =
             language === 'kotlin'
@@ -96,11 +94,13 @@ export const DockerArgs = {
         const args: string[] = [
             'run',
             '--rm',
-            '--name', containerName,
+            '--name',
+            containerName,
             `--memory=${CONFIG.MAX_MEMORY}`,
             `--cpus=${language === 'kotlin' ? CONFIG.MAX_CPU_PERCENT_KOTLIN : CPU_LIMITS[language] || CONFIG.MAX_CPU_PERCENT}`,
             '--init',
-            '--stop-timeout', '1'
+            '--stop-timeout',
+            '1'
         ];
 
         if (language !== 'typescript' && language !== 'bash') {
@@ -109,13 +109,18 @@ export const DockerArgs = {
 
         args.push(
             '--read-only',
-            '--tmpfs', `/tmp:rw,exec,nosuid,size=${tmpfsSize}`,
+            '--tmpfs',
+            `/tmp:rw,exec,nosuid,size=${tmpfsSize}`,
             '--cap-drop=ALL',
-            '--security-opt', 'no-new-privileges',
+            '--security-opt',
+            'no-new-privileges',
             '--pids-limit=128',
-            '--log-driver', 'none',
-            '--user', '1000:1000',
-            '--oom-score-adj', '500'
+            '--log-driver',
+            'none',
+            '--user',
+            '1000:1000',
+            '--oom-score-adj',
+            '500'
         );
 
         const hostFileName = path.basename(hostCodePath);
@@ -137,7 +142,12 @@ export const DockerArgs = {
             containerPath
         });
 
-        const fileCopyCommand = DockerArgs.buildFileCopyCommand(actualMountedPath, containerPath, !!opts.inputPath, inputBasename);
+        const fileCopyCommand = DockerArgs.buildFileCopyCommand(
+            actualMountedPath,
+            containerPath,
+            !!opts.inputPath,
+            inputBasename
+        );
         const fullCommand = `${fileCopyCommand}${command}`;
 
         logger.debug('Full Docker command', { fullCommand: fullCommand.substring(0, 500) });
@@ -147,10 +157,7 @@ export const DockerArgs = {
         return { args, containerName };
     },
 
-    buildPoolStartupArgs(
-        language: string,
-        kotlinCacheDir?: string
-    ): { args: string[]; containerName: string } {
+    buildPoolStartupArgs(language: string, kotlinCacheDir?: string): { args: string[]; containerName: string } {
         if (!Validator.language(language)) {
             throw new Error('Invalid language');
         }
@@ -167,11 +174,13 @@ export const DockerArgs = {
             'run',
             '-d', // Detached mode
             '--rm',
-            '--name', containerName,
+            '--name',
+            containerName,
             `--memory=${CONFIG.MAX_MEMORY}`,
             `--cpus=${language === 'kotlin' ? CONFIG.MAX_CPU_PERCENT_KOTLIN : CPU_LIMITS[language] || CONFIG.MAX_CPU_PERCENT}`,
             '--init',
-            '--stop-timeout', '1'
+            '--stop-timeout',
+            '1'
         ];
 
         if (language !== 'typescript' && language !== 'bash') {
@@ -180,13 +189,18 @@ export const DockerArgs = {
 
         args.push(
             '--read-only',
-            '--tmpfs', `/tmp:rw,exec,nosuid,size=${tmpfsSize}`,
+            '--tmpfs',
+            `/tmp:rw,exec,nosuid,size=${tmpfsSize}`,
             '--cap-drop=ALL',
-            '--security-opt', 'no-new-privileges',
+            '--security-opt',
+            'no-new-privileges',
             '--pids-limit=128',
-            '--log-driver', 'none',
-            '--user', '1000:1000',
-            '--oom-score-adj', '500'
+            '--log-driver',
+            'none',
+            '--user',
+            '1000:1000',
+            '--oom-score-adj',
+            '500'
         );
 
         if (language === 'kotlin' && kotlinCacheDir) {

@@ -7,7 +7,7 @@ const RETRY_DELAY_MS = 1000;
 const RETRYABLE_STATUS_CODES = [500, 502, 503, 504];
 
 const sleep = (ms: number): Promise<void> => {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 const makeRequest = async (
@@ -77,9 +77,10 @@ const makeRequest = async (
                 throw new Error('TRANSLATION_KEY:request-timeout-retry');
             }
 
-            const isNetworkError = error.message.includes('Failed to fetch') ||
-                                 error.message.includes('NetworkError') ||
-                                 error.message.includes('Network request failed');
+            const isNetworkError =
+                error.message.includes('Failed to fetch') ||
+                error.message.includes('NetworkError') ||
+                error.message.includes('Network request failed');
 
             if (isNetworkError && attempt < MAX_RETRIES) {
                 const delay = RETRY_DELAY_MS * Math.pow(2, attempt);
@@ -113,4 +114,3 @@ export const executeCode = async (
 ): Promise<ExecuteResponse> => {
     return makeRequest(code, language, input, 0);
 };
-

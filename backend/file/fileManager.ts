@@ -71,7 +71,7 @@ export async function findImageFiles(outputDir: string): Promise<ImageFile[]> {
 
         // Process all image files in parallel
         const imagePromises = files
-            .filter(file => {
+            .filter((file) => {
                 const ext = path.extname(file).toLowerCase();
                 return IMAGE_EXTENSIONS.includes(ext as any);
             })
@@ -127,4 +127,3 @@ export async function ensureDirectories(
 export function generateSessionId(): string {
     return crypto.randomBytes(16).toString('hex');
 }
-

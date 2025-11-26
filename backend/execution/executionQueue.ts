@@ -24,12 +24,7 @@ export class ExecutionQueue {
         this.maxQueueSize = maxQueueSize;
     }
 
-    async enqueue(
-        id: string,
-        language: string,
-        execute: () => Promise<void>,
-        priority: number = 0
-    ): Promise<void> {
+    async enqueue(id: string, language: string, execute: () => Promise<void>, priority: number = 0): Promise<void> {
         if (this.queue.length >= this.maxQueueSize) {
             logger.warn('Queue full', { queueSize: this.queue.length, maxQueueSize: this.maxQueueSize });
             throw new Error('Execution queue is full. Please try again later.');
@@ -116,11 +111,11 @@ export class ExecutionQueue {
     }
 
     getStatus(): {
-                running: number;
-                queued: number;
-                maxConcurrent: number;
-                maxQueueSize: number;
-                } {
+        running: number;
+        queued: number;
+        maxConcurrent: number;
+        maxQueueSize: number;
+    } {
         return {
             running: this.running.size,
             queued: this.queue.length,
@@ -136,7 +131,4 @@ export class ExecutionQueue {
     }
 }
 
-export const executionQueue = new ExecutionQueue(
-    CONFIG.MAX_CONCURRENT_EXECUTIONS,
-    CONFIG.MAX_QUEUE_SIZE
-);
+export const executionQueue = new ExecutionQueue(CONFIG.MAX_CONCURRENT_EXECUTIONS, CONFIG.MAX_QUEUE_SIZE);

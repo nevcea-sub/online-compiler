@@ -63,22 +63,34 @@ const EditorLanguageSelector = ({ onLanguageChange, pendingChange }: EditorLangu
                 className={`editor-language-button ${isOpen ? 'active' : ''} ${pendingChange ? 'pending' : ''}`}
                 onClick={() => setIsOpen(!isOpen)}
             >
-                <img
-                    src={LANGUAGE_CONFIG.icons[currentLanguage]}
-                    alt=""
-                    className="editor-language-icon"
-                />
+                <img src={LANGUAGE_CONFIG.icons[currentLanguage]} alt="" className="editor-language-icon" />
                 <span className="editor-language-name">{LANGUAGE_CONFIG.names[currentLanguage]}</span>
-                <svg className="select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                    className="select-arrow"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
                     <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
             </button>
-            <div
-                ref={dropdownRef}
-                className={`editor-language-dropdown ${isOpen ? 'show' : ''}`}
-            >
+            <div ref={dropdownRef} className={`editor-language-dropdown ${isOpen ? 'show' : ''}`}>
                 <div className="editor-language-search">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
                         <circle cx="11" cy="11" r="8"></circle>
                         <path d="m21 21-4.35-4.35"></path>
                     </svg>
@@ -100,7 +112,16 @@ const EditorLanguageSelector = ({ onLanguageChange, pendingChange }: EditorLangu
                                 setSearchQuery('');
                             }}
                         >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
@@ -117,11 +138,7 @@ const EditorLanguageSelector = ({ onLanguageChange, pendingChange }: EditorLangu
                                 handleClose();
                             }}
                         >
-                            <img
-                                src={LANGUAGE_CONFIG.icons[lang]}
-                                alt=""
-                                className="editor-language-icon"
-                            />
+                            <img src={LANGUAGE_CONFIG.icons[lang]} alt="" className="editor-language-icon" />
                             <span className="editor-language-name">{LANGUAGE_CONFIG.names[lang]}</span>
                         </div>
                     ))}
@@ -132,4 +149,3 @@ const EditorLanguageSelector = ({ onLanguageChange, pendingChange }: EditorLangu
 };
 
 export default EditorLanguageSelector;
-
