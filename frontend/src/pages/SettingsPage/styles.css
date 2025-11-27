@@ -36,7 +36,7 @@
 
     .font-select-wrapper,
     .theme-select-wrapper,
-    .lang-select-wrapper {
+    .language-select-wrapper {
         max-width: 100%;
     }
 }
@@ -213,6 +213,7 @@
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    user-select: none;
 }
 
 .language-select-button span {
@@ -438,6 +439,7 @@
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    user-select: none;
 }
 
 .font-select-button span {
@@ -705,6 +707,7 @@
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    user-select: none;
 }
 
 .theme-select-button span {
